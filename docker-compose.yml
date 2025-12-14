@@ -1,0 +1,24 @@
+version: '3.8'
+
+services:
+  wpp-music-bot:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: wpp-music-bot
+    restart: unless-stopped
+    
+    ports:
+      - "${PORT:-3000}:3000"
+    
+    volumes:
+      - ./storage:/app/storage
+    
+    environment:
+      - PORT=${PORT:-3000}
+      - HOST=${HOST:-0.0.0.0}
+      - TARGET_GROUP_ID=${TARGET_GROUP_ID:-}
+      - SPOTIFY_CLIENT_ID=${SPOTIFY_CLIENT_ID:-}
+      - SPOTIFY_CLIENT_SECRET=${SPOTIFY_CLIENT_SECRET:-}
+      - YOUTUBE_API_KEY=${YOUTUBE_API_KEY:-}
+      - DEBUG=${DEBUG:-false}
