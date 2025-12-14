@@ -1,0 +1,19 @@
+# Dependencies
+node_modules/
+
+# Environment variables
+.env
+
+# Storage (new structure)
+storage/
+
+# Legacy storage (kept for backward compatibility)
+auth/
+temp/
+queue.json
+priority.json
+
+# System files
+.DS_Store
+
+*.lock

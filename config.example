@@ -1,0 +1,55 @@
+# ======================
+# WppMusicBot Configuration
+# ======================
+# Copy this file to .env and configure your API keys and secrets
+#
+# NOTE: All other settings (audio quality, playback settings, etc.) are now managed
+# through the web UI and stored in storage/data/settings.json
+# ======================
+
+# ==================
+# Server Configuration
+# ==================
+# These can also be set via environment variables (takes precedence over UI settings)
+
+# Port for the web dashboard (default: 3000)
+PORT=3000
+
+# Host for the web server (default: localhost)
+HOST=localhost
+
+# ==================
+# WhatsApp Configuration
+# ==================
+
+# Optional: Restrict bot to a specific WhatsApp group ID
+# Find the group ID by checking logs when a message is sent
+# Example: 123456789@g.us
+TARGET_GROUP_ID=
+
+# ==================
+# Spotify API Configuration (for Playlist Support)
+# ==================
+# Required for VIP playlist feature to work with Spotify playlists
+# Get your credentials at: https://developer.spotify.com/dashboard
+# 1. Create a new app
+# 2. Copy the Client ID and Client Secret
+# Note: YouTube playlists work without any API credentials
+
+SPOTIFY_CLIENT_ID=
+SPOTIFY_CLIENT_SECRET=
+
+# ==================
+# YouTube Data API Configuration (for Improved Search)
+# ==================
+# Optional: YouTube Data API v3 key for more accurate search results
+# Get your API key at: https://console.cloud.google.com/apis/credentials
+# 1. Create a new project or select existing one
+# 2. Enable "YouTube Data API v3"
+# 3. Create credentials (API Key)
+# 4. Copy the API key here
+# Note: Free quota is 10,000 units/day (100 searches/day)
+# If not configured, the bot will use play-dl as fallback
+
+YOUTUBE_API_KEY=
+
