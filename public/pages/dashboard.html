@@ -1,0 +1,1078 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>WabiSaby</title>
+    <link rel="icon" type="image/svg+xml" href="../assets/favicon.svg">
+    <link rel="alternate icon" href="../assets/favicon.ico">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="../styles/style.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+</head>
+<body>
+    <div class="bg-overlay"></div>
+    <div class="container">
+        <header class="glass-navbar">
+            <div class="logo-container">
+                <i class="fas fa-leaf fa-2x pulse-icon"></i>
+                <h1>Wabi<span class="highlight">Saby</span></h1>
+            </div>
+            <div class="navbar-actions">
+                <a href="/pages/logs.html" class="navbar-icon-btn" title="System Logs" id="logs-btn" target="_blank">
+                    <i class="fas fa-terminal"></i>
+                </a>
+                <button id="settings-btn" class="navbar-icon-btn" title="Settings">
+                    <i class="fas fa-cog"></i>
+                </button>
+                <div class="status-badge online" id="connection-status">
+                    <span class="dot"></span> LIVE
+                </div>
+            </div>
+        </header>
+
+        <main class="dashboard-grid">
+            <!-- Login / QR Section (Hidden by default) -->
+            <section id="auth-section" class="card full-width hidden">
+                 <div class="card-header">
+                    <i class="fas fa-qrcode"></i>
+                    <h2>SYSTEM AUTHENTICATION</h2>
+                </div>
+                <div class="auth-content">
+                    <p>Scan the QR code to connect the bot to WhatsApp</p>
+                    <div id="qr-container">
+                        <div class="qr-placeholder">
+                            <i class="fas fa-circle-notch fa-spin"></i> Waiting for QR...
+                        </div>
+                    </div>
+                </div>
+            </section>
+
+            <section id="now-playing" class="card full-width now-playing-card">
+                <!-- Visualizer Background -->
+                <div class="np-visualizer-bg">
+                    <canvas id="visualizer-canvas"></canvas>
+                </div>
+                
+                <!-- Main Content -->
+                <div class="np-content">
+                    <!-- Left: Album Art -->
+                    <div class="np-artwork-container">
+                        <div id="np-artwork" class="np-artwork">
+                            <i class="fas fa-compact-disc np-artwork-placeholder"></i>
+                        </div>
+                    </div>
+                    
+                    <!-- Center: Song Info & Progress -->
+                    <div class="np-info">
+                        <div id="current-song-info" class="np-song-details">
+                            <div class="np-idle-state">
+                                <span class="np-idle-label">READY TO PLAY</span>
+                                <p class="np-idle-hint">Add a track to get started</p>
+                            </div>
+                        </div>
+                        
+                        <div id="progress-section" class="np-progress hidden">
+                            <div class="np-progress-bar-container">
+                                <div id="progress-bar" class="np-progress-bar"></div>
+                            </div>
+                            <div class="np-time-display">
+                                <span id="current-time">0:00</span>
+                                <span id="total-time">0:00</span>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <!-- Right: Controls -->
+                    <div class="np-controls">
+                        <button id="play-pause-btn" class="np-control-btn" title="Pause">
+                            <i class="fas fa-pause"></i>
+                        </button>
+                        <button id="skip-btn" class="np-control-btn np-skip-btn" title="Skip">
+                            <i class="fas fa-forward"></i>
+                        </button>
+                        <button id="fullscreen-btn" class="np-control-btn np-fullscreen-btn" title="Fullscreen">
+                            <i class="fas fa-expand"></i>
+                        </button>
+                    </div>
+                </div>
+            </section>
+
+            <!-- Audio Effects Card -->
+            <section id="effects-card" class="card full-width effects-card">
+                <div class="card-header" style="justify-content: space-between;">
+                    <div style="display: flex; align-items: center; gap: 15px;">
+                        <i class="fas fa-sliders-h"></i>
+                        <h2>Audio Effects</h2>
+                        <div class="effects-active-badge" id="effects-active-badge">
+                            <span class="preset-name">Normal</span>
+                        </div>
+                    </div>
+                    <div style="display: flex; align-items: center; gap: 12px;">
+                        <button type="button" id="effects-reset-all" class="cyber-btn small danger effects-reset-all-btn" title="Reset All Effects">
+                            <i class="fas fa-undo"></i>
+                            <span>RESET ALL</span>
+                        </button>
+                        <label class="toggle-switch-v2">
+                            <input type="checkbox" id="effects-enabled" checked>
+                            <span class="toggle-track">
+                                <span class="toggle-thumb"></span>
+                            </span>
+                        </label>
+                        <button id="effects-expand-btn" class="cyber-btn small" title="Expand Effects" style="width: auto; padding: 8px;">
+                            <i class="fas fa-chevron-down"></i>
+                        </button>
+                    </div>
+                </div>
+                
+                <!-- Presets Row (always visible) -->
+                <div class="effects-presets-row">
+                    <div class="effects-presets-grid" id="effects-presets-grid">
+                        <!-- Presets populated by JavaScript -->
+                    </div>
+                </div>
+                
+                <!-- Expandable Content -->
+                <div class="effects-expanded-content" id="effects-expanded-content">
+                    <div class="effects-columns">
+                        <!-- Left Column: Speed & EQ -->
+                        <div class="effects-column">
+                            <!-- Speed Control -->
+                            <div class="effects-section compact">
+                                <div class="effects-section-header">
+                                    <i class="fas fa-tachometer-alt"></i>
+                                    <span>Speed</span>
+                                </div>
+                                <div class="effect-slider-row">
+                                    <div class="effect-slider-container">
+                                        <input type="range" id="effect-speed" class="effect-slider" min="0.5" max="2" step="0.05" value="1">
+                                        <span class="effect-value" id="effect-speed-value">1.0x</span>
+                                    </div>
+                                    <button class="effect-reset-btn" data-target="effect-speed" data-default="1" title="Reset">
+                                        <i class="fas fa-undo"></i>
+                                    </button>
+                                </div>
+                            </div>
+                            
+                            <!-- EQ Controls -->
+                            <div class="effects-section compact">
+                                <div class="effects-section-header">
+                                    <i class="fas fa-sliders-h"></i>
+                                    <span>Equalizer</span>
+                                </div>
+                                <div class="effects-eq-horizontal">
+                                    <div class="eq-band-h">
+                                        <label>Bass</label>
+                                        <input type="range" id="effect-eq-bass" class="eq-slider-h" min="-20" max="20" step="1" value="0">
+                                        <span class="eq-value-h" id="effect-eq-bass-value">0</span>
+                                    </div>
+                                    <div class="eq-band-h">
+                                        <label>Mid</label>
+                                        <input type="range" id="effect-eq-mid" class="eq-slider-h" min="-20" max="20" step="1" value="0">
+                                        <span class="eq-value-h" id="effect-eq-mid-value">0</span>
+                                    </div>
+                                    <div class="eq-band-h">
+                                        <label>Treble</label>
+                                        <input type="range" id="effect-eq-treble" class="eq-slider-h" min="-20" max="20" step="1" value="0">
+                                        <span class="eq-value-h" id="effect-eq-treble-value">0</span>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <!-- Right Column: Effects -->
+                        <div class="effects-column">
+                            <div class="effects-section compact">
+                                <div class="effects-section-header">
+                                    <i class="fas fa-magic"></i>
+                                    <span>Effects</span>
+                                </div>
+                                <div class="effects-toggles-grid">
+                                    <!-- Reverb -->
+                                    <div class="effect-toggle-card">
+                                        <div class="effect-toggle-header">
+                                            <i class="fas fa-water"></i>
+                                            <span>Reverb</span>
+                                            <label class="toggle-switch-v2 small">
+                                                <input type="checkbox" id="effect-reverb-enabled">
+                                                <span class="toggle-track"><span class="toggle-thumb"></span></span>
+                                            </label>
+                                        </div>
+                                        <div class="effect-toggle-controls" id="effect-reverb-controls">
+                                            <div class="mini-control">
+                                                <span>Size</span>
+                                                <input type="range" id="effect-reverb-roomSize" min="0.1" max="1" step="0.1" value="0.5">
+                                            </div>
+                                            <div class="mini-control">
+                                                <span>Wet</span>
+                                                <input type="range" id="effect-reverb-wetLevel" min="0.1" max="0.8" step="0.05" value="0.3">
+                                            </div>
+                                        </div>
+                                    </div>
+                                    
+                                    <!-- Echo -->
+                                    <div class="effect-toggle-card">
+                                        <div class="effect-toggle-header">
+                                            <i class="fas fa-broadcast-tower"></i>
+                                            <span>Echo</span>
+                                            <label class="toggle-switch-v2 small">
+                                                <input type="checkbox" id="effect-echo-enabled">
+                                                <span class="toggle-track"><span class="toggle-thumb"></span></span>
+                                            </label>
+                                        </div>
+                                        <div class="effect-toggle-controls" id="effect-echo-controls">
+                                            <div class="mini-control">
+                                                <span>Delay</span>
+                                                <input type="range" id="effect-echo-delay" min="50" max="1000" step="50" value="300">
+                                            </div>
+                                            <div class="mini-control">
+                                                <span>Decay</span>
+                                                <input type="range" id="effect-echo-decay" min="0.1" max="0.8" step="0.05" value="0.4">
+                                            </div>
+                                        </div>
+                                    </div>
+                                    
+                                    <!-- Distortion -->
+                                    <div class="effect-toggle-card">
+                                        <div class="effect-toggle-header">
+                                            <i class="fas fa-bolt"></i>
+                                            <span>Distortion</span>
+                                            <label class="toggle-switch-v2 small">
+                                                <input type="checkbox" id="effect-distortion-enabled">
+                                                <span class="toggle-track"><span class="toggle-thumb"></span></span>
+                                            </label>
+                                        </div>
+                                        <div class="effect-toggle-controls" id="effect-distortion-controls">
+                                            <div class="mini-control">
+                                                <span>Drive</span>
+                                                <input type="range" id="effect-distortion-drive" min="0.1" max="1" step="0.05" value="0.5">
+                                            </div>
+                                        </div>
+                                    </div>
+                                    
+                                    <!-- Compressor -->
+                                    <div class="effect-toggle-card">
+                                        <div class="effect-toggle-header">
+                                            <i class="fas fa-compress-alt"></i>
+                                            <span>Compressor</span>
+                                            <label class="toggle-switch-v2 small">
+                                                <input type="checkbox" id="effect-compressor-enabled">
+                                                <span class="toggle-track"><span class="toggle-thumb"></span></span>
+                                            </label>
+                                        </div>
+                                        <div class="effect-toggle-controls" id="effect-compressor-controls">
+                                            <div class="mini-control">
+                                                <span>Thresh</span>
+                                                <input type="range" id="effect-compressor-threshold" min="-40" max="0" step="1" value="-20">
+                                            </div>
+                                            <div class="mini-control">
+                                                <span>Ratio</span>
+                                                <input type="range" id="effect-compressor-ratio" min="1" max="20" step="1" value="4">
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </section>
+
+            <section id="queue" class="card full-width">
+                <div class="card-header" style="justify-content: space-between;">
+                    <div style="display: flex; align-items: center; gap: 15px;">
+                        <i class="fas fa-list"></i>
+                        <h2>Up Next</h2>
+                        <span class="badge" id="queue-count">0</span>
+                    </div>
+                    <div class="queue-header-actions">
+                        <button id="prefetch-btn" class="cyber-btn small queue-action-btn" title="Download all songs in queue">
+                            <i class="fas fa-download"></i> PREFETCH ALL
+                        </button>
+                        <button id="add-song-btn" class="cyber-btn primary small add-track-btn queue-action-btn" title="Add a track">
+                            <i class="fas fa-plus"></i> ADD TRACK
+                        </button>
+                    </div>
+                </div>
+                <div class="queue-container">
+                    <ul id="queue-list">
+                        <!-- Queue items populated here -->
+                    </ul>
+                </div>
+            </section>
+
+            <!-- Analytics Section -->
+            <section id="stats" class="card full-width collapsed">
+                <div class="card-header" style="justify-content: space-between;">
+                    <div style="display: flex; align-items: center; gap: 15px;">
+                        <i class="fas fa-chart-line"></i>
+                        <h2>Analytics</h2>
+                    </div>
+                    <div style="display: flex; align-items: center; gap: 12px;">
+                        <!-- Detailed Stats Tabs -->
+                        <div class="stats-tabs">
+                            <button class="stats-tab-btn active" data-tab="overview">
+                                <i class="fas fa-chart-pie"></i> Overview
+                            </button>
+                            <button class="stats-tab-btn" data-tab="requesters">
+                                <i class="fas fa-users"></i> Top Requesters
+                            </button>
+                            <button class="stats-tab-btn" data-tab="history">
+                                <i class="fas fa-history"></i> Recent History
+                            </button>
+                        </div>
+                        <button id="stats-collapse-btn" class="cyber-btn small" title="Expand Analytics" style="width: auto; padding: 8px;">
+                            <i class="fas fa-chevron-up"></i>
+                        </button>
+                    </div>
+                </div>
+                
+                <!-- Quick Stats Overview -->
+                <div class="stats-grid">
+                    <div class="stat-item">
+                        <i class="fas fa-clock"></i>
+                        <div class="stat-content">
+                            <div class="stat-label">UPTIME</div>
+                            <div class="stat-value" id="uptime-value">0h 0m</div>
+                        </div>
+                    </div>
+                    <div class="stat-item">
+                        <i class="fas fa-music"></i>
+                        <div class="stat-content">
+                            <div class="stat-label">SONGS PLAYED</div>
+                            <div class="stat-value" id="songs-played-value">0</div>
+                        </div>
+                    </div>
+                    <div class="stat-item">
+                        <i class="fas fa-list"></i>
+                        <div class="stat-content">
+                            <div class="stat-label">IN QUEUE</div>
+                            <div class="stat-value" id="queue-count-value">0</div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Tab Contents -->
+                <div class="stats-tab-content active" id="tab-overview">
+                    <div class="stats-overview">
+                        <p class="stats-placeholder"><i class="fas fa-spinner fa-spin"></i> Loading analytics...</p>
+                    </div>
+                </div>
+
+                <div class="stats-tab-content" id="tab-requesters">
+                    <div class="requesters-list">
+                        <p class="stats-placeholder">Top requesters will appear here</p>
+                    </div>
+                </div>
+
+                <div class="stats-tab-content" id="tab-history">
+                    <div class="history-list">
+                        <p class="stats-placeholder">Playback history will appear here</p>
+                    </div>
+                </div>
+            </section>
+
+             <section id="settings" class="card full-width vip-section-new">
+                <!-- Password Unlock Overlay -->
+                <div class="vip-unlock-overlay-new" id="vip-unlock-overlay">
+                    <div class="vip-unlock-card">
+                        <div class="vip-unlock-header">
+                            <div class="vip-unlock-icon-new">
+                                <i class="fas fa-crown"></i>
+                            </div>
+                            <div class="vip-unlock-text">
+                                <h3>VIP Management</h3>
+                                <p>Enter password to manage priority users</p>
+                            </div>
+                        </div>
+                        <form id="vip-unlock-form" class="vip-unlock-form" onsubmit="unlockVipArea(event)">
+                            <div class="vip-password-input-wrapper">
+                                <i class="fas fa-key"></i>
+                                <input type="password" id="vip-password" placeholder="Admin password..." autocomplete="off">
+                                <button type="button" class="vip-password-toggle" onclick="toggleVipPasswordVisibility()">
+                                    <i class="fas fa-eye" id="vip-password-eye"></i>
+                                </button>
+                            </div>
+                            <button type="submit" class="vip-unlock-btn">
+                                <i class="fas fa-unlock"></i>
+                                <span>Unlock VIP Area</span>
+                            </button>
+                        </form>
+                        <p class="vip-password-error" id="vip-password-error"></p>
+                    </div>
+                </div>
+                
+                <!-- Unlocked VIP Content -->
+                <div class="vip-content-new" id="vip-content-wrapper">
+                    <!-- Header Row -->
+                    <div class="vip-top-bar">
+                        <div class="vip-title-section">
+                            <div class="vip-icon-badge">
+                                <i class="fas fa-crown"></i>
+                            </div>
+                            <div class="vip-title-text">
+                                <h2>VIP Access</h2>
+                                <span class="vip-subtitle">Priority queue for selected users</span>
+                            </div>
+                        </div>
+                        <div class="vip-actions">
+                            <div class="vip-mode-toggle">
+                                <button type="button" class="vip-mode-btn active" id="toggle-group-select" onclick="showGroupSelector()">
+                                    <i class="fas fa-users"></i>
+                                    <span>Group</span>
+                                </button>
+                                <button type="button" class="vip-mode-btn" id="toggle-manual-input" onclick="showManualInput()">
+                                    <i class="fas fa-keyboard"></i>
+                                    <span>Manual</span>
+                                </button>
+                            </div>
+                            <button type="button" class="vip-lock-btn-new" id="vip-lock-btn" onclick="lockVipArea()" title="Lock VIP Area">
+                                <i class="fas fa-lock"></i>
+                            </button>
+                        </div>
+                    </div>
+                    
+                    <!-- Main Content Grid -->
+                    <div class="vip-grid">
+                        <!-- Left: Add VIP -->
+                        <div class="vip-add-panel">
+                            <div class="vip-panel-header">
+                                <i class="fas fa-user-plus"></i>
+                                <span>Add VIP User</span>
+                            </div>
+                            
+                            <!-- Group member selector -->
+                            <div id="group-selector-container" class="vip-selector-container">
+                                <div class="vip-search-box">
+                                    <i class="fas fa-search"></i>
+                                    <input type="text" id="member-search" placeholder="Search members..." oninput="filterMembers()">
+                                </div>
+                                <div id="members-list" class="vip-members-list">
+                                    <div class="vip-loading">
+                                        <i class="fas fa-circle-notch fa-spin"></i>
+                                        <span>Loading members...</span>
+                                    </div>
+                                </div>
+                            </div>
+                            
+                            <!-- Manual input form (hidden by default) -->
+                            <form id="add-vip-form" class="vip-manual-form hidden">
+                                <div class="vip-manual-input-wrapper">
+                                    <i class="fas fa-phone"></i>
+                                    <input type="text" id="vip-id" placeholder="5511999999999@s.whatsapp.net" required>
+                                </div>
+                                <button type="submit" class="vip-add-btn">
+                                    <i class="fas fa-plus"></i>
+                                </button>
+                            </form>
+                        </div>
+                        
+                        <!-- Right: Current VIPs -->
+                        <div class="vip-list-panel">
+                            <div class="vip-panel-header">
+                                <i class="fas fa-star"></i>
+                                <span>Current VIPs</span>
+                                <span class="vip-count-badge" id="vip-count-badge">0</span>
+                            </div>
+                            <ul id="vip-list" class="vip-users-list">
+                                <!-- VIP users here -->
+                            </ul>
+                        </div>
+                    </div>
+                </div>
+            </section>
+
+        </main>
+
+        <!-- Settings Modal - Redesigned -->
+        <div id="settings-modal" class="modal-overlay settings-modal-overlay">
+            <div class="modal-content glass-modal settings-modal-content">
+                <!-- Sidebar Navigation -->
+                <nav class="settings-sidebar">
+                    <div class="settings-sidebar-header">
+                        <div class="settings-logo">
+                            <i class="fas fa-sliders-h"></i>
+                        </div>
+                        <h2>Settings</h2>
+                    </div>
+                    
+                    <div class="settings-search-wrapper">
+                        <i class="fas fa-search"></i>
+                        <input type="text" id="settings-search" placeholder="Search settings..." autocomplete="off">
+                        <button type="button" id="settings-search-clear" class="settings-search-clear hidden">
+                            <i class="fas fa-times"></i>
+                        </button>
+                    </div>
+                    
+                    <ul class="settings-nav">
+                        <li class="settings-nav-item active" data-category="download">
+                            <i class="fas fa-download"></i>
+                            <span>Download</span>
+                            <span class="nav-indicator"></span>
+                        </li>
+                        <li class="settings-nav-item" data-category="playback">
+                            <i class="fas fa-play-circle"></i>
+                            <span>Playback</span>
+                            <span class="nav-indicator"></span>
+                        </li>
+                        <li class="settings-nav-item" data-category="performance">
+                            <i class="fas fa-bolt"></i>
+                            <span>Performance</span>
+                            <span class="nav-indicator"></span>
+                        </li>
+                        <li class="settings-nav-item" data-category="notifications">
+                            <i class="fas fa-bell"></i>
+                            <span>Notifications</span>
+                            <span class="nav-indicator"></span>
+                        </li>
+                        <li class="settings-nav-item" data-category="groups">
+                            <i class="fas fa-users"></i>
+                            <span>Groups</span>
+                            <span class="nav-indicator"></span>
+                        </li>
+                        <li class="settings-nav-item" data-category="system">
+                            <i class="fas fa-server"></i>
+                            <span>System</span>
+                            <span class="nav-indicator"></span>
+                        </li>
+                    </ul>
+                    
+                    <div class="settings-sidebar-footer">
+                        <button type="button" id="settings-reset-all" class="settings-reset-btn">
+                            <i class="fas fa-undo"></i>
+                            <span>Reset All</span>
+                        </button>
+                    </div>
+                </nav>
+                
+                <!-- Main Content Area -->
+                <div class="settings-main">
+                    <div class="settings-main-header">
+                        <button id="settings-modal-close" class="modal-close-btn">
+                            <i class="fas fa-times"></i>
+                        </button>
+                    </div>
+                    
+                    <div class="settings-content" id="settings-content">
+                        <!-- Download Settings Panel -->
+                        <div class="settings-panel active" data-panel="download">
+                            <div class="panel-header">
+                                <div class="panel-icon download">
+                                    <i class="fas fa-download"></i>
+                                </div>
+                                <div class="panel-title">
+                                    <h3>Download Settings</h3>
+                                    <p>Configure audio format, quality, and download behavior</p>
+                                </div>
+                            </div>
+                            
+                            <div class="settings-group">
+                                <div class="setting-row" data-searchable="audio format mp3 m4a opus flac wav">
+                                    <div class="setting-info">
+                                        <label for="setting-audioFormat">Audio Format</label>
+                                        <p class="setting-description">Output format for downloaded audio files</p>
+                                    </div>
+                                    <div class="setting-control">
+                                        <div class="select-wrapper">
+                                            <select id="setting-audioFormat" data-category="download" data-key="audioFormat">
+                                                <option value="mp3">MP3</option>
+                                                <option value="m4a">M4A</option>
+                                                <option value="opus">Opus</option>
+                                                <option value="flac">FLAC</option>
+                                                <option value="wav">WAV</option>
+                                            </select>
+                                            <i class="fas fa-chevron-down"></i>
+                                        </div>
+                                    </div>
+                                </div>
+                                
+                                <div class="setting-row" data-searchable="audio quality bitrate 64 128 192 256 320 kbps">
+                                    <div class="setting-info">
+                                        <label for="setting-audioQuality">Audio Quality</label>
+                                        <p class="setting-description">Bitrate for audio encoding. Higher = better quality, larger files</p>
+                                    </div>
+                                    <div class="setting-control">
+                                        <div class="quality-selector">
+                                            <input type="range" id="setting-audioQuality-slider" min="0" max="4" step="1" value="2">
+                                            <div class="quality-labels">
+                                                <span data-value="64k">64k</span>
+                                                <span data-value="128k">128k</span>
+                                                <span data-value="192k">192k</span>
+                                                <span data-value="256k">256k</span>
+                                                <span data-value="320k">320k</span>
+                                            </div>
+                                        </div>
+                                        <select id="setting-audioQuality" data-category="download" data-key="audioQuality" class="hidden">
+                                            <option value="64k">64 kbps</option>
+                                            <option value="128k">128 kbps</option>
+                                            <option value="192k">192 kbps</option>
+                                            <option value="256k">256 kbps</option>
+                                            <option value="320k">320 kbps</option>
+                                        </select>
+                                    </div>
+                                </div>
+                                
+                                <div class="setting-row" data-searchable="youtube client android web ios player">
+                                    <div class="setting-info">
+                                        <label for="setting-playerClient">YouTube Client</label>
+                                        <p class="setting-description">Client to emulate when fetching from YouTube</p>
+                                    </div>
+                                    <div class="setting-control">
+                                        <div class="client-selector">
+                                            <label class="client-option">
+                                                <input type="radio" name="playerClient" value="android" data-category="download" data-key="playerClient">
+                                                <span class="client-btn">
+                                                    <i class="fab fa-android"></i>
+                                                    <span>Android</span>
+                                                </span>
+                                            </label>
+                                            <label class="client-option">
+                                                <input type="radio" name="playerClient" value="web" data-category="download" data-key="playerClient">
+                                                <span class="client-btn">
+                                                    <i class="fas fa-globe"></i>
+                                                    <span>Web</span>
+                                                </span>
+                                            </label>
+                                            <label class="client-option">
+                                                <input type="radio" name="playerClient" value="ios" data-category="download" data-key="playerClient">
+                                                <span class="client-btn">
+                                                    <i class="fab fa-apple"></i>
+                                                    <span>iOS</span>
+                                                </span>
+                                            </label>
+                                        </div>
+                                        <select id="setting-playerClient" data-category="download" data-key="playerClient" class="hidden">
+                                            <option value="android">Android</option>
+                                            <option value="web">Web</option>
+                                            <option value="ios">iOS</option>
+                                        </select>
+                                    </div>
+                                </div>
+                                
+                                <div class="setting-row" data-searchable="download thumbnails album art cover image">
+                                    <div class="setting-info">
+                                        <label for="setting-downloadThumbnails">Download Thumbnails</label>
+                                        <p class="setting-description">Save album artwork alongside audio files</p>
+                                    </div>
+                                    <div class="setting-control">
+                                        <label class="toggle-switch-v2">
+                                            <input type="checkbox" id="setting-downloadThumbnails" data-category="download" data-key="downloadThumbnails">
+                                            <span class="toggle-track">
+                                                <span class="toggle-thumb"></span>
+                                            </span>
+                                        </label>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <!-- Playback Settings Panel -->
+                        <div class="settings-panel" data-panel="playback">
+                            <div class="panel-header">
+                                <div class="panel-icon playback">
+                                    <i class="fas fa-play-circle"></i>
+                                </div>
+                                <div class="panel-title">
+                                    <h3>Playback Settings</h3>
+                                    <p>Control playback behavior and transitions</p>
+                                </div>
+                            </div>
+                            
+                            <div class="settings-group">
+                                <div class="setting-row" data-searchable="cleanup after play delete remove files">
+                                    <div class="setting-info">
+                                        <label for="setting-cleanupAfterPlay">Cleanup After Play</label>
+                                        <p class="setting-description">Automatically delete audio files after playback completes</p>
+                                    </div>
+                                    <div class="setting-control">
+                                        <label class="toggle-switch-v2">
+                                            <input type="checkbox" id="setting-cleanupAfterPlay" data-category="playback" data-key="cleanupAfterPlay">
+                                            <span class="toggle-track">
+                                                <span class="toggle-thumb"></span>
+                                            </span>
+                                        </label>
+                                    </div>
+                                </div>
+                                
+                                <div class="setting-row" data-searchable="confirm skip dialog prompt">
+                                    <div class="setting-info">
+                                        <label for="setting-confirmSkip">Confirm Skip</label>
+                                        <p class="setting-description">Show confirmation dialog before skipping songs</p>
+                                    </div>
+                                    <div class="setting-control">
+                                        <label class="toggle-switch-v2">
+                                            <input type="checkbox" id="setting-confirmSkip" data-category="playback" data-key="confirmSkip">
+                                            <span class="toggle-track">
+                                                <span class="toggle-thumb"></span>
+                                            </span>
+                                        </label>
+                                    </div>
+                                </div>
+                                
+                                <div class="setting-row" data-searchable="show requester name display current song who requested">
+                                    <div class="setting-info">
+                                        <label for="setting-showRequesterName">Show Requester Name</label>
+                                        <p class="setting-description">Display the requester's name on the currently playing song</p>
+                                    </div>
+                                    <div class="setting-control">
+                                        <label class="toggle-switch-v2">
+                                            <input type="checkbox" id="setting-showRequesterName" data-category="playback" data-key="showRequesterName">
+                                            <span class="toggle-track">
+                                                <span class="toggle-thumb"></span>
+                                            </span>
+                                        </label>
+                                    </div>
+                                </div>
+                                
+                                <div class="setting-row" data-searchable="transition delay milliseconds gap pause between songs">
+                                    <div class="setting-info">
+                                        <label for="setting-songTransitionDelay">Transition Delay</label>
+                                        <p class="setting-description">Pause between songs in milliseconds (0 - 10000)</p>
+                                    </div>
+                                    <div class="setting-control">
+                                        <div class="number-input-wrapper">
+                                            <button type="button" class="number-btn minus"><i class="fas fa-minus"></i></button>
+                                            <input type="number" id="setting-songTransitionDelay" data-category="playback" data-key="songTransitionDelay" min="0" max="10000" step="100">
+                                            <span class="number-unit">ms</span>
+                                            <button type="button" class="number-btn plus"><i class="fas fa-plus"></i></button>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <!-- Performance Settings Panel -->
+                        <div class="settings-panel" data-panel="performance">
+                            <div class="panel-header">
+                                <div class="panel-icon performance">
+                                    <i class="fas fa-bolt"></i>
+                                </div>
+                                <div class="panel-title">
+                                    <h3>Performance Settings</h3>
+                                    <p>Optimize loading and caching behavior</p>
+                                </div>
+                            </div>
+                            
+                            <div class="settings-group">
+                                <div class="setting-row" data-searchable="prefetch enable preload cache buffer">
+                                    <div class="setting-info">
+                                        <label for="setting-prefetchNext">Enable Prefetch</label>
+                                        <p class="setting-description">Download upcoming songs before they're needed</p>
+                                    </div>
+                                    <div class="setting-control">
+                                        <label class="toggle-switch-v2">
+                                            <input type="checkbox" id="setting-prefetchNext" data-category="performance" data-key="prefetchNext">
+                                            <span class="toggle-track">
+                                                <span class="toggle-thumb"></span>
+                                            </span>
+                                        </label>
+                                    </div>
+                                </div>
+                                
+                                <div class="setting-row" data-searchable="prefetch count number songs queue ahead">
+                                    <div class="setting-info">
+                                        <label for="setting-prefetchCount">Prefetch Count</label>
+                                        <p class="setting-description">Number of songs to preload ahead (0 = all queued songs)</p>
+                                    </div>
+                                    <div class="setting-control">
+                                        <div class="number-input-wrapper">
+                                            <button type="button" class="number-btn minus"><i class="fas fa-minus"></i></button>
+                                            <input type="number" id="setting-prefetchCount" data-category="performance" data-key="prefetchCount" min="0" max="20" step="1">
+                                            <span class="number-unit">songs</span>
+                                            <button type="button" class="number-btn plus"><i class="fas fa-plus"></i></button>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                            
+                            <div class="settings-info-card">
+                                <i class="fas fa-lightbulb"></i>
+                                <div>
+                                    <strong>Pro Tip</strong>
+                                    <p>Enable prefetch with count 2-3 for smooth playback without using too much storage.</p>
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <!-- Notifications Settings Panel -->
+                        <div class="settings-panel" data-panel="notifications">
+                            <div class="panel-header">
+                                <div class="panel-icon notifications">
+                                    <i class="fas fa-bell"></i>
+                                </div>
+                                <div class="panel-title">
+                                    <h3>Notification Settings</h3>
+                                    <p>Configure WhatsApp notification behavior</p>
+                                </div>
+                            </div>
+                            
+                            <div class="settings-group">
+                                <div class="setting-row" data-searchable="enable notifications alerts messages">
+                                    <div class="setting-info">
+                                        <label for="setting-notificationsEnabled">Enable Notifications</label>
+                                        <p class="setting-description">Send WhatsApp messages when songs are about to play</p>
+                                    </div>
+                                    <div class="setting-control">
+                                        <label class="toggle-switch-v2">
+                                            <input type="checkbox" id="setting-notificationsEnabled" data-category="notifications" data-key="enabled">
+                                            <span class="toggle-track">
+                                                <span class="toggle-thumb"></span>
+                                            </span>
+                                        </label>
+                                    </div>
+                                </div>
+                                
+                                <div class="setting-row" data-searchable="notify position queue spot alert when">
+                                    <div class="setting-info">
+                                        <label for="setting-notifyAtPosition">Notify at Position</label>
+                                        <p class="setting-description">Alert users when their song reaches this queue position (1 = next up)</p>
+                                    </div>
+                                    <div class="setting-control">
+                                        <div class="number-input-wrapper">
+                                            <button type="button" class="number-btn minus"><i class="fas fa-minus"></i></button>
+                                            <input type="number" id="setting-notifyAtPosition" data-category="notifications" data-key="notifyAtPosition" min="1" max="10" step="1">
+                                            <span class="number-unit">pos</span>
+                                            <button type="button" class="number-btn plus"><i class="fas fa-plus"></i></button>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                            
+                            <div class="settings-info-card accent">
+                                <i class="fas fa-info-circle"></i>
+                                <div>
+                                    <strong>How it works</strong>
+                                    <p>When enabled, the person who requested a song gets a WhatsApp message when their song is about to play.</p>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Groups Settings Panel -->
+                        <div class="settings-panel" data-panel="groups">
+                            <div class="panel-header">
+                                <div class="panel-icon groups">
+                                    <i class="fas fa-users"></i>
+                                </div>
+                                <div class="panel-title">
+                                    <h3>Monitored Groups</h3>
+                                    <p>Manage WhatsApp groups the bot listens to</p>
+                                </div>
+                            </div>
+                            
+                            <div class="settings-group">
+                                <div class="setting-row">
+                                    <div class="setting-info">
+                                        <label>Add Group</label>
+                                        <p class="setting-description">Manually add a group by its WhatsApp ID (ends with @g.us)</p>
+                                    </div>
+                                    <div class="setting-control">
+                                        <form id="add-group-form" class="groups-add-form">
+                                            <input type="text" id="group-id-input" placeholder="123456789@g.us" required>
+                                            <button type="submit" class="groups-add-btn">
+                                                <i class="fas fa-plus"></i>
+                                                <span>Add</span>
+                                            </button>
+                                        </form>
+                                    </div>
+                                </div>
+                            </div>
+                            
+                            <div class="groups-pending-container" id="groups-pending-container" style="display: none;">
+                                <div class="groups-list-header">
+                                    <span>Pending Requests (<span id="pending-count">0</span>)</span>
+                                </div>
+                                <div id="groups-pending-list" class="groups-list">
+                                    <!-- Pending confirmations will be loaded here -->
+                                </div>
+                            </div>
+                            
+                            <div class="groups-list-container">
+                                <div class="groups-list-header">
+                                    <span>Monitored Groups (<span id="groups-count">0</span>)</span>
+                                </div>
+                                <div id="groups-list" class="groups-list">
+                                    <div class="groups-loading">
+                                        <i class="fas fa-circle-notch fa-spin"></i>
+                                        <span>Loading groups...</span>
+                                    </div>
+                                </div>
+                            </div>
+                            
+                            <div class="settings-info-card accent">
+                                <i class="fas fa-info-circle"></i>
+                                <div>
+                                    <strong>How to add groups</strong>
+                                    <p>Send <code>!ping</code> in any WhatsApp group you want to add. The request will appear here for confirmation. You can also manually add groups using the form above.</p>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- System Settings Panel -->
+                        <div class="settings-panel" data-panel="system">
+                            <div class="panel-header">
+                                <div class="panel-icon system">
+                                    <i class="fas fa-server"></i>
+                                </div>
+                                <div class="panel-title">
+                                    <h3>System Controls</h3>
+                                    <p>Manage session state and system maintenance</p>
+                                </div>
+                            </div>
+                            
+                            <div class="settings-group">
+                                <div class="setting-row" data-searchable="new session reset clear queue stats">
+                                    <div class="setting-info">
+                                        <label>New Session</label>
+                                        <p class="setting-description">Clear the current queue, stop playback, and reset all statistics. Use this when starting a fresh event or day.</p>
+                                    </div>
+                                    <div class="setting-control">
+                                        <button id="new-session-btn" class="cyber-btn danger small" style="width: auto;">
+                                            <i class="fas fa-redo"></i> Start New Session
+                                        </button>
+                                    </div>
+                                </div>
+                            </div>
+                            
+                            <div class="settings-info-card warning">
+                                <i class="fas fa-exclamation-circle"></i>
+                                <div>
+                                    <strong>Warning</strong>
+                                    <p>Starting a new session is destructive. All playback history, stats, and the current queue will be cleared immediately.</p>
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <!-- Search Results Panel (hidden by default) -->
+                        <div class="settings-panel" data-panel="search-results" id="search-results-panel">
+                            <div class="panel-header">
+                                <div class="panel-icon search">
+                                    <i class="fas fa-search"></i>
+                                </div>
+                                <div class="panel-title">
+                                    <h3>Search Results</h3>
+                                    <p id="search-results-count">0 settings found</p>
+                                </div>
+                            </div>
+                            <div class="settings-group" id="search-results-container">
+                                <!-- Search results populated here -->
+                            </div>
+                            <div class="no-results hidden" id="no-search-results">
+                                <i class="fas fa-search"></i>
+                                <p>No settings match your search</p>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <div class="settings-footer">
+                        <div class="footer-note">
+                            <i class="fas fa-info-circle"></i>
+                            <span>Changes apply instantly. Server settings require <code>.env</code> edit and restart.</span>
+                        </div>
+                        <div class="footer-save-indicator" id="settings-save-indicator">
+                            <i class="fas fa-check-circle"></i>
+                            <span>Saved</span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Add Track Modal -->
+        <div id="add-track-modal" class="modal-overlay">
+            <div class="modal-content glass-modal add-track-modal">
+                <div class="modal-header">
+                    <div class="modal-title">
+                        <i class="fas fa-music"></i>
+                        <h2>Add Track</h2>
+                    </div>
+                    <button id="add-track-modal-close" class="modal-close-btn">
+                        <i class="fas fa-times"></i>
+                    </button>
+                </div>
+                <div class="modal-body">
+                    <form id="add-song-form" class="add-track-form">
+                        <div class="track-input-group">
+                            <label class="track-input-label">
+                                <i class="fas fa-link"></i>
+                                Song URL or Search
+                            </label>
+                            <div class="track-input-wrapper">
+                                <input type="text" id="song-url" class="track-input" placeholder="Paste YouTube/Spotify URL or search by name..." required autocomplete="off">
+                                <div class="track-platforms">
+                                    <span class="track-platform" title="YouTube supported"><i class="fab fa-youtube"></i></span>
+                                    <span class="track-platform" title="Spotify supported"><i class="fab fa-spotify"></i></span>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="track-input-group">
+                            <label class="track-input-label">
+                                <i class="fas fa-user"></i>
+                                Requested By <span class="optional-tag">Optional</span>
+                            </label>
+                            <input type="text" id="requester-name" class="track-input dj-field" placeholder="Your name or DJ alias..." autocomplete="off">
+                        </div>
+                        <button type="submit" class="cyber-btn primary track-submit-btn">
+                            <i class="fas fa-plus"></i> Add to Queue
+                        </button>
+                    </form>
+                </div>
+            </div>
+        </div>
+
+        <!-- Confirmation Modal -->
+        <div id="confirmation-modal" class="modal-overlay">
+            <div class="modal-content glass-modal confirmation-modal">
+                <div class="modal-header">
+                    <div class="modal-title">
+                        <i id="confirmation-icon" class="fas fa-exclamation-triangle"></i>
+                        <h2 id="confirmation-title">Confirm Action</h2>
+                    </div>
+                    <button id="confirmation-modal-close" class="modal-close-btn">
+                        <i class="fas fa-times"></i>
+                    </button>
+                </div>
+                <div class="modal-body">
+                    <p id="confirmation-message" class="confirmation-message"></p>
+                </div>
+                <div class="modal-footer confirmation-footer">
+                    <button id="confirmation-cancel" class="cyber-btn secondary confirmation-btn">
+                        <i class="fas fa-times"></i> Cancel
+                    </button>
+                    <button id="confirmation-confirm" class="cyber-btn primary confirmation-btn confirm-action-btn">
+                        <i class="fas fa-check"></i> Confirm
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script src="https://cdn.rawgit.com/davidshimjs/qrcodejs/gh-pages/qrcode.min.js"></script>
+    
+    <!-- Core Modules (no dependencies) -->
+    <script src="../js/core/config.js"></script>
+    <script src="../js/core/utils.js"></script>
+    
+    <!-- Core Modules (with dependencies) -->
+    <script src="../js/core/broadcast.js"></script>
+    <script src="../js/core/api.js"></script>
+    
+    <!-- Feature Modules -->
+    <script src="../js/modules/notifications.js"></script>
+    <script src="../js/modules/modals.js"></script>
+    <script src="../js/modules/ui.js"></script>
+    <script src="../js/modules/audio.js"></script>
+    <script src="../js/modules/queue.js"></script>
+    <script src="../js/modules/vip.js"></script>
+    <script src="../js/modules/settings.js"></script>
+    <script src="../js/modules/effects.js"></script>
+    <script src="../js/modules/stats.js"></script>
+    <script src="../js/modules/groups.js"></script>
+    <script src="../js/modules/fullscreen.js"></script>
+    
+    <!-- Main Dashboard (orchestration) -->
+    <script src="../js/pages/dashboard.js"></script>
+</body>
+</html>

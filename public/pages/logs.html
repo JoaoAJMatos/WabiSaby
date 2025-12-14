@@ -1,0 +1,132 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>System Logs - WabiSaby</title>
+    <link rel="icon" type="image/svg+xml" href="../assets/favicon.svg">
+    <link rel="alternate icon" href="../assets/favicon.ico">
+    <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <link rel="stylesheet" href="../styles/style.css">
+    <link rel="stylesheet" href="../styles/logs.css">
+</head>
+<body>
+    <header class="logs-header">
+        <div class="header-left">
+            <a href="/pages/dashboard.html" class="back-btn" title="Back to Dashboard">
+                <i class="fas fa-arrow-left"></i>
+            </a>
+            <div class="logo">
+                <i class="fas fa-terminal"></i>
+                <h1>System Logs <span>/ WabiSaby</span></h1>
+            </div>
+        </div>
+        <div class="header-controls">
+            <div class="search-box">
+                <i class="fas fa-search"></i>
+                <input type="text" id="search-input" placeholder="Search logs..." autocomplete="off">
+            </div>
+            <div class="filter-group">
+                <button class="filter-btn active" data-level="all">
+                    <span>All</span>
+                    <span class="count" id="count-all">0</span>
+                </button>
+                <button class="filter-btn" data-level="info">
+                    <i class="fas fa-info-circle"></i>
+                    <span>Info</span>
+                    <span class="count" id="count-info">0</span>
+                </button>
+                <button class="filter-btn" data-level="warn">
+                    <i class="fas fa-exclamation-triangle"></i>
+                    <span>Warn</span>
+                    <span class="count" id="count-warn">0</span>
+                </button>
+                <button class="filter-btn" data-level="error">
+                    <i class="fas fa-times-circle"></i>
+                    <span>Error</span>
+                    <span class="count" id="count-error">0</span>
+                </button>
+                <button class="filter-btn" data-level="debug">
+                    <i class="fas fa-bug"></i>
+                    <span>Debug</span>
+                    <span class="count" id="count-debug">0</span>
+                </button>
+            </div>
+            <button class="action-btn danger" id="clear-btn" title="Clear all logs">
+                <i class="fas fa-trash-alt"></i>
+                <span>Clear</span>
+            </button>
+        </div>
+    </header>
+
+    <div class="status-bar">
+        <div class="status-item">
+            <div class="status-dot" id="connection-dot"></div>
+            <span id="connection-status">Connecting...</span>
+        </div>
+        <div class="status-item">
+            <i class="fas fa-database"></i>
+            <span><span id="total-logs">0</span> logs buffered</span>
+        </div>
+        <div class="status-item">
+            <i class="fas fa-users"></i>
+            <span><span id="connected-clients">1</span> viewer(s)</span>
+        </div>
+    </div>
+
+    <div class="logs-container">
+        <div class="logs-scroll" id="logs-scroll">
+            <div id="logs-list">
+                <!-- Logs will be inserted here -->
+            </div>
+            <div class="empty-state" id="empty-state">
+                <i class="fas fa-scroll"></i>
+                <h3>No logs yet</h3>
+                <p>System logs will appear here in real-time</p>
+            </div>
+        </div>
+    </div>
+
+    <button class="auto-scroll-indicator active" id="auto-scroll-btn" title="Toggle auto-scroll">
+        <i class="fas fa-arrow-down"></i>
+        <span>Auto-scroll</span>
+    </button>
+
+    <button class="new-logs-btn" id="new-logs-btn">
+        <i class="fas fa-arrow-down"></i>
+        <span>New logs</span>
+    </button>
+
+
+    <!-- Confirmation Modal -->
+    <div id="confirmation-modal" class="modal-overlay">
+        <div class="modal-content glass-modal confirmation-modal">
+            <div class="modal-header">
+                <div class="modal-title">
+                    <i id="confirmation-icon" class="fas fa-exclamation-triangle"></i>
+                    <h2 id="confirmation-title">Confirm Action</h2>
+                </div>
+                <button id="confirmation-modal-close" class="modal-close-btn">
+                    <i class="fas fa-times"></i>
+                </button>
+            </div>
+            <div class="modal-body">
+                <p id="confirmation-message" class="confirmation-message"></p>
+            </div>
+            <div class="modal-footer confirmation-footer">
+                <button id="confirmation-cancel" class="cyber-btn secondary confirmation-btn">
+                    <i class="fas fa-times"></i> Cancel
+                </button>
+                <button id="confirmation-confirm" class="cyber-btn primary confirmation-btn confirm-action-btn">
+                    <i class="fas fa-check"></i> Confirm
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <script src="../js/pages/logs.js"></script>
+</body>
+</html>
+
