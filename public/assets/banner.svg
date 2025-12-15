@@ -111,19 +111,17 @@
           fill="url(#glassHighlight)"/>
     
     <!-- Logo (centered in container) -->
-    <g transform="translate(65, 65)">
-      <g transform="translate(-50, -50) scale(1.4)">
-        <path d="M 50 20 Q 30 25 25 40 Q 20 55 30 65 Q 40 75 50 80 Q 60 75 70 65 Q 80 55 75 40 Q 70 25 50 20 Z" 
-              fill="url(#leafGradient)" 
-              stroke="#34d399" 
-              stroke-width="2" 
-              opacity="0.9"
-              filter="url(#glow)"/>
-        <path d="M 50 20 L 50 80" 
-              stroke="#34d399" 
-              stroke-width="1.5" 
-              opacity="0.6"/>
-      </g>
+    <g transform="translate(65, 65) scale(1.4) translate(-50, -50)">
+      <path d="M 50 20 Q 30 25 25 40 Q 20 55 30 65 Q 40 75 50 80 Q 60 75 70 65 Q 80 55 75 40 Q 70 25 50 20 Z" 
+            fill="url(#leafGradient)" 
+            stroke="#34d399" 
+            stroke-width="2" 
+            opacity="0.9"
+            filter="url(#glow)"/>
+      <path d="M 50 20 L 50 80" 
+            stroke="#34d399" 
+            stroke-width="1.5" 
+            opacity="0.6"/>
     </g>
   </g>
   
