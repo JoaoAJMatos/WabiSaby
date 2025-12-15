@@ -343,18 +343,23 @@ function recalculateFromHistory() {
     const stats = loadStats();
     
     // Recalculate totalDuration from history
-    let totalDuration = 0;
-    for (const song of stats.history) {
-        if (song.duration && song.duration > 0) {
-            totalDuration += song.duration;
-        }
-    }
+    // NOTE: This logic is flawed because history triggers only last 100 songs
+    // Calculating total duration from just 100 songs will wipe out the lifetime duration
+    // We should only use this for validation or if totalDuration is 0/missing
     
-    // Only update if different
-    if (stats.totalDuration !== totalDuration) {
-        logger.info(`Recalculating totalDuration: ${stats.totalDuration} -> ${totalDuration}`);
-        stats.totalDuration = totalDuration;
-        saveStats();
+    if (!stats.totalDuration || stats.totalDuration === 0) {
+        let totalDuration = 0;
+        for (const song of stats.history) {
+            if (song.duration && song.duration > 0) {
+                totalDuration += song.duration;
+            }
+        }
+        
+        if (totalDuration > 0) {
+            logger.info(`Restored totalDuration from history: ${totalDuration}`);
+            stats.totalDuration = totalDuration;
+            saveStats();
+        }
     }
     
     return stats;

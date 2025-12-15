@@ -1,28 +1,31 @@
 <!DOCTYPE html>
 <html lang="en">
+
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Now Playing - WabiSaby</title>
     <link rel="icon" type="image/svg+xml" href="../assets/favicon.svg">
     <link rel="alternate icon" href="../assets/favicon.ico">
-    <link href="https://fonts.googleapis.com/css2?family=Sora:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Sora:wght@300;400;500;600;700;800&display=swap"
+        rel="stylesheet">
     <link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <link rel="stylesheet" href="../styles/player.css">
 </head>
+
 <body class="visualizer-mode idle-state">
     <!-- Background layers -->
     <div class="bg-base"></div>
     <div class="bg-blur" id="bg-blur"></div>
     <div class="bg-overlay"></div>
-    
+
     <!-- Gradient mask for visualizer -->
     <div class="visualizer-mask"></div>
-    
+
     <canvas id="shadow-canvas"></canvas>
     <canvas id="wave-canvas"></canvas>
-    
+
     <!-- Top bar -->
     <div class="top-bar">
         <div class="brand">
@@ -31,64 +34,79 @@
             <span class="data-indicator" id="data-indicator" title="No audio data"></span>
         </div>
         <div class="mode-toggle">
-            <button class="mode-btn" id="btn-lyrics" title="Show Lyrics" disabled>
-                <i class="fas fa-microphone"></i>
-                <span>Lyrics</span>
-            </button>
+            <div class="split-btn-wrapper">
+                <div class="offset-controls" id="offset-controls">
+                    <button class="mode-btn offset-btn" id="btn-offset-minus" title="Decrease Offset">
+                        <i class="fas fa-minus"></i>
+                    </button>
+                    <span class="offset-display" id="offset-display-val">0.0s</span>
+                    <button class="mode-btn offset-btn" id="btn-offset-plus" title="Increase Offset">
+                        <i class="fas fa-plus"></i>
+                    </button>
+                </div>
+                <button class="mode-btn split-child-btn" id="btn-lyrics-offset" title="Adjust Sync">
+                    <i class="fas fa-sliders-h"></i>
+                </button>
+                <button class="mode-btn" id="btn-lyrics" title="Show Lyrics" disabled>
+                    <i class="fas fa-microphone"></i>
+                    <span>Lyrics</span>
+                </button>
+            </div>
             <button class="mode-btn active" id="btn-visualizer" title="Show Visualizer">
                 <i class="fas fa-wave-square"></i>
                 <span>Visualizer</span>
             </button>
         </div>
     </div>
-    
+
     <!-- VISUALIZER MODE VIEW -->
     <div class="visualizer-view">
         <div class="now-playing-card">
-        <div class="album-wrapper">
-            <div class="album-art" id="album-art">
-                <img id="album-img" crossorigin="anonymous">
-                <div class="album-placeholder" id="album-placeholder">
-                    <i class="fas fa-music"></i>
+            <div class="album-wrapper">
+                <div class="album-art" id="album-art">
+                    <img id="album-img" crossorigin="anonymous">
+                    <div class="album-placeholder" id="album-placeholder">
+                        <i class="fas fa-music"></i>
+                    </div>
                 </div>
             </div>
-        </div>
-        
-        <div class="song-info">
-            <h1 class="song-title" id="song-title">Waiting for music...</h1>
-            <p class="song-artist" id="song-artist"></p>
-            <div class="song-requester" id="song-requester">
-                <i class="fas fa-user-circle"></i>
-                <span>-</span>
+
+            <div class="song-info">
+                <h1 class="song-title" id="song-title">Waiting for music...</h1>
+                <p class="song-artist" id="song-artist"></p>
+                <div class="song-requester" id="song-requester">
+                    <i class="fas fa-user-circle"></i>
+                    <span>-</span>
+                </div>
+                <div id="active-effects" class="active-effects"></div>
             </div>
-        </div>
-        
-        <div class="progress-section">
-            <div class="progress-bar-container" id="progress-bar-container">
-                <div class="progress-bar-fill" id="progress-bar"></div>
-            </div>
-            <div class="time-display">
-                <span id="current-time">0:00</span>
-                <span id="total-time">0:00</span>
+
+            <div class="progress-section">
+                <div class="progress-bar-container" id="progress-bar-container">
+                    <div class="progress-bar-fill" id="progress-bar"></div>
+                </div>
+                <div class="time-display">
+                    <span id="current-time">0:00</span>
+                    <span id="total-time">0:00</span>
                 </div>
             </div>
         </div>
     </div>
-    
+
     <!-- KARAOKE/LYRICS MODE VIEW -->
     <div class="lyrics-view">
         <div class="lyrics-header">
             <div class="mini-player">
-            <div class="mini-album">
-                <img id="mini-album-img" crossorigin="anonymous">
-            </div>
+                <div class="mini-album">
+                    <img id="mini-album-img" crossorigin="anonymous">
+                </div>
                 <div class="mini-player-info">
                     <div class="mini-player-title" id="lyrics-title">-</div>
                     <div class="mini-player-artist" id="lyrics-artist">-</div>
                 </div>
             </div>
         </div>
-        
+
         <div class="lyrics-stage">
             <div class="lyrics-container" id="lyrics-container">
                 <div class="lyrics-placeholder">
@@ -97,7 +115,7 @@
                 </div>
             </div>
         </div>
-        
+
         <div class="lyrics-footer">
             <div class="lyrics-progress">
                 <div class="progress-bar-container" id="lyrics-progress-container">
@@ -113,4 +131,5 @@
 
     <script src="../js/pages/player.js"></script>
 </body>
+
 </html>

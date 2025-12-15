@@ -17,7 +17,7 @@ function openFullscreenWindow() {
     const left = (screen.width - width) / 2;
     const top = (screen.height - height) / 2;
 
-    fullscreenWindow = window.open('pages/player.html', 'WabiSabyNowPlaying', `width=${width},height=${height},left=${left},top=${top},menubar=no,toolbar=no,location=no,status=no,resizable=yes,scrollbars=no`);
+    fullscreenWindow = window.open('/pages/player.html', 'WabiSabyNowPlaying', `width=${width},height=${height},left=${left},top=${top},menubar=no,toolbar=no,location=no,status=no,resizable=yes,scrollbars=no`);
     
     // Sync initial state after a short delay to allow load
     setTimeout(() => {

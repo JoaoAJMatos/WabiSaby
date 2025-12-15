@@ -4,10 +4,11 @@ const net = require('net');
 const path = require('path');
 const config = require('../config');
 const { logger } = require('../utils/logger');
-const { sendMessageWithMention } = require('../utils/helpers');
+const { sendMessageWithMention, getThumbnailUrl } = require('../utils/helpers');
 const queueManager = require('./queue');
 const { downloadTrack } = require('../services/download.service');
 const effectsService = require('../services/effects.service');
+const statsService = require('../services/stats.service');
 const { isRateLimitError } = require('../utils/rate-limit.util');
 
 /**
@@ -57,7 +58,7 @@ function isCommandAvailable(command) {
  */
 function detectBackend() {
     if (audioBackend) return audioBackend;
-    
+
     if (isCommandAvailable('mpv')) {
         audioBackend = 'mpv';
         logger.info('🎵 Audio backend: MPV (seamless effect changes)');
@@ -68,7 +69,7 @@ function detectBackend() {
     } else {
         throw new Error('No audio backend available. Please install mpv or ffmpeg.');
     }
-    
+
     return audioBackend;
 }
 
@@ -95,9 +96,9 @@ function sendMpvCommand(command) {
 
         const id = requestId++;
         const message = JSON.stringify({ command, request_id: id }) + '\n';
-        
+
         pendingRequests.set(id, { resolve, reject });
-        
+
         setTimeout(() => {
             if (pendingRequests.has(id)) {
                 pendingRequests.delete(id);
@@ -107,7 +108,7 @@ function sendMpvCommand(command) {
 
         ipcSocket.write(message);
     });
-        }
+}
 
 /**
  * Connect to MPV IPC socket
@@ -125,21 +126,21 @@ function connectToMpv() {
 
         const tryConnect = () => {
             ipcSocket = net.createConnection(ipcSocketPath);
-            
+
             ipcSocket.on('connect', () => {
                 logger.info('Connected to MPV IPC socket');
-                
+
                 let buffer = '';
                 ipcSocket.on('data', (data) => {
                     buffer += data.toString();
                     const lines = buffer.split('\n');
                     buffer = lines.pop();
-                    
+
                     for (const line of lines) {
                         if (!line.trim()) continue;
                         try {
                             const msg = JSON.parse(line);
-                            
+
                             if (msg.request_id && pendingRequests.has(msg.request_id)) {
                                 const { resolve, reject } = pendingRequests.get(msg.request_id);
                                 pendingRequests.delete(msg.request_id);
@@ -147,9 +148,9 @@ function connectToMpv() {
                                     reject(new Error(msg.error));
                                 } else {
                                     resolve(msg.data);
-            }
+                                }
                             }
-                            
+
                             if (msg.event === 'end-file') {
                                 logger.info('MPV: File ended');
                                 queueManager.emit('mpv_file_ended', msg.reason);
@@ -159,9 +160,9 @@ function connectToMpv() {
                         }
                     }
                 });
-                
-            resolve();
-        });
+
+                resolve();
+            });
 
             ipcSocket.on('error', (err) => {
                 if (retries < maxRetries) {
@@ -207,7 +208,7 @@ async function startMpv(filePath, startTimeOffset = 0) {
     args.push(filePath);
 
     logger.info(`Starting MPV: mpv ${args.slice(0, 5).join(' ')} ...`);
-    
+
     mpvProcess = spawn('mpv', args, { stdio: ['pipe', 'pipe', 'pipe'] });
 
     mpvProcess.stderr.on('data', (data) => {
@@ -235,9 +236,9 @@ async function updateMpvFilters() {
         logger.warn('Cannot update filters: MPV not connected');
         return;
     }
-    
+
     const filterChain = effectsService.buildFilterChain();
-    
+
     try {
         if (filterChain) {
             await sendMpvCommand(['set_property', 'af', `lavfi=[${filterChain}]`]);
@@ -258,7 +259,7 @@ async function stopMpv() {
     if (ipcSocket && !ipcSocket.destroyed) {
         try {
             await sendMpvCommand(['quit']);
-        } catch (e) {}
+        } catch (e) { }
         ipcSocket.destroy();
         ipcSocket = null;
     }
@@ -269,7 +270,7 @@ async function stopMpv() {
     }
 
     if (ipcSocketPath && fs.existsSync(ipcSocketPath)) {
-        try { fs.unlinkSync(ipcSocketPath); } catch (e) {}
+        try { fs.unlinkSync(ipcSocketPath); } catch (e) { }
     }
 
     isPlaying = false;
@@ -286,17 +287,17 @@ async function stopMpv() {
  */
 function buildFfplayArgs(filePath, startTimeOffset = 0) {
     const args = ['-nodisp', '-autoexit', '-hide_banner', '-loglevel', 'quiet'];
-    
+
     if (startTimeOffset > 0) {
         args.push('-ss', (startTimeOffset / 1000).toFixed(2));
     }
-    
+
     const filterChain = effectsService.buildFilterChain();
     if (filterChain) {
         args.push('-af', filterChain);
         logger.info(`Applying audio effects: ${filterChain}`);
     }
-    
+
     args.push(filePath);
     return args;
 }
@@ -306,9 +307,9 @@ function buildFfplayArgs(filePath, startTimeOffset = 0) {
  */
 function startFfplay(filePath, startTimeOffset = 0) {
     const args = buildFfplayArgs(filePath, startTimeOffset);
-    
+
     logger.info(`Starting ffplay: ffplay ${args.slice(0, 5).join(' ')} ...`);
-    
+
     ffplayProcess = spawn('ffplay', args);
     currentFilePath = filePath;
     isPlaying = true;
@@ -424,18 +425,18 @@ let activePrefetchCount = 0;
 
 async function prefetchNext(count = null) {
     if (!config.performance.prefetchNext) return;
-    
+
     // Prevent concurrent prefetching calls
     if (isPrefetching) {
         logger.debug('Prefetch already in progress, skipping');
         return;
     }
-    
+
     if (count === null) count = config.performance.prefetchCount;
-    
+
     const queue = queueManager.getQueue();
     if (queue.length === 0) return;
-    
+
     // Filter to only songs that need prefetching and are not already being downloaded
     const itemsNeedingPrefetch = queue.filter(item => {
         if (item.type !== 'url') return false;
@@ -448,29 +449,29 @@ async function prefetchNext(count = null) {
         }
         return true;
     });
-    
+
     if (itemsNeedingPrefetch.length === 0) {
         logger.debug('No songs need prefetching');
         return;
     }
-    
+
     const itemsToPrefetch = count === 0 ? itemsNeedingPrefetch.length : Math.min(count, itemsNeedingPrefetch.length);
-    
+
     logger.info(`Prefetching ${itemsToPrefetch} song(s) from ${itemsNeedingPrefetch.length} that need prefetching (total queue: ${queue.length})`);
-    
+
     isPrefetching = true;
-    
+
     // Prefetch songs with rate limiting and concurrency control
     let prefetchedCount = 0;
     let failedCount = 0;
-    
+
     // Process items sequentially with delays to avoid rate limiting
     for (let i = 0; i < itemsToPrefetch; i++) {
         // Wait if we have too many concurrent prefetches
         while (activePrefetchCount >= MAX_CONCURRENT_PREFETCHES) {
             await new Promise(resolve => setTimeout(resolve, 500));
         }
-        
+
         // Rate limiting: wait between prefetches to avoid bursts
         const timeSinceLastPrefetch = Date.now() - lastPrefetchTime;
         if (timeSinceLastPrefetch < prefetchRateLimitDelay && i > 0) {
@@ -478,21 +479,21 @@ async function prefetchNext(count = null) {
             logger.debug(`Rate limiting: waiting ${waitTime}ms before next prefetch`);
             await new Promise(resolve => setTimeout(resolve, waitTime));
         }
-        
+
         const item = itemsNeedingPrefetch[i];
         const originalUrl = item.content; // Capture URL before it changes
-        
+
         // Skip if URL is already being downloaded (race condition check)
         if (downloadingUrls.has(originalUrl)) {
             logger.debug(`Skipping duplicate download (race): ${item.title || originalUrl}`);
             continue;
         }
-        
+
         // Mark URL as being downloaded
         downloadingUrls.add(originalUrl);
         activePrefetchCount++;
         lastPrefetchTime = Date.now();
-        
+
         // Start prefetching (don't await - let it run in background)
         (async () => {
             logger.info(`Prefetching song #${i + 1}/${itemsToPrefetch}: ${item.title || item.content}`);
@@ -500,14 +501,14 @@ async function prefetchNext(count = null) {
             item.downloadProgress = 0;
             item.downloading = true;
             queueManager.saveQueue(true);
-            
+
             try {
                 const result = await downloadTrack(originalUrl, (progress) => {
                     item.downloadProgress = progress.percent || 0;
                     item.downloadStatus = progress.status || 'downloading';
                     queueManager.saveQueue(true);
                 });
-                
+
                 item.type = 'file';
                 item.content = result.filePath;
                 item.title = result.title;
@@ -519,7 +520,7 @@ async function prefetchNext(count = null) {
                 logger.info(`✓ Prefetch complete for: ${item.title}`);
                 queueManager.saveQueue(true);
                 prefetchedCount++;
-                
+
                 // On success, slightly reduce delay (but not below 1 second)
                 prefetchRateLimitDelay = Math.max(1000, prefetchRateLimitDelay - 100);
             } catch (err) {
@@ -530,7 +531,7 @@ async function prefetchNext(count = null) {
                 item.downloadProgress = 0;
                 queueManager.saveQueue(true);
                 failedCount++;
-                
+
                 // On rate limit error, increase delay significantly
                 if (isRateLimitError(err)) {
                     prefetchRateLimitDelay = Math.min(10000, prefetchRateLimitDelay * 2); // Double delay, max 10s
@@ -545,19 +546,19 @@ async function prefetchNext(count = null) {
                 activePrefetchCount--;
             }
         })();
-        
+
         // Small delay between starting prefetches to avoid bursts
         if (i < itemsToPrefetch - 1) {
             await new Promise(resolve => setTimeout(resolve, 500));
         }
     }
-    
+
     // Wait a bit for prefetches to complete before marking as done
     // (but don't wait forever - they'll complete in background)
     await new Promise(resolve => setTimeout(resolve, 2000));
-    
+
     logger.info(`Prefetch batch started: ${prefetchedCount} completed, ${failedCount} failed, ${activePrefetchCount} still active`);
-    
+
     isPrefetching = false;
 }
 
@@ -576,7 +577,7 @@ async function prefetchAll() {
 async function processQueueItem(sock, item, isConnected) {
     // Detect backend on first use
     detectBackend();
-    
+
     try {
         let filePath;
         let title = 'Audio';
@@ -589,15 +590,23 @@ async function processQueueItem(sock, item, isConnected) {
             item.downloadStatus = 'preparing';
             item.downloadProgress = 0;
             queueManager.saveQueue();
-            
+
             const result = await downloadTrack(item.content, (progress) => {
                 item.downloadProgress = progress.percent || 0;
                 item.downloadStatus = progress.status || 'downloading';
                 queueManager.saveQueue();
             });
-            
+
             filePath = result.filePath;
             title = result.title;
+
+            // Update stats with thumbnail
+            if (result.thumbnailPath) {
+                const thumbnailUrl = getThumbnailUrl(result.thumbnailPath);
+                if (thumbnailUrl) {
+                    statsService.updateLastSong(item.content, { thumbnailUrl });
+                }
+            }
 
             item.type = 'file';
             item.content = filePath;
@@ -618,9 +627,9 @@ async function processQueueItem(sock, item, isConnected) {
                     logger.warn('Failed to send playing notification:', e.message);
                 }
             }
-            
+
             logger.info(`Playing locally: ${filePath}`);
-            
+
             if (audioBackend === 'mpv') {
                 await playWithMpv(filePath);
             } else {
@@ -637,7 +646,7 @@ async function processQueueItem(sock, item, isConnected) {
             if (isConnected && item.remoteJid && item.remoteJid !== 'WEB_DASHBOARD') {
                 try {
                     await sendMessageWithMention(sock, item.remoteJid, 'Failed to play song.', item.sender);
-                } catch (e) {}
+                } catch (e) { }
             }
             // Mark as failed to prevent retry loop
             await new Promise(resolve => setTimeout(resolve, config.playback.songTransitionDelay));
@@ -649,18 +658,18 @@ async function processQueueItem(sock, item, isConnected) {
         logger.error('Error processing queue item:', error);
         if (audioBackend === 'mpv') await stopMpv();
         else stopFfplay();
-        
+
         if (isConnected && item.remoteJid && item.remoteJid !== 'WEB_DASHBOARD') {
             try {
                 await sendMessageWithMention(sock, item.remoteJid, `Error: ${error.message}`, item.sender);
-            } catch (e) {}
+            } catch (e) { }
         }
         // Mark as failed to prevent retry loop
         await new Promise(resolve => setTimeout(resolve, config.playback.songTransitionDelay));
         queueManager.songFinished(true); // Pass true to indicate failure
         return; // Exit early, don't continue
     }
-    
+
     // Only reach here if song played successfully
     await new Promise(resolve => setTimeout(resolve, config.playback.songTransitionDelay));
     queueManager.songFinished(false); // Pass false to indicate success
@@ -683,7 +692,7 @@ async function playWithMpv(filePath) {
 
     // Event handlers
     const effectsHandler = () => updateMpvFilters();
-    
+
     const pauseHandler = async () => {
         await pausePlayback();
         const current = queueManager.getCurrent();
@@ -757,60 +766,60 @@ async function playWithMpv(filePath) {
  * Play with ffplay backend (restart-based effects)
  */
 async function playWithFfplay(filePath) {
-            await new Promise(async (resolve) => {
-                let finished = false;
-                
-                while (!finished) {
-                    const current = queueManager.getCurrent();
-                    if (!current) break;
+    await new Promise(async (resolve) => {
+        let finished = false;
 
-                    let offset = 0;
-                    
+        while (!finished) {
+            const current = queueManager.getCurrent();
+            if (!current) break;
+
+            let offset = 0;
+
             // Handle pause state
-                    if (current.pausedAt) {
-                        const pauseResult = await new Promise(r => {
+            if (current.pausedAt) {
+                const pauseResult = await new Promise(r => {
                     const handlers = {};
                     const cleanup = () => {
-                        Object.keys(handlers).forEach(e => 
+                        Object.keys(handlers).forEach(e =>
                             queueManager.removeListener(e, handlers[e])
                         );
                     };
-                    
+
                     handlers.resume_current = () => { cleanup(); r('resume'); };
                     handlers.skip_current = () => { cleanup(); r('skip'); };
                     handlers.seek_current = () => { cleanup(); r('seek'); };
                     handlers.effects_changed = () => { cleanup(); r('effects'); };
-                    
-                    Object.keys(handlers).forEach(e => 
+
+                    Object.keys(handlers).forEach(e =>
                         queueManager.on(e, handlers[e])
                     );
-                        });
-                        
-                        if (pauseResult === 'skip') {
-                            finished = true;
-                            stopFfplay();
-                            break;
-                        }
-                        
-                        if (pauseResult === 'seek' || pauseResult === 'effects') {
-                            queueManager.isSeeking = false;
-                            continue;
-                        }
-                    }
+                });
+
+                if (pauseResult === 'skip') {
+                    finished = true;
+                    stopFfplay();
+                    break;
+                }
+
+                if (pauseResult === 'seek' || pauseResult === 'effects') {
+                    queueManager.isSeeking = false;
+                    continue;
+                }
+            }
 
             // Calculate offset
-                    if (current.startTime) {
-                        offset = Math.max(0, Date.now() - current.startTime);
+            if (current.startTime) {
+                offset = Math.max(0, Date.now() - current.startTime);
                 logger.info(`Starting/Resuming at offset: ${offset}ms`);
-                    } else {
-                        current.startTime = Date.now();
-                        queueManager.saveQueue();
-                    }
+            } else {
+                current.startTime = Date.now();
+                queueManager.saveQueue();
+            }
 
             // Start ffplay
-                    const result = await new Promise((resPlay) => {
+            const result = await new Promise((resPlay) => {
                 const p = startFfplay(filePath, offset);
-                        let killed = false;
+                let killed = false;
                 let killReason = null;
 
                 const handlers = {
@@ -820,62 +829,62 @@ async function playWithFfplay(filePath) {
                         p.kill('SIGKILL');
                     },
                     skip_current: () => {
-                            killed = true;
+                        killed = true;
                         killReason = 'skipped';
-                            p.kill('SIGKILL');
+                        p.kill('SIGKILL');
                     },
                     seek_current: () => {
-                            killed = true;
+                        killed = true;
                         killReason = 'seek';
-                            p.kill('SIGKILL');
+                        p.kill('SIGKILL');
                     },
                     effects_changed: () => {
-                            killed = true;
+                        killed = true;
                         killReason = 'effects';
                         const current = queueManager.getCurrent();
                         if (current && current.startTime) {
                             const elapsed = Date.now() - current.startTime;
                             current.startTime = Date.now() - elapsed;
                         }
-                            p.kill('SIGKILL');
+                        p.kill('SIGKILL');
                         logger.info('Restarting ffplay with new effects');
                     }
                 };
 
-                Object.keys(handlers).forEach(e => 
+                Object.keys(handlers).forEach(e =>
                     queueManager.once(e, handlers[e])
                 );
 
-                        p.on('close', (code) => {
-                    Object.keys(handlers).forEach(e => 
+                p.on('close', (code) => {
+                    Object.keys(handlers).forEach(e =>
                         queueManager.removeListener(e, handlers[e])
                     );
-                            
-                            if (killed) {
+
+                    if (killed) {
                         if (killReason === 'paused' || queueManager.isPaused) {
-                                    resPlay('paused');
+                            resPlay('paused');
                         } else if (killReason === 'seek' || queueManager.isSeeking) {
-                                    resPlay('seek');
+                            resPlay('seek');
                         } else if (killReason === 'effects') {
                             resPlay('effects');
-                                } else {
-                                    resPlay('skipped');
-                                }
-                            } else {
-                                resPlay('finished');
-                            }
-                        });
-                    });
-                    
-            if (result === 'seek' || result === 'effects') {
-                        queueManager.isSeeking = false;
-                continue;
+                        } else {
+                            resPlay('skipped');
+                        }
+                    } else {
+                        resPlay('finished');
                     }
+                });
+            });
 
-                    if (result === 'finished' || result === 'skipped') {
-                        finished = true;
-                    }
-                }
+            if (result === 'seek' || result === 'effects') {
+                queueManager.isSeeking = false;
+                continue;
+            }
+
+            if (result === 'finished' || result === 'skipped') {
+                finished = true;
+            }
+        }
 
         stopFfplay();
         resolve();
@@ -887,7 +896,7 @@ async function playWithFfplay(filePath) {
  */
 async function playAudio(filePath, startTimeOffset = 0) {
     detectBackend();
-    
+
     if (audioBackend === 'mpv') {
         await startMpv(filePath, startTimeOffset);
         return new Promise((resolve) => {
@@ -920,7 +929,7 @@ async function playAudio(filePath, startTimeOffset = 0) {
 
 function getEffects() {
     return effectsService.getEffects();
-            }
+}
 
 function getPresets() {
     return effectsService.getPresetsInfo();

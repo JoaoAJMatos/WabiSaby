@@ -9,6 +9,9 @@ let effectsUpdateTimeout = null;
 let effectsBackend = 'ffplay';
 let effectsSeamless = false;
 
+// Broadcast Channel for syncing effects with player
+const effectsBroadcast = new BroadcastChannel('wabisaby_audio_channel');
+
 /**
  * Fetch current effects settings from server
  */
@@ -24,6 +27,8 @@ async function loadEffects() {
             updateEffectsUI(currentEffects);
             renderEffectsPresets(effectsPresets, currentEffects.preset);
             updateBackendIndicator();
+            // Broadcast initial effects
+            effectsBroadcast.postMessage({ type: 'EFFECTS_UPDATE', effects: currentEffects });
         }
     } catch (err) {
         console.error('Failed to load effects:', err);
@@ -60,6 +65,8 @@ async function updateEffects(newSettings) {
             updateEffectsUI(currentEffects);
             updateCurrentPresetDisplay(currentEffects.preset);
             showEffectsSaveIndicator();
+            // Broadcast update
+            effectsBroadcast.postMessage({ type: 'EFFECTS_UPDATE', effects: currentEffects });
         }
     } catch (err) {
         console.error('Failed to update effects:', err);
@@ -81,6 +88,8 @@ async function applyEffectsPreset(presetId) {
             updateCurrentPresetDisplay(currentEffects.preset);
             highlightActivePreset(presetId);
             showEffectsSaveIndicator();
+            // Broadcast update
+            effectsBroadcast.postMessage({ type: 'EFFECTS_UPDATE', effects: currentEffects });
         }
     } catch (err) {
         console.error('Failed to apply preset:', err);
@@ -102,6 +111,8 @@ async function resetAllEffects() {
             updateCurrentPresetDisplay('normal');
             highlightActivePreset('normal');
             showEffectsSaveIndicator();
+            // Broadcast update
+            effectsBroadcast.postMessage({ type: 'EFFECTS_UPDATE', effects: currentEffects });
         }
     } catch (err) {
         console.error('Failed to reset effects:', err);
@@ -113,11 +124,11 @@ async function resetAllEffects() {
  */
 function updateEffectsUI(effects) {
     if (!effects) return;
-    
+
     // Master toggle
     const enabledToggle = document.getElementById('effects-enabled');
     if (enabledToggle) enabledToggle.checked = effects.enabled;
-    
+
     // Speed
     const speedSlider = document.getElementById('effect-speed');
     const speedValue = document.getElementById('effect-speed-value');
@@ -125,21 +136,21 @@ function updateEffectsUI(effects) {
         speedSlider.value = effects.speed;
         if (speedValue) speedValue.textContent = `${effects.speed.toFixed(2)}x`;
     }
-    
+
     // EQ
     updateEQSlider('bass', effects.eq?.bass || 0);
     updateEQSlider('mid', effects.eq?.mid || 0);
     updateEQSlider('treble', effects.eq?.treble || 0);
-    
+
     // Reverb
     updateEffectCard('reverb', effects.reverb);
-    
+
     // Echo
     updateEffectCard('echo', effects.echo);
-    
+
     // Distortion
     updateEffectCard('distortion', effects.distortion);
-    
+
     // Compressor
     updateEffectCard('compressor', effects.compressor);
 }
@@ -164,16 +175,16 @@ function updateEQSlider(band, value) {
  */
 function updateEffectCard(effectName, settings) {
     if (!settings) return;
-    
+
     const enabledToggle = document.getElementById(`effect-${effectName}-enabled`);
     if (enabledToggle) enabledToggle.checked = settings.enabled;
-    
+
     const controls = document.getElementById(`effect-${effectName}-controls`);
     if (controls) {
         controls.style.opacity = settings.enabled ? '1' : '0.5';
         controls.style.pointerEvents = settings.enabled ? 'auto' : 'none';
     }
-    
+
     // Update individual sliders
     Object.entries(settings).forEach(([key, value]) => {
         if (key === 'enabled') return;
@@ -202,15 +213,15 @@ function formatEffectValue(effectName, key, value) {
  * Render effects presets
  */
 function renderEffectsPresets(presets, activePreset) {
-    const container = document.getElementById('effects-presets');
+    const container = document.getElementById('effects-presets-grid');
     if (!container) return;
-    
+
     container.innerHTML = presets.map(preset => `
         <button class="effects-preset-btn ${preset.id === activePreset ? 'active' : ''}" 
                 onclick="applyEffectsPreset('${preset.id}')"
                 data-preset-id="${preset.id}">
+            <i class="fas ${preset.icon || 'fa-music'} preset-icon"></i>
             <span class="preset-name">${preset.name}</span>
-            <span class="preset-desc">${preset.description || ''}</span>
         </button>
     `).join('');
 }
@@ -266,7 +277,7 @@ function debouncedEffectsUpdate(newSettings) {
 function initEffectCardListeners(effectName, params) {
     const enabledToggle = document.getElementById(`effect-${effectName}-enabled`);
     const controls = document.getElementById(`effect-${effectName}-controls`);
-    
+
     if (enabledToggle) {
         enabledToggle.addEventListener('change', () => {
             const settings = { enabled: enabledToggle.checked };
@@ -276,16 +287,16 @@ function initEffectCardListeners(effectName, params) {
                     settings[param] = parseFloat(slider.value);
                 }
             });
-            
+
             if (controls) {
                 controls.style.opacity = enabledToggle.checked ? '1' : '0.5';
                 controls.style.pointerEvents = enabledToggle.checked ? 'auto' : 'none';
             }
-            
+
             debouncedEffectsUpdate({ [effectName]: settings });
         });
     }
-    
+
     params.forEach(param => {
         const slider = document.getElementById(`effect-${effectName}-${param}`);
         if (slider) {
@@ -320,7 +331,7 @@ function initEffectsListeners() {
             effectsCard.classList.toggle('expanded');
         });
     }
-    
+
     // Master toggle
     const enabledToggle = document.getElementById('effects-enabled');
     if (enabledToggle) {
@@ -328,7 +339,7 @@ function initEffectsListeners() {
             debouncedEffectsUpdate({ enabled: enabledToggle.checked });
         });
     }
-    
+
     // Speed slider
     const speedSlider = document.getElementById('effect-speed');
     const speedValue = document.getElementById('effect-speed-value');
@@ -341,7 +352,7 @@ function initEffectsListeners() {
             debouncedEffectsUpdate({ speed: parseFloat(speedSlider.value) });
         });
     }
-    
+
     // EQ sliders
     ['bass', 'mid', 'treble'].forEach(band => {
         const slider = document.getElementById(`effect-eq-${band}`);
@@ -365,19 +376,19 @@ function initEffectsListeners() {
             });
         }
     });
-    
+
     // Effect card toggles and sliders
     initEffectCardListeners('reverb', ['roomSize', 'wetLevel']);
     initEffectCardListeners('echo', ['delay', 'decay']);
     initEffectCardListeners('distortion', ['drive']);
     initEffectCardListeners('compressor', ['threshold', 'ratio']);
-    
+
     // Reset all button
     const resetBtn = document.getElementById('effects-reset-all');
     if (resetBtn) {
         resetBtn.addEventListener('click', resetAllEffects);
     }
-    
+
     // Individual reset buttons
     document.querySelectorAll('.effect-reset-btn').forEach(btn => {
         btn.addEventListener('click', () => {

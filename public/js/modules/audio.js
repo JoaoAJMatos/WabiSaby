@@ -3,6 +3,11 @@
  * Handles audio context, visualizer, idle animation, and audio playback
  */
 
+// Initialize global variable if not already defined (will be set by dashboard.js)
+if (typeof localCurrentSong === 'undefined') {
+    var localCurrentSong = null;
+}
+
 // Visualizer Setup (exposed globally for dashboard.js)
 var audioContext = null;
 var analyser = null;
@@ -19,9 +24,7 @@ var isShowingIdle = true;
 // Smooth transition state for visualizer bars
 const barCurrentHeights = new Array(BAR_COUNT).fill(0);  // Current displayed heights
 const barTargetHeights = new Array(BAR_COUNT).fill(0);   // Target heights to lerp to
-const LERP_SPEED_DOWN = 0.1;
-const INTENSITY_DECAY = 0.95;
-const AUDIO_STALE_MS = 1500;
+// Note: LERP_SPEED_DOWN, INTENSITY_DECAY, and AUDIO_STALE_MS are defined in config.js
 
 // Canvas setup (run once)
 let idleCanvasCtx = null;
@@ -161,7 +164,7 @@ async function initVisualizer() {
                 if (dataSendCount % 200 === 0) { // Log every 2 seconds
                     console.log('✓ Sent audio data:', dataSendCount, 'times, length:', data.length, 'sample:', data[0], data[10], data[50]);
                 }
-            } else if (localCurrentSong && !localCurrentSong.streamUrl) {
+            } else if (typeof localCurrentSong !== 'undefined' && localCurrentSong && !localCurrentSong.streamUrl) {
                 // Song is preparing, send idle animation indicator
                 broadcast.postMessage({ type: 'IDLE_ANIMATION', preparing: true });
             } else {
@@ -307,7 +310,7 @@ async function startAudioPlayback() {
 
 // Ensure audio is playing when it should be (called periodically)
 function ensureAudioPlaying() {
-    if (currentAudio && localCurrentSong && !localCurrentSong.isPaused && currentAudio.paused) {
+    if (currentAudio && typeof localCurrentSong !== 'undefined' && localCurrentSong && !localCurrentSong.isPaused && currentAudio.paused) {
         console.log('Audio should be playing but is paused, attempting to start...');
         startAudioPlayback();
     }
@@ -333,7 +336,7 @@ function unlockAudio() {
             audioUnlocked = true;
             
             // Try to start playback if we should be playing
-            if (currentAudio && localCurrentSong && !localCurrentSong.isPaused && currentAudio.paused) {
+            if (currentAudio && typeof localCurrentSong !== 'undefined' && localCurrentSong && !localCurrentSong.isPaused && currentAudio.paused) {
                 startAudioPlayback();
             }
         });
@@ -357,7 +360,7 @@ document.addEventListener('visibilitychange', () => {
         }
         
         // If we should be playing, try to restart
-        if (currentAudio && localCurrentSong && !localCurrentSong.isPaused && currentAudio.paused) {
+        if (currentAudio && typeof localCurrentSong !== 'undefined' && localCurrentSong && !localCurrentSong.isPaused && currentAudio.paused) {
             startAudioPlayback();
         }
     }

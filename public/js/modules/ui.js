@@ -8,42 +8,38 @@ let backgroundImageUrl = null;
 
 function updateBackgroundImage(url) {
     if (backgroundImageUrl === url) return; // Avoid duplicate updates
-    
+
     backgroundImageUrl = url;
-    const body = document.body;
-    
-    // Remove old background
-    body.style.backgroundImage = '';
-    body.style.backgroundSize = '';
-    body.style.backgroundPosition = '';
-    body.style.backgroundRepeat = '';
-    
+    const overlay = document.querySelector('.bg-overlay');
+    if (!overlay) return;
+
     // Add new background with fade effect
     const img = new Image();
     img.onload = () => {
-        body.style.backgroundImage = `url(${url})`;
-        body.style.backgroundSize = 'cover';
-        body.style.backgroundPosition = 'center';
-        body.style.backgroundRepeat = 'no-repeat';
-        body.style.transition = 'background-image 0.5s ease-in-out';
+        overlay.style.backgroundImage = `url(${url})`;
+        overlay.style.opacity = '1';
     };
     img.src = url;
 }
 
 function clearBackgroundImage() {
     backgroundImageUrl = null;
-    const body = document.body;
-    body.style.backgroundImage = '';
-    body.style.backgroundSize = '';
-    body.style.backgroundPosition = '';
-    body.style.backgroundRepeat = '';
+    const overlay = document.querySelector('.bg-overlay');
+    if (!overlay) return;
+
+    overlay.style.opacity = '0';
+    setTimeout(() => {
+        if (!backgroundImageUrl) {
+            overlay.style.backgroundImage = '';
+        }
+    }, 800); // Wait for transition
 }
 
 function updateAuthUI(authData) {
     const authSection = document.getElementById('auth-section');
     const qrContainer = document.getElementById('qr-container');
     const statusBadge = document.getElementById('connection-status');
-    
+
     if (authData.isConnected) {
         statusBadge.className = 'status-badge online';
         statusBadge.innerHTML = '<span class="dot"></span> SYSTEM ONLINE';
@@ -55,14 +51,14 @@ function updateAuthUI(authData) {
     }
 
     if (!authData.isConnected && authData.qr) {
-        qrContainer.innerHTML = ''; 
+        qrContainer.innerHTML = '';
         new QRCode(qrContainer, {
             text: authData.qr,
             width: 256,
             height: 256,
-            colorDark : "#000000",
-            colorLight : "#ffffff",
-            correctLevel : QRCode.CorrectLevel.H
+            colorDark: "#000000",
+            colorLight: "#ffffff",
+            correctLevel: QRCode.CorrectLevel.H
         });
     } else if (!authData.isConnected && !authData.qr) {
         qrContainer.innerHTML = '<div class="qr-placeholder"><i class="fas fa-circle-notch fa-spin"></i> Generating QR...</div>';
@@ -71,7 +67,7 @@ function updateAuthUI(authData) {
 
 function updateStatsUI(stats) {
     if (!stats) return;
-    
+
     // Store stats and timestamp for local interpolation
     // Note: serverStats and statsReceivedAt should be managed in dashboard.js
     // This function will be called with the stats object

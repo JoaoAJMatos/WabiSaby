@@ -3,16 +3,51 @@
  * Handles statistics fetching and display functions
  */
 
+// Initialize tabs logic
+function initStatsTabs() {
+    const tabs = document.querySelectorAll('.stats-tab-btn');
+    if (!tabs.length) return;
+
+    tabs.forEach(tab => {
+        tab.addEventListener('click', () => {
+            // Remove active class from all tabs
+            tabs.forEach(t => t.classList.remove('active'));
+            document.querySelectorAll('.stats-tab-content').forEach(c => c.classList.remove('active'));
+
+            // Activate clicked tab
+            tab.classList.add('active');
+            const targetId = `tab-${tab.dataset.tab}`;
+            const targetContent = document.getElementById(targetId);
+            if (targetContent) {
+                targetContent.classList.add('active');
+            }
+
+            // Fetch data for the new tab
+            if (tab.dataset.tab === 'requesters') {
+                fetchRequestersView();
+            } else if (tab.dataset.tab === 'history') {
+                fetchHistoryView();
+            } else {
+                fetchOverviewView();
+            }
+        });
+    });
+}
+
 // Fetch and display overview from backend
 async function fetchOverviewView() {
-    const container = document.querySelector('.overview-content');
-    
+    const container = document.querySelector('.stats-overview');
+    if (!container) {
+        console.warn('Stats overview container not found');
+        return;
+    }
+
     try {
         const res = await fetch('/api/stats/overview');
         if (!res.ok) throw new Error('Failed to fetch');
-        
+
         const data = await res.json();
-        
+
         // Helper functions for formatting
         function formatDuration(ms) {
             const hours = Math.floor(ms / 3600000);
@@ -22,27 +57,45 @@ async function fetchOverviewView() {
             }
             return `${minutes}m`;
         }
-        
+
         function formatHour(hour) {
             if (hour === null || hour === undefined) return '-';
             const period = hour >= 12 ? 'PM' : 'AM';
             const displayHour = hour === 0 ? 12 : hour > 12 ? hour - 12 : hour;
             return `${displayHour}${period}`;
         }
-        
+
         // Build hourly chart
         let hourlyChart = '';
-        if (data.hourlyDistribution && data.hourlyDistribution.length > 0) {
-            const maxCount = Math.max(...data.hourlyDistribution.map(h => h.count));
+        // Convert object { "0": 1, "15": 3 } to array [{hour: 0, count: 1}, ...]
+        let hourlyData = [];
+        if (data.hourlyDistribution) {
+            hourlyData = Object.entries(data.hourlyDistribution).map(([hour, count]) => ({
+                hour: parseInt(hour),
+                count
+            }));
+        }
+
+        if (hourlyData.length > 0) {
+            const maxCount = Math.max(...hourlyData.map(h => h.count));
+
+            // Fill in missing hours for smoother chart (optional but looks better)
+            // But for now, let's just show what we have or map 0-23
+            const fullHourlyData = Array.from({ length: 24 }, (_, i) => {
+                const existing = hourlyData.find(h => h.hour === i);
+                return existing || { hour: i, count: 0 };
+            });
+
             hourlyChart = `
                 <div class="overview-section">
                     <h4><i class="fas fa-chart-line"></i> Activity by Hour</h4>
                     <div class="hourly-chart">
                         <div class="hour-bars">
-                            ${data.hourlyDistribution.map(({hour, count}) => {
-                                const height = maxCount > 0 ? (count / maxCount) * 100 : 0;
-                                return `<div class="hour-bar" style="height: ${height}%" title="${formatHour(hour)}: ${count} songs"></div>`;
-                            }).join('')}
+                            ${fullHourlyData.map(({ hour, count }) => {
+                const height = maxCount > 0 ? (count / maxCount) * 100 : 0;
+                // Only show height if > 0 to preserve min-height
+                return `<div class="hour-bar" style="height: ${Math.max(5, height)}%" title="${formatHour(hour)}: ${count} songs"></div>`;
+            }).join('')}
                         </div>
                         <div class="hour-labels">
                             <span>12AM</span><span>6AM</span><span>12PM</span><span>6PM</span><span>11PM</span>
@@ -51,7 +104,7 @@ async function fetchOverviewView() {
                 </div>
             `;
         }
-        
+
         // Build top artists section
         let artistsSection = '';
         if (data.topArtists && data.topArtists.length > 0) {
@@ -59,7 +112,7 @@ async function fetchOverviewView() {
                 <div class="overview-section">
                     <h4><i class="fas fa-microphone-alt"></i> Top Artists</h4>
                     <div class="overview-list">
-                        ${data.topArtists.map(({name, count}, i) => `
+                        ${data.topArtists.map(({ name, count }, i) => `
                             <div class="overview-list-item">
                                 <span class="overview-rank">${i + 1}</span>
                                 <span class="overview-name">${name}</span>
@@ -70,7 +123,7 @@ async function fetchOverviewView() {
                 </div>
             `;
         }
-        
+
         container.innerHTML = `
             <div class="overview-grid">
                 <div class="overview-stat">
@@ -108,6 +161,7 @@ async function fetchOverviewView() {
             ${artistsSection}
         `;
     } catch (e) {
+        console.error(e);
         container.innerHTML = '<p class="stats-placeholder">Failed to load overview</p>';
     }
 }
@@ -115,22 +169,26 @@ async function fetchOverviewView() {
 // Fetch and display top requesters from backend
 async function fetchRequestersView() {
     const container = document.querySelector('.requesters-list');
-    
+    if (!container) {
+        console.warn('Requesters list container not found');
+        return;
+    }
+
     try {
         const res = await fetch('/api/stats/requesters?limit=20');
         if (!res.ok) throw new Error('Failed to fetch');
-        
+
         const requesters = await res.json();
-        
+
         if (requesters.length === 0) {
             container.innerHTML = '<p class="stats-placeholder">No requests yet</p>';
             return;
         }
-        
+
         container.innerHTML = requesters.map(({ rank, name, count }) => {
             const rankClass = rank <= 3 ? `top-${rank}` : '';
             const rankIcon = rank === 1 ? '👑' : rank;
-            
+
             return `
                 <div class="requester-item">
                     <div class="requester-info">
@@ -155,18 +213,22 @@ async function fetchRequestersView() {
 // Fetch and display history from backend
 async function fetchHistoryView() {
     const container = document.querySelector('.history-list');
-    
+    if (!container) {
+        console.warn('History list container not found');
+        return;
+    }
+
     try {
         const res = await fetch('/api/stats/history?limit=20');
         if (!res.ok) throw new Error('Failed to fetch');
-        
+
         const history = await res.json();
-        
+
         if (history.length === 0) {
             container.innerHTML = '<p class="stats-placeholder">No songs played yet</p>';
             return;
         }
-        
+
         container.innerHTML = history.map(song => {
             const timeAgo = getTimeAgo(song.playedAt);
             return `
@@ -196,21 +258,21 @@ async function fetchDetailedStats() {
     try {
         const res = await fetch('/api/stats');
         if (!res.ok) return;
-        
+
         const stats = await res.json();
-        
+
         // Update songs played counter from backend stats
         const songsPlayedEl = document.getElementById('songs-played-value');
         if (songsPlayedEl) {
             songsPlayedEl.textContent = stats.songsPlayed || 0;
         }
-        
+
         // Update uptime from backend stats
         const uptimeEl = document.getElementById('uptime-value');
         if (uptimeEl && stats.uptime) {
             uptimeEl.textContent = formatUptime(stats.uptime);
         }
-        
+
         // Refresh active tab data if visible
         const activeTab = document.querySelector('.stats-tab-btn.active');
         if (activeTab) {
@@ -230,7 +292,7 @@ async function fetchDetailedStats() {
 function toggleStatsCollapse() {
     const statsSection = document.getElementById('stats');
     const collapseBtn = document.getElementById('stats-collapse-btn');
-    
+
     if (statsSection.classList.contains('collapsed')) {
         statsSection.classList.remove('collapsed');
         collapseBtn.setAttribute('title', 'Collapse Analytics');
@@ -245,5 +307,8 @@ fetchOverviewView();
 
 // Fetch detailed stats every 10 seconds (less frequent, backend handles persistence)
 setInterval(fetchDetailedStats, 10000);
-fetchDetailedStats(); // Initial fetch
+// Initial fetch
+initStatsTabs();
+fetchDetailedStats();
+
 

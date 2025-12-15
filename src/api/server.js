@@ -51,7 +51,6 @@ function startServer() {
     app.listen(PORT, () => {
         console.log(`Visualization dashboard running at http://${config.server.host}:${PORT}`);
         
-        // Print configuration on startup
         if (process.env.DEBUG === 'true') {
             config.print();
         }
