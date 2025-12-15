@@ -1,4 +1,4 @@
-# WabiSaby
+![WabiSaby Banner](./public/assets/banner.svg)
 
 A collaborative music bot that plays audio from YouTube/Spotify links via WhatsApp or a web dashboard. Features real-time audio visualization, synchronized playback, and a cyberpunk-themed UI.
 
