@@ -9,6 +9,8 @@ const { initializeErrorHandlers } = require('../error');
 
 logger.info('Initializing database...');
 initializeDatabase();
+
+config.loadSettings();
 config.cleanupTempFiles();
 
 initializeErrorHandlers();

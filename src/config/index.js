@@ -40,18 +40,29 @@ class Config {
         this.youtube = {
             apiKey: process.env.YOUTUBE_API_KEY || null,
         };
-        this.server = {};
-        this.whatsapp = {
+        
+        // Initialize settings with defaults to avoid undefined access
+        // These will be overridden by loadSettings() when database is available
+        const defaults = this.getDefaultSettings();
+        this.server = { 
+            ...defaults.server,
+            port: process.env.PORT ? parseInt(process.env.PORT, 10) : defaults.server.port,
+            host: process.env.HOST || defaults.server.host,
+        };
+        this.whatsapp = { 
+            ...defaults.whatsapp,
             targetGroupId: process.env.TARGET_GROUP_ID || null,
         };
-        this.download = {};
-        this.playback = {};
-        this.logging = {};
-        this.performance = {};
-        this.notifications = {};
+        this.download = { ...defaults.download };
+        this.playback = { ...defaults.playback };
+        this.logging = { ...defaults.logging };
+        this.performance = { ...defaults.performance };
+        this.notifications = { ...defaults.notifications };
         
         this.initializeStorage();
-        this.loadSettings();
+        // Don't load settings in constructor to avoid circular dependency
+        // Settings will be loaded lazily on first access or explicitly after initialization
+        this._settingsLoaded = false;
     }
     
     /**
@@ -124,6 +135,10 @@ class Config {
      * Load settings from database (or fallback to JSON file)
      */
     loadSettings() {
+        if (this._settingsLoaded) {
+            return; // Already loaded
+        }
+        
         let loadedSettings = {};
         
         // Try to load from database first
@@ -175,6 +190,17 @@ class Config {
         this.logging = { ...defaults.logging, ...loadedSettings.logging };
         this.performance = { ...defaults.performance, ...loadedSettings.performance };
         this.notifications = { ...defaults.notifications, ...loadedSettings.notifications };
+        
+        this._settingsLoaded = true;
+    }
+    
+    /**
+     * Ensure settings are loaded (lazy loading)
+     */
+    _ensureSettingsLoaded() {
+        if (!this._settingsLoaded) {
+            this.loadSettings();
+        }
     }
     
     /**
@@ -426,6 +452,17 @@ class Config {
 
 // Export singleton instance
 const config = new Config();
+
+// Load settings after singleton is created (deferred to avoid circular dependency)
+// Settings will be loaded when database is available, or fallback to defaults/JSON file
+process.nextTick(() => {
+    try {
+        config.loadSettings();
+    } catch (err) {
+        // If settings can't be loaded yet, defaults are already set in constructor
+        // Settings will be loaded when database becomes available
+    }
+});
 
 // Validate on load
 const validation = config.validate();
