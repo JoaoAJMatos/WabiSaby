@@ -35,12 +35,17 @@ app.use('/api', logsRouter);
 app.use('/api', effectsRouter);
 app.use('/api', groupsRouter);
 
-function startServer() {
+function startServer(callback) {
     app.listen(PORT, () => {
-        console.log(`Visualization dashboard running at http://${config.server.host}:${PORT}`);
+        const url = `http://${config.server.host}:${PORT}`;
+        console.log(`Visualization dashboard running at ${url}`);
         
         if (process.env.DEBUG === 'true') {
             config.print();
+        }
+        
+        if (callback) {
+            callback(url);
         }
     });
 }

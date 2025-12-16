@@ -1,6 +1,5 @@
 const { default: makeWASocket, useMultiFileAuthState, DisconnectReason } = require('@whiskeysockets/baileys');
 const { pino } = require('pino');
-const qrcode = require('qrcode-terminal');
 const config = require('../config');
 const { logger } = require('../utils/logger');
 const { sendMessageWithMention } = require('../utils/helpers');
@@ -37,12 +36,11 @@ async function connectToWhatsApp() {
 
     const sock = makeWASocket({
         logger: pino({ level: 'silent' }),
-        printQRInTerminal: false, // We handle it manually
+        printQRInTerminal: false,
         auth: state,
         browser: [config.whatsapp.browserName, 'Chrome', config.whatsapp.browserVersion]
     });
 
-    // Wire up Queue Manager
     queueManager.removeAllListeners('play_next');
     queueManager.removeAllListeners('skip_current');
     queueManager.removeAllListeners('pause_current');
@@ -68,11 +66,6 @@ async function connectToWhatsApp() {
             updateAuthStatus(connection, qr);
         } else if (qr) {
             updateAuthStatus('qr', qr);
-        }
-
-        if (qr) {
-            console.log('Scan the QR code below to login:');
-            qrcode.generate(qr, { small: true });
         }
 
         if (connection === 'close') {
