@@ -1,17 +1,12 @@
 const EventEmitter = require('events');
 const dbService = require('../database/db.service');
 const { checkPriority } = require('../services/priority.service');
-const statsService = require('../services/stats.service');
+const { QUEUE_ITEM_ADDED, QUEUE_ITEM_REMOVED, QUEUE_REORDERED, QUEUE_CLEARED, QUEUE_UPDATED } = require('./events');
 
 class QueueManager extends EventEmitter {
     constructor() {
         super();
         this.queue = [];
-        this.isPlaying = false;
-        this.isPaused = false;
-        this.isSeeking = false;
-        this.currentSong = null;
-        this.songsPlayed = 0;
         this.queueItemIds = new Map(); // Map position -> queue_item_id for database updates
         this.loadQueue();
     }
@@ -46,33 +41,6 @@ class QueueManager extends EventEmitter {
                     this.queueItemIds.set(index, item.id);
                 }
             });
-            
-            // Load playback state
-            const playbackState = dbService.getPlaybackState();
-            if (playbackState) {
-                this.isPlaying = playbackState.is_playing === 1;
-                this.isPaused = playbackState.is_paused === 1;
-                this.songsPlayed = playbackState.songs_played || 0;
-                
-                // Load current song if exists
-                if (playbackState.current_song_id) {
-                    const song = dbService.getSong(playbackState.current_song_id);
-                    if (song) {
-                        this.currentSong = {
-                            content: song.content,
-                            title: song.title,
-                            artist: song.artist,
-                            channel: song.channel,
-                            duration: song.duration,
-                            thumbnail: song.thumbnail_path,
-                            thumbnailUrl: song.thumbnail_url,
-                            startTime: playbackState.start_time ? playbackState.start_time * 1000 : Date.now(),
-                            pausedAt: playbackState.paused_at ? playbackState.paused_at * 1000 : null,
-                            isPaused: this.isPaused
-                        };
-                    }
-                }
-            }
         } catch (e) {
             console.error('Failed to load queue:', e);
         }
@@ -80,28 +48,12 @@ class QueueManager extends EventEmitter {
 
     saveQueue(emitUpdate = false) {
         try {
-            // Update playback state in database
-            dbService.updatePlaybackState({
-                is_playing: this.isPlaying ? 1 : 0,
-                is_paused: this.isPaused ? 1 : 0,
-                current_song_id: this.currentSong ? dbService.getOrCreateSong({
-                    content: this.currentSong.content,
-                    title: this.currentSong.title,
-                    artist: this.currentSong.artist,
-                    channel: this.currentSong.channel,
-                    duration: this.currentSong.duration,
-                    thumbnail_path: this.currentSong.thumbnail,
-                    thumbnail_url: this.currentSong.thumbnailUrl
-                }) : null,
-                start_time: this.currentSong?.startTime ? Math.floor(this.currentSong.startTime / 1000) : null,
-                paused_at: this.currentSong?.pausedAt ? Math.floor(this.currentSong.pausedAt / 1000) : null,
-                seek_position: this.currentSong?.elapsed || null,
-                songs_played: this.songsPlayed
-            });
+            // Save queue items to database (positions are already updated in add/remove/reorder)
+            // Note: Playback state is now managed by PlaybackController, not QueueManager
             
             // Emit update event if requested (for real-time UI updates during downloads)
             if (emitUpdate) {
-                this.emit('queue_updated');
+                this.emit(QUEUE_UPDATED);
             }
         } catch (e) {
             console.error('Failed to save queue:', e);
@@ -164,8 +116,8 @@ class QueueManager extends EventEmitter {
         }
 
         this.saveQueue();
-        this.emit('queue_updated');
-        this.processQueue();
+        this.emit(QUEUE_UPDATED);
+        this.emit(QUEUE_ITEM_ADDED, { item: queueItem });
     }
 
     remove(index) {
@@ -187,7 +139,8 @@ class QueueManager extends EventEmitter {
             });
             
             this.saveQueue();
-            this.emit('queue_updated');
+            this.emit(QUEUE_UPDATED);
+            this.emit(QUEUE_ITEM_REMOVED, { index, item: removed[0] });
             return removed[0];
         }
         return null;
@@ -212,7 +165,8 @@ class QueueManager extends EventEmitter {
             });
             
             this.saveQueue();
-            this.emit('queue_updated');
+            this.emit(QUEUE_UPDATED);
+            this.emit(QUEUE_REORDERED, { fromIndex, toIndex });
             return true;
         }
         return false;
@@ -222,16 +176,13 @@ class QueueManager extends EventEmitter {
         return this.queue;
     }
 
-    getCurrent() {
-        return this.currentSong;
-    }
-
     clear() {
         dbService.clearQueue();
         this.queue = [];
         this.queueItemIds.clear();
         this.saveQueue();
-        this.emit('queue_updated');
+        this.emit(QUEUE_UPDATED);
+        this.emit(QUEUE_CLEARED);
         
         // Clear caches when queue is cleared
         try {
@@ -244,157 +195,6 @@ class QueueManager extends EventEmitter {
         } catch (e) {
             // Ignore errors if modules aren't loaded yet
         }
-    }
-
-    resetSession() {
-        // Stop current playback if playing
-        if (this.isPlaying) {
-            this.emit('skip_current');
-        }
-
-        // Reset all state
-        this.queue = [];
-        this.currentSong = null;
-        this.isPlaying = false;
-        this.isPaused = false;
-        this.songsPlayed = 0; // Reset session counter
-        
-        // Also reset cumulative stats
-        statsService.resetStats();
-        
-        // Clear caches when session is reset
-        try {
-            const { clearCaches } = require('../services/download.service');
-            const { clearVideoInfoCache } = require('../services/metadata.service');
-            const { clearSearchCache } = require('../services/search.service');
-            clearCaches();
-            clearVideoInfoCache();
-            clearSearchCache();
-        } catch (e) {
-            // Ignore errors if modules aren't loaded yet
-        }
-        
-        this.saveQueue(true); // Save and emit update
-        return true;
-    }
-
-    processQueue() {
-        if (this.isPlaying || this.queue.length === 0) {
-            return;
-        }
-
-        this.isPlaying = true;
-        this.isPaused = false;
-        
-        // Remove first item from queue
-        const queueItem = this.queue.shift();
-        const itemId = this.queueItemIds.get(0);
-        this.queueItemIds.delete(0);
-        
-        // Update position mappings
-        this.queueItemIds.clear();
-        this.queue.forEach((item, i) => {
-            if (item.id) {
-                this.queueItemIds.set(i, item.id);
-            }
-        });
-        
-        // Remove from database
-        if (itemId) {
-            dbService.removeQueueItem(itemId);
-        }
-        
-        // Set as current song
-        this.currentSong = queueItem;
-        if (this.currentSong) {
-            this.currentSong.startTime = Date.now();
-            this.currentSong.pausedAt = null;
-        }
-        
-        this.saveQueue();
-        
-        // Record song in stats
-        if (this.currentSong) {
-            statsService.recordSongPlayed(this.currentSong);
-        }
-        
-        this.emit('play_next', this.currentSong);
-    }
-
-    songFinished() {
-        this.isPlaying = false;
-        this.isPaused = false;
-        this.currentSong = null;
-        this.songsPlayed++;
-        this.saveQueue();
-        this.processQueue();
-    }
-    
-    skip() {
-        if(this.currentSong) {
-             this.emit('skip_current');
-             // The actual skipping logic (stopping playback) will be handled by the player/downloader
-             // which will then call songFinished()
-        }
-    }
-
-    pause() {
-        if (this.isPlaying && !this.isPaused && this.currentSong) {
-            this.isPaused = true;
-            this.currentSong.pausedAt = Date.now();
-            this.saveQueue();
-            this.emit('pause_current');
-            return true;
-        }
-        return false;
-    }
-
-    resume() {
-        if (this.isPlaying && this.isPaused && this.currentSong) {
-            this.isPaused = false;
-            if (this.currentSong.pausedAt && this.currentSong.startTime) {
-                const pauseDuration = Date.now() - this.currentSong.pausedAt;
-                this.currentSong.startTime += pauseDuration;
-                this.currentSong.pausedAt = null;
-            }
-            this.saveQueue();
-            this.emit('resume_current');
-            return true;
-        }
-        return false;
-    }
-
-    seek(timeMs) {
-        if (this.isPlaying && this.currentSong && this.currentSong.duration) {
-            // Clamp the seek time to valid range
-            const seekTime = Math.max(0, Math.min(timeMs, this.currentSong.duration));
-            
-            // Set seeking flag
-            this.isSeeking = true;
-            
-            // Update startTime to reflect the new position
-            // If paused, account for the pause time
-            if (this.isPaused && this.currentSong.pausedAt) {
-                // Calculate how long we've been paused
-                const pauseDuration = Date.now() - this.currentSong.pausedAt;
-                // Set startTime so that elapsed time equals seekTime
-                this.currentSong.startTime = Date.now() - seekTime - pauseDuration;
-            } else {
-                // Set startTime so that elapsed time equals seekTime
-                this.currentSong.startTime = Date.now() - seekTime;
-            }
-            
-            // Clear pausedAt if we were paused (seeking resumes playback)
-            if (this.currentSong.pausedAt) {
-                this.currentSong.pausedAt = null;
-                this.isPaused = false;
-            }
-            
-            this.saveQueue();
-            this.emit('seek_current', seekTime);
-            return true;
-        }
-        return false;
     }
 }
 
