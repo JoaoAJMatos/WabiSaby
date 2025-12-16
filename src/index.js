@@ -1,10 +1,13 @@
 require('dotenv').config();
-const config = require('./config');
 const { logger } = require('./utils/logger');
+const { initializeDatabase } = require('./database');
+const config = require('./config');
 const { startServer } = require('./api/server');
 const { connectToWhatsApp } = require('./core/whatsapp');
 const { initializeErrorHandlers } = require('./error');
 
+logger.info('Initializing database...');
+initializeDatabase();
 config.cleanupTempFiles();
 
 initializeErrorHandlers();
