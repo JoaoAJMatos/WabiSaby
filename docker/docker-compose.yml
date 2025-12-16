@@ -1,0 +1,37 @@
+version: '3.8'
+
+services:
+  wpp-music-bot:
+    build:
+      context: ..
+      dockerfile: ../Dockerfile
+    container_name: wpp-music-bot
+    restart: unless-stopped
+    
+    ports:
+      - "${PORT:-3000}:3000"
+    
+    volumes:
+      # Mount storage directory for persistent data
+      - ../storage:/app/storage
+    
+    environment:
+      - PORT=${PORT:-3000}
+      - HOST=${HOST:-0.0.0.0}
+      - STORAGE_DIR=${STORAGE_DIR:-}
+      - TARGET_GROUP_ID=${TARGET_GROUP_ID:-}
+      - SPOTIFY_CLIENT_ID=${SPOTIFY_CLIENT_ID:-}
+      - SPOTIFY_CLIENT_SECRET=${SPOTIFY_CLIENT_SECRET:-}
+      - YOUTUBE_API_KEY=${YOUTUBE_API_KEY:-}
+      - DEBUG=${DEBUG:-false}
+      - NODE_ENV=production
+    
+    # Health check using the status API endpoint
+    # Uses Bun's native fetch for efficient health checks
+    healthcheck:
+      test: ["CMD", "bun", "-e", "fetch('http://localhost:3000/api/status').then(r => r.ok ? process.exit(0) : process.exit(1)).catch(() => process.exit(1))"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 40s
+

@@ -2,24 +2,35 @@ FROM oven/bun:latest
 
 WORKDIR /app
 
+# Install system dependencies in a single layer
 RUN apt-get update && \
-    apt-get install -y \
+    apt-get install -y --no-install-recommends \
     ffmpeg \
     mpv \
     && rm -rf /var/lib/apt/lists/*
 
+# Copy dependency files first for better layer caching
 COPY package.json bun.lock* ./
 
-RUN bun install --frozen-lockfile
+# Install dependencies using Bun's optimized install
+# --frozen-lockfile ensures reproducible builds
+# --production installs only production dependencies (if any)
+RUN bun install --frozen-lockfile --production
 
+# Copy application code
+# This layer will be rebuilt only when code changes
 COPY . .
 
-RUN mkdir -p storage/auth storage/data storage/media storage/temp storage/thumbnails
+# Storage directories are created automatically by initializeStorage() at runtime
+# No need to create them here since they're mounted as volumes
     
 EXPOSE 3000
 
-ENV NODE_ENV=production
-ENV PORT=3000
-ENV HOST=0.0.0.0
+# Set environment variables
+ENV NODE_ENV=production \
+    PORT=3000 \
+    HOST=0.0.0.0
 
-CMD ["bun", "src/index.js"]
+# Use Bun's native runtime for optimal performance
+# Using 'bun start' leverages the package.json script
+CMD ["bun", "start"]

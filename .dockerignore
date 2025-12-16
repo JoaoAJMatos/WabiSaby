@@ -22,7 +22,7 @@ priority.json
 
 # Docker files
 Dockerfile
-docker-compose.yml
+docker/
 .dockerignore
 
 # Documentation

@@ -133,10 +133,10 @@ cd wpp-music-bot
 cp config.example .env
 
 # 3. Start with Docker Compose
-docker-compose up -d
+docker-compose -f docker/docker-compose.yml up -d
 
 # 4. View logs
-docker-compose logs -f
+docker-compose -f docker/docker-compose.yml logs -f
 ```
 
 ---
@@ -267,13 +267,19 @@ All tracks are added with VIP priority. Progress updates sent every 10 tracks.
 ### Quick Start
 
 ```bash
-docker-compose up -d
-docker-compose logs -f
+docker-compose -f docker/docker-compose.yml up -d
+docker-compose -f docker/docker-compose.yml logs -f
+```
+
+### Development Mode (with hot reload)
+
+```bash
+docker-compose -f docker/docker-compose.yml -f docker/docker-compose.dev.yml up
 ```
 
 ### Volume Mounts
 
-The `docker-compose.yml` mounts:
+The `docker/docker-compose.yml` mounts:
 
 - `./storage:/app/storage` - Persistent data (auth, database, queue, stats, etc.)
   - Database file: `storage/data/wabisaby.db`
@@ -288,7 +294,7 @@ You can use a custom storage directory by setting `STORAGE_DIR` in your `.env` f
 STORAGE_DIR=/var/lib/wabisaby
 ```
 
-Then update `docker-compose.yml` to mount your custom path:
+Then update `docker/docker-compose.yml` to mount your custom path:
 
 ```yaml
 volumes:

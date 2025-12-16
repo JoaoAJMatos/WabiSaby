@@ -1,0 +1,24 @@
+version: '3.8'
+
+# Development override for docker-compose.yml
+# Use with: docker-compose -f docker/docker-compose.yml -f docker/docker-compose.dev.yml up
+
+services:
+  wpp-music-bot:
+    build:
+      context: ..
+      dockerfile: ../Dockerfile
+    volumes:
+      # Mount source code for hot reload (if using Bun's --watch)
+      - ../src:/app/src:ro
+      - ../public:/app/public:ro
+      # Keep storage mounted
+      - ../storage:/app/storage
+    environment:
+      # Enable debug mode for development
+      - DEBUG=true
+      - NODE_ENV=development
+    # Override command to use Bun's watch mode for auto-reload
+    # Note: Bun's watch mode requires the full source to be mounted
+    command: ["bun", "--watch", "src/app/index.js"]
+
