@@ -1,5 +1,5 @@
 const express = require('express');
-const { getLyrics } = require('../../services/lyrics.service');
+const lyricsService = require('../../services/lyrics.service');
 const { logger } = require('../../utils/logger.util');
 
 const router = express.Router();
@@ -25,7 +25,7 @@ router.get('/lyrics', async (req, res) => {
         // Parse duration to number (it's in seconds)
         const durationSec = duration ? parseFloat(duration) : null;
         
-        const lyrics = await getLyrics(title, artist, durationSec);
+        const lyrics = await lyricsService.getLyrics(title, artist, durationSec);
         
         if (!lyrics) {
             return res.status(404).json({ error: 'Lyrics not found' });

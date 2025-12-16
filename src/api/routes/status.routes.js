@@ -2,9 +2,11 @@ const express = require('express');
 const path = require('path');
 const fs = require('fs');
 const queueManager = require('../../core/queue');
-const { getAudioDuration } = require('../../services/metadata.service');
+const playbackController = require('../../core/playback.controller');
+const whatsappAdapter = require('../../core/whatsapp');
+const metadataService = require('../../services/metadata.service');
 const statsService = require('../../services/stats.service');
-const { getThumbnailUrl } = require('../../utils/helpers.util');
+const helpersUtil = require('../../utils/helpers.util');
 
 const router = express.Router();
 
@@ -13,16 +15,13 @@ const router = express.Router();
  * Handles combined status endpoint for auth, queue, and stats
  */
 
-// In-memory storage for auth status
+// In-memory storage for auth status (QR code)
 let latestQR = null;
-let isConnected = false;
-const botStartTime = Date.now();
 
 /**
- * Update authentication status (called from WhatsApp module)
+ * Update authentication status (called from WhatsApp module for QR code)
  */
 function updateAuthStatus(status, qr) {
-    isConnected = status === 'open';
     latestQR = qr || null;
 }
 
@@ -31,8 +30,8 @@ function updateAuthStatus(status, qr) {
  * GET /api/status
  */
 router.get('/status', async (req, res) => {
-    const current = queueManager.getCurrent();
-    const isPaused = queueManager.isPaused;
+    const current = playbackController.getCurrent();
+    const isPaused = playbackController.isPaused;
 
     // Add elapsed time for sync
     if (current && current.startTime) {
@@ -49,12 +48,12 @@ router.get('/status', async (req, res) => {
         
         // Get duration if not already cached
         if (!current.duration && fs.existsSync(current.content)) {
-            current.duration = await getAudioDuration(current.content);
+            current.duration = await metadataService.getAudioDuration(current.content);
         }
         
         // Add thumbnail URL if available
         if (current.thumbnail && fs.existsSync(current.thumbnail)) {
-            current.thumbnailUrl = getThumbnailUrl(current.thumbnail);
+            current.thumbnailUrl = helpersUtil.getThumbnailUrl(current.thumbnail);
         }
         
         // Update stats with duration and thumbnail if we have them
@@ -75,7 +74,7 @@ router.get('/status', async (req, res) => {
     const queue = queueManager.getQueue();
     const addThumbnailUrl = (item) => {
         if (item.thumbnail && fs.existsSync(item.thumbnail)) {
-            const thumbnailUrl = getThumbnailUrl(item.thumbnail);
+            const thumbnailUrl = helpersUtil.getThumbnailUrl(item.thumbnail);
             if (thumbnailUrl) {
                 return { ...item, thumbnailUrl };
             }
@@ -87,6 +86,7 @@ router.get('/status', async (req, res) => {
 
     // Get stats from statsService for consistency
     const detailedStats = statsService.getStats();
+    const isConnected = whatsappAdapter.getConnectionStatus();
     
     res.json({
         auth: {

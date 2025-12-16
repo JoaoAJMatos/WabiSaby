@@ -1,10 +1,10 @@
 const express = require('express');
 const queueManager = require('../../core/queue');
-const { getTrackInfo } = require('../../services/metadata.service');
-const { searchYouTube } = require('../../services/search.service');
-const { isSpotifyUrl, isYouTubeUrl } = require('../../utils/url.util');
+const playbackController = require('../../core/playback.controller');
+const metadataService = require('../../services/metadata.service');
+const searchService = require('../../services/search.service');
+const urlUtil = require('../../utils/url.util');
 const { logger } = require('../../utils/logger.util');
-const { prefetchAll } = require('../../core/player');
 
 const router = express.Router();
 
@@ -19,7 +19,7 @@ const router = express.Router();
  */
 router.get('/queue', async (req, res) => {
     const queue = queueManager.getQueue();
-    const currentSong = queueManager.getCurrent();
+    const currentSong = playbackController.getCurrent();
     
     res.json({ 
         queue: queue,
@@ -45,15 +45,15 @@ router.post('/queue/add', async (req, res) => {
 
     try {
         // Check if input is a URL
-        if (isSpotifyUrl(input) || isYouTubeUrl(input)) {
+        if (urlUtil.isSpotifyUrl(input) || urlUtil.isYouTubeUrl(input)) {
             // Resolve info from URL
-            const info = await getTrackInfo(input);
+            const info = await metadataService.getTrackInfo(input);
             title = info.title;
             artist = info.artist;
         } else {
             // Treat as search query
             logger.info(`[API] Searching for: ${input}`);
-            const searchResult = await searchYouTube(input);
+            const searchResult = await searchService.searchYouTube(input);
             url = searchResult.url;
             title = searchResult.title;
             artist = searchResult.artist;
@@ -86,8 +86,11 @@ router.post('/queue/add', async (req, res) => {
  * POST /api/queue/skip
  */
 router.post('/queue/skip', (req, res) => {
-    queueManager.skip();
-    res.json({ success: true, message: 'Skipped current song' });
+    if (playbackController.skip()) {
+        res.json({ success: true, message: 'Skipped current song' });
+    } else {
+        res.status(400).json({ error: 'Cannot skip (nothing playing)' });
+    }
 });
 
 /**
@@ -95,7 +98,7 @@ router.post('/queue/skip', (req, res) => {
  * POST /api/queue/pause
  */
 router.post('/queue/pause', (req, res) => {
-    if (queueManager.pause()) {
+    if (playbackController.pause()) {
         res.json({ success: true, message: 'Paused current song' });
     } else {
         res.status(400).json({ error: 'Cannot pause (not playing or already paused)' });
@@ -107,7 +110,7 @@ router.post('/queue/pause', (req, res) => {
  * POST /api/queue/resume
  */
 router.post('/queue/resume', (req, res) => {
-    if (queueManager.resume()) {
+    if (playbackController.resume()) {
         res.json({ success: true, message: 'Resumed current song' });
     } else {
         res.status(400).json({ error: 'Cannot resume (not paused or not playing)' });
@@ -126,7 +129,7 @@ router.post('/queue/seek', (req, res) => {
         return res.status(400).json({ error: 'Valid time (in milliseconds) is required' });
     }
     
-    if (queueManager.seek(time)) {
+    if (playbackController.seek(time)) {
         res.json({ success: true, message: `Seeked to ${time}ms` });
     } else {
         res.status(400).json({ error: 'Cannot seek (not playing or no current song)' });
@@ -174,7 +177,7 @@ router.post('/queue/reorder', (req, res) => {
 router.post('/queue/prefetch', async (req, res) => {
     try {
         // Trigger prefetch in background (don't wait for it to complete)
-        prefetchAll().catch(err => logger.error('Prefetch error:', err));
+        playbackController.prefetchAll().catch(err => logger.error('Prefetch error:', err));
         res.json({ success: true, message: 'Prefetch started' });
     } catch (error) {
         logger.error('[API] Error starting prefetch:', error);
@@ -189,7 +192,8 @@ router.post('/queue/prefetch', async (req, res) => {
  * Clears queue and resets session state
  */
 router.post('/queue/newsession', (req, res) => {
-    if (queueManager.resetSession()) {
+    queueManager.clear();
+    if (playbackController.resetSession()) {
         res.json({ success: true, message: 'New session started' });
     } else {
         res.status(500).json({ error: 'Failed to start new session' });

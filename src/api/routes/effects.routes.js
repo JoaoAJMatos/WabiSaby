@@ -1,8 +1,9 @@
 const express = require('express');
 const effectsService = require('../../services/effects.service');
-const queueManager = require('../../core/queue');
+const playbackController = require('../../core/playback.controller');
 const { logger } = require('../../utils/logger.util');
 const player = require('../../core/player');
+const { EFFECTS_CHANGED } = require('../../core/events');
 
 const router = express.Router();
 
@@ -67,6 +68,9 @@ router.put('/effects', (req, res) => {
 router.post('/effects/preset/:presetId', (req, res) => {
     try {
         const { presetId } = req.params;
+        if (!presetId) {
+            return res.status(400).json({ error: 'Preset ID is required' });
+        }
         const updated = effectsService.applyPreset(presetId);
         
         // Trigger playback restart if currently playing
@@ -77,7 +81,7 @@ router.post('/effects/preset/:presetId', (req, res) => {
             filterChain: effectsService.buildFilterChain()
         });
     } catch (err) {
-        logger.error('Failed to apply preset:', err);
+        logger.error(`Failed to apply preset "${req.params.presetId}":`, err);
         res.status(400).json({ error: err.message });
     }
 });
@@ -125,10 +129,10 @@ router.get('/effects/presets', (req, res) => {
  * ffplay: Restarts playback at current position with new filters
  */
 function triggerEffectsUpdate() {
-    const current = queueManager.getCurrent();
+    const current = playbackController.getCurrent();
     if (current) {
         const backend = player.getBackend();
-        queueManager.emit('effects_changed');
+        playbackController.emit(EFFECTS_CHANGED);
         if (backend === 'mpv') {
             logger.info('Effects changed - applying seamlessly via MPV IPC');
         } else {
