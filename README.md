@@ -1,55 +1,59 @@
+<div align="center">
+
+![WabiSaby Banner](./docs/assets/banner.svg)
+
 # WabiSaby
 
-![WabiSaby Banner](./public/assets/banner.svg)
+**A collaborative music bot for WhatsApp groups with a beautiful web dashboard**
 
-A collaborative music bot that plays audio from YouTube/Spotify links via WhatsApp or a web dashboard. Features real-time audio visualization, synchronized playback, and a cyberpunk-themed UI.
+[![Bun](https://img.shields.io/badge/Runtime-Bun-black?style=for-the-badge&logo=bun)](https://bun.sh)
+[![Docker](https://img.shields.io/badge/Docker-Supported-2496ED?style=for-the-badge&logo=docker&logoColor=white)](https://www.docker.com/)
+[![Version](https://img.shields.io/badge/version-1.0.0-blue?style=for-the-badge)](./package.json)
 
-## Table of Contents
+[Quick Start](#-quick-start) • [Features](#-features) • [Documentation](./docs) • [Configuration](./docs/CONFIGURATION.md)
 
-- [Overview](#overview)
-- [Features](#features)
-- [Screenshots](#screenshots)
-- [Quick Start](#quick-start)
-- [Installation](#installation)
-- [Usage](#usage)
-- [Configuration](#configuration)
-- [API Documentation](#api-documentation)
-- [Advanced Features](#advanced-features)
-- [Docker Deployment](#docker-deployment)
-- [Troubleshooting](#troubleshooting)
-- [Development](#development)
+</div>
 
-## Overview
+---
 
-WabiSaby is a music bot that integrates with WhatsApp and provides a web dashboard for collaborative music playback. Users can request songs via WhatsApp commands or the web interface, and the bot plays audio on the server using FFmpeg. The web dashboard syncs with server playback and provides real-time visualization.
+## 🎵 What is WabiSaby?
 
-## Features
+WabiSaby is a music bot that brings collaborative music playback to your WhatsApp groups. Share YouTube or Spotify links, and the bot plays them on your server with a beautiful web dashboard for real-time control and visualization.
 
-### WhatsApp Integration
+Perfect for:
 
-- Send YouTube/Spotify links to add songs to queue
-- Command-based control (`!play`, `!skip`, `!queue`, etc.)
+- 🎉 **Party hosts** who want to share music with guests
+- 👥 **Friend groups** who want to collaborate on playlists
+- 🏢 **Communities** looking for a shared music experience
+- 🎮 **Gaming sessions** that need background music
+
+> Hook the PC to a speaker and let your friends do the rest.
+
+## ✨ Features
+
+### 🎤 WhatsApp Integration
+
+- Send YouTube/Spotify links directly or use commands
 - Smart notifications when your song is about to play
 - VIP system with priority queue and playlist support
+- Support for multiple WhatsApp groups
 
-### Web Dashboard
+### 🎨 Web Dashboard
 
-- Real-time audio visualizer
-- Synchronized playback control (play/pause/skip/seek)
-- Queue management with drag-and-drop reordering
-- Current song display with progress tracking
-- VIP management interface
-- Statistics dashboard (uptime, songs played, top requesters, history)
-- System logs viewer
+- **Real-time audio visualizer** - See the music come alive
+- **Synchronized playback control** - Play, pause, skip, and seek
+- **Queue management** - Drag and drop to reorder songs
+- **Statistics dashboard** - Track uptime, top requesters, and playback history
+- **VIP management** - Control priority users from the web interface
+- **System logs** - Monitor everything in real-time
 
-### Audio Effects
+### 🎛️ Audio Effects
 
 - Real-time audio effects (EQ, reverb, echo, speed control)
 - Preset effects (Normal, Bass Boost, Treble Boost, etc.)
-- Seamless effect updates (MPV backend) or restart-based (ffplay)
 - Customizable filter chains
 
-### Statistics
+### 📊 Statistics & Analytics
 
 - Uptime tracking
 - Songs played counter
@@ -57,50 +61,55 @@ WabiSaby is a music bot that integrates with WhatsApp and provides a web dashboa
 - Playback history
 - Top artists analytics
 
-### VIP Management
+### 🎯 VIP Features
 
 - Priority queue (VIP songs added to front)
 - Skip any song (not just own requests)
 - Playlist support (Spotify/YouTube playlists)
 - Profile picture display
 
-### Groups Management
-
-- Monitor multiple WhatsApp groups
-- Group metadata and participant management
-- Confirmation system for group additions
-
-### Lyrics
+### 🎼 Lyrics
 
 - Automatic lyrics retrieval for current song
 - Search by title, artist, and duration
 
-## Screenshots
+---
 
-> **Note:** Screenshots coming soon. The dashboard features a cyberpunk-themed UI with real-time audio visualization, queue management, and comprehensive controls.
+## 🚀 Quick Start
 
-- **Dashboard**: Main interface with now-playing card, queue, and controls
-- **Audio Effects**: Real-time effects panel with EQ, reverb, echo, and presets
-- **Statistics**: Analytics dashboard with uptime, top requesters, and playback history
-- **VIP Management**: Interface for managing priority users
-- **System Logs**: Real-time log viewer with filtering
+### Prerequisites
 
-## Quick Start
+- **[Bun](https://bun.sh)** (latest version recommended)
+- **[FFmpeg](https://ffmpeg.org/)** (includes `ffplay` for server-side playback)
 
-### Manual Installation
+<details>
+<summary><b>Install FFmpeg</b></summary>
+
+- **macOS**: `brew install ffmpeg`
+- **Linux**: `sudo apt install ffmpeg`
+- **Windows**: Download from [ffmpeg.org](https://ffmpeg.org/download.html) and add `bin` folder to PATH
+
+</details>
+
+### Installation
 
 ```bash
-# 1. Clone and install
+# 1. Clone the repository
 git clone <repository-url>
 cd wpp-music-bot
+
+# 2. Install dependencies
 bun install
 
-# 2. Configure API keys (optional)
-# Create .env file with your API keys (see Configuration section)
+# 3. (Optional) Configure API keys
+cp config.example .env
+# Edit .env and add your API keys - see docs/CONFIGURATION.md for details
 
-# 3. Start
+# 4. Start the bot
 bun start
 ```
+
+Open `http://localhost:3000` in your browser and scan the QR code to connect WhatsApp!
 
 ### Docker Installation
 
@@ -109,75 +118,25 @@ bun start
 git clone <repository-url>
 cd wpp-music-bot
 
-# 2. Configure API keys (optional)
-# Create .env file with your API keys (see Configuration section)
+# 2. (Optional) Configure API keys
+cp config.example .env
 
 # 3. Start with Docker Compose
 docker-compose up -d
+
+# 4. View logs
+docker-compose logs -f
 ```
 
-Open `http://localhost:3000` and scan the QR code to connect WhatsApp.
+---
 
-## Installation
-
-### Prerequisites
-
-- **Bun** (latest version recommended)
-- **FFmpeg** (includes `ffplay` for server-side playback)
-
-#### Install FFmpeg
-
-- **macOS**: `brew install ffmpeg`
-- **Linux**: `sudo apt install ffmpeg`
-- **Windows**: Download from [ffmpeg.org](https://ffmpeg.org/download.html) and add `bin` folder to PATH
-
-### Manual Installation Steps
-
-1. Clone the repository:
-
-   ```bash
-   git clone <repository-url>
-   cd wpp-music-bot
-   ```
-
-2. Install dependencies:
-
-   ```bash
-   bun install
-   ```
-
-3. Create `.env` file for API keys (optional):
-
-   ```bash
-   # Create .env file and add your API keys
-   # See Configuration section for details
-   ```
-
-4. Start the bot:
-
-   ```bash
-   bun start
-   ```
-
-### Docker Installation Steps
-
-See [Docker Deployment](#docker-deployment) section for detailed instructions.
-
-## Usage
-
-### Starting the Bot
-
-```bash
-bun start
-```
-
-The web dashboard will be available at `http://localhost:3000` (default). Server settings can be changed in the web UI.
+## 📖 Usage
 
 ### Connecting WhatsApp
 
-1. Start the bot
+1. Start the bot (`bun start`)
 2. Open `http://localhost:3000` in your browser
-3. Scan the QR code displayed in the "System Authentication" section using WhatsApp (Linked Devices)
+3. Scan the QR code using WhatsApp (Linked Devices)
 
 ### Playing Music
 
@@ -206,148 +165,79 @@ The web dashboard will be available at `http://localhost:3000` (default). Server
 
 ### Notification System
 
-Users are automatically notified when their requested song reaches a configurable position in the queue (default: next in queue).
+Get notified when your requested song is about to play! Configure the notification position in the Settings panel (default: next in queue).
 
 - `!notifications` - Check status
 - `!notifications on` - Enable
 - `!notifications off` - Disable
 - `!notifications clear` - Clear history
 
-Configure notification position in the Settings panel of the web UI (default: 1 = next in queue).
+---
 
-## Configuration
+## ⚙️ Configuration
 
 Configuration is split into two parts:
 
 1. **Secrets** (`.env` file) - API keys and sensitive settings
 2. **Settings** (Web UI) - All other configuration managed through the dashboard
 
-### Secrets (.env file)
-
-The `.env` file is for **secrets and server configuration** - API keys, sensitive settings, and server host/port. Create a `.env` file in the project root with:
+### Quick Setup
 
 ```bash
-# Server Configuration (optional, can also be set in UI)
-# Port for the web dashboard (default: 3000)
-PORT=3000
+# Copy the example file
+cp config.example .env
 
-# Host for the web server (default: localhost)
-HOST=localhost
-
-# WhatsApp Configuration (optional)
-# Restrict bot to a specific WhatsApp group ID
-TARGET_GROUP_ID=
-
-# Spotify API Configuration (for Playlist Support)
-# Get credentials at: https://developer.spotify.com/dashboard
-SPOTIFY_CLIENT_ID=
-SPOTIFY_CLIENT_SECRET=
-
-# YouTube Data API Configuration (optional, for improved search)
-# Get API key at: https://console.cloud.google.com/apis/credentials
-YOUTUBE_API_KEY=
+# Then edit .env and add your API keys
 ```
 
-**Note:**
+**Available Environment Variables:**
 
-- `PORT` and `HOST` can be set via `.env` (takes precedence) or through the web UI
-- All other settings (audio quality, playback settings, etc.) are managed through the web UI and automatically saved to `storage/data/settings.json`
+- `PORT` - Port for web dashboard (default: 3000)
+- `HOST` - Host address (default: localhost)
+- `TARGET_GROUP_ID` - Restrict bot to specific WhatsApp group (optional)
+- `SPOTIFY_CLIENT_ID` / `SPOTIFY_CLIENT_SECRET` - Required for Spotify playlists
+- `YOUTUBE_API_KEY` - Optional, improves search accuracy
 
-### Settings (Web UI)
+**📚 For detailed documentation** on each variable, including why they're needed, default values, fallback behavior, and setup instructions, see the [Configuration Guide](./docs/CONFIGURATION.md).
 
-All non-secret settings are managed through the **Settings** panel in the web dashboard:
+> **Note:** Most settings (audio quality, playback settings, etc.) are managed through the web UI and automatically saved.
 
-#### Server Settings
+---
 
-- Port (default: 3000)
-- Host (default: localhost)
-- *Note: Server settings require a restart to take effect*
-- *Note: These can also be set via `PORT` and `HOST` environment variables (takes precedence over UI settings)*
+## 🎯 Advanced Features
 
-#### Download Settings
+### Spotify Playlist Support
 
-- Audio format (mp3, m4a, opus, flac, wav)
-- Audio quality/bitrate (64k, 128k, 192k, 256k, 320k)
-- Download thumbnails
-- Thumbnail format (jpg, png, webp)
-- Player client (android, web, ios)
-- Maximum filename length
+Spotify API credentials are required for playlist/album support. Individual Spotify tracks work without credentials.
 
-#### Playback Settings
+**Quick Setup:**
 
-- Cleanup after play
-- Cleanup on startup
-- Song transition delay
-- Skip confirmation
-- Show requester name
-
-#### Performance Settings
-
-- Prefetch next song
-- Prefetch count
-
-#### Notification Settings
-
-- Enable notifications
-- Notify at position
-
-#### Logging Settings
-
-- Log level
-- Pretty print logs
-
-Settings are saved automatically when changed and persist across restarts. Default values are used on first startup.
-
-### Storage Organization
-
-All data is organized under `storage/`:
-
-- `storage/temp/` - Temporary downloads
-- `storage/data/` - Persistent data
-  - `queue.json` - Current queue
-  - `priority.json` - VIP users
-  - `stats.json` - Statistics
-  - `groups.json` - Monitored groups
-  - `settings.json` - **UI-managed settings** (auto-generated)
-- `storage/auth/` - WhatsApp authentication session
-- `storage/media/` - Downloaded media (if cleanup disabled)
-- `storage/thumbnails/` - Thumbnail images
-
-## API Documentation
-
-See [API Documentation](docs/API.md) for complete API reference.
-
-## Advanced Features
-
-### Spotify API Setup (Playlists)
-
-1. Go to [Spotify Developer Dashboard](https://developer.spotify.com/dashboard)
-2. Create app (name: `WabiSaby`, redirect URI: `http://localhost`)
-3. Get Client ID and Client Secret
-4. Add to `.env`:
+1. Get credentials from [Spotify Developer Dashboard](https://developer.spotify.com/dashboard)
+2. Add to `.env`:
 
    ```bash
    SPOTIFY_CLIENT_ID=your_client_id
    SPOTIFY_CLIENT_SECRET=your_client_secret
    ```
 
-5. Restart bot (API keys are loaded from `.env` on startup)
+3. Restart bot
 
-**Note:** YouTube playlists work without API credentials.
+**For detailed setup instructions**, see [Configuration Guide](./docs/CONFIGURATION.md#spotify-api-configuration).
 
-### YouTube API Setup (Search)
+### YouTube API (Improved Search)
 
-1. Go to [Google Cloud Console](https://console.cloud.google.com/apis/credentials)
-2. Create project or select existing
-3. Enable "YouTube Data API v3"
-4. Create API Key
-5. Add to `.env`:
+Optional but improves search accuracy. Falls back to `play-dl` if not configured.
+
+**Quick Setup:**
+
+1. Get API key from [Google Cloud Console](https://console.cloud.google.com/apis/credentials)
+2. Add to `.env`:
 
    ```bash
    YOUTUBE_API_KEY=your_api_key
    ```
 
-**Note:** Free quota: 10,000 units/day (~100 searches/day). Falls back to play-dl if not configured.
+**For detailed setup instructions**, see [Configuration Guide](./docs/CONFIGURATION.md#youtube-data-api-configuration).
 
 ### VIP Playlist Support
 
@@ -358,27 +248,14 @@ VIPs can add entire playlists using `!playlist <url>`:
 
 All tracks are added with VIP priority. Progress updates sent every 10 tracks.
 
-## Docker Deployment
+---
 
-### Docker Prerequisites
+## 🐳 Docker Deployment
 
-- Docker and Docker Compose installed
-- FFmpeg available in container (included in Dockerfile)
-
-### Docker Quick Start
+### Quick Start
 
 ```bash
-# 1. Clone repository
-git clone <repository-url>
-cd wpp-music-bot
-
-# 2. Configure API keys (optional)
-# Create .env file with your API keys (see Configuration section)
-
-# 3. Start
 docker-compose up -d
-
-# 4. View logs
 docker-compose logs -f
 ```
 
@@ -388,89 +265,65 @@ The `docker-compose.yml` mounts:
 
 - `./storage:/app/storage` - Persistent data (auth, queue, stats, etc.)
 
-### Environment Variables
+### Audio Playback in Docker
 
-Only secrets (API keys) need to be set in `.env`. All other settings are managed through the web UI and stored in `storage/data/settings.json`.
+Audio playback in Docker requires additional configuration. For most use cases, running directly on the host is recommended. See the [Docker Deployment Guide](./docs) for detailed instructions.
 
-### Audio Playback
+---
 
-For audio playback on the host system:
+## 📚 Documentation
 
-#### Option 1: Network Mode (Linux)
+- **[Configuration Guide](./docs/CONFIGURATION.md)** - Complete guide to all environment variables
+- **[API Documentation](./docs/API.md)** - Full API reference
+- **[Architecture Decisions](./docs/adr/)** - Technical design decisions
 
-```yaml
-network_mode: host
-```
+---
 
-#### Option 2: PulseAudio Socket (Linux)
-
-```yaml
-volumes:
-  - /run/user/1000/pulse:/run/user/1000/pulse:ro
-  - ${XDG_RUNTIME_DIR}/pulse:${XDG_RUNTIME_DIR}/pulse:ro
-```
-
-#### Option 3: ALSA Devices (Linux)
-
-```yaml
-devices:
-  - /dev/snd:/dev/snd
-```
-
-**Note:** Audio playback in Docker requires additional configuration. For most use cases, running directly on the host is recommended.
-
-### Docker Troubleshooting
-
-- **Container won't start**: Check logs with `docker-compose logs`
-- **Audio not playing**: Configure audio playback (see above) or use host network mode
-- **Storage not persisting**: Ensure `./storage` directory exists and has correct permissions
-- **Port conflicts**: Change `PORT` in `.env` or docker-compose.yml
-
-## Troubleshooting
+## 🔧 Troubleshooting
 
 ### Common Issues
 
-#### "ffplay not found"
+<details>
+<summary><b>ffplay not found</b></summary>
 
 - Ensure FFmpeg is installed: `ffmpeg -version`
 - Verify `ffplay` is available: `which ffplay` (Linux/macOS)
 
-#### Files not cleaning up
+</details>
 
-- Check cleanup settings in the Settings panel of the web UI
-- Verify `storage/temp/` directory permissions
-
-#### Slow downloads
-
-- Adjust download settings in the Settings panel (disable thumbnails or reduce audio quality)
-- Check network connection and YouTube API rate limits
-
-#### Spotify playlists not working
+<details>
+<summary><b>Spotify playlists not working</b></summary>
 
 - Verify `SPOTIFY_CLIENT_ID` and `SPOTIFY_CLIENT_SECRET` are set
 - Check credentials in Spotify Developer Dashboard
 - Ensure playlist is public or shared with link
 - Check logs for authentication errors
 
-#### YouTube playlists not working
+</details>
 
-- Ensure playlist is public
-- Update `yt-dlp`: `pip install -U yt-dlp`
-
-#### WhatsApp connection issues
+<details>
+<summary><b>WhatsApp connection issues</b></summary>
 
 - Delete `storage/auth/` and restart to regenerate QR code
 - Check network connectivity
 - Verify WhatsApp account is not restricted
 
-#### Web dashboard not loading
+</details>
 
-- Check server port and host settings in the Settings panel (or check `storage/data/settings.json`)
+<details>
+<summary><b>Web dashboard not loading</b></summary>
+
+- Check server port and host settings in the Settings panel
 - Verify no firewall blocking the port
-- Check logs for server errors
 - Default is `http://localhost:3000`
 
-## Development
+</details>
+
+For more troubleshooting tips, see the [Configuration Guide](./docs/CONFIGURATION.md#troubleshooting).
+
+---
+
+## 🛠️ Development
 
 ### Project Structure
 
@@ -490,12 +343,12 @@ wpp-music-bot/
 
 ### Key Technologies
 
-- **Runtime**: Bun
-- **Web Framework**: Express
-- **WhatsApp**: Baileys
+- **Runtime**: [Bun](https://bun.sh)
+- **Web Framework**: [Express](https://expressjs.com/)
+- **WhatsApp**: [Baileys](https://github.com/WhiskeySockets/Baileys)
 - **Audio**: FFmpeg, MPV
 - **Download**: play-dl, yt-dlp
-- **Logging**: Pino
+- **Logging**: [Pino](https://getpino.io/)
 
 ### Setup for Development
 
@@ -510,10 +363,11 @@ echo "DEBUG=true" >> .env
 bun start
 ```
 
-### Development Configuration
+---
 
-- **Secrets**: Add API keys to `.env` (see Configuration section)
-- **Settings**: Manage all other settings through the web UI
-- **Debug**: Set `DEBUG=true` in `.env` to view full configuration on startup
+## 🙏 Acknowledgments
 
-Settings are automatically persisted to `storage/data/settings.json` and loaded on startup.
+- Built with [Bun](https://bun.sh) for blazing-fast performance
+- WhatsApp integration powered by [Baileys](https://github.com/WhiskeySockets/Baileys)
+- Audio processing with [FFmpeg](https://ffmpeg.org/)
+
