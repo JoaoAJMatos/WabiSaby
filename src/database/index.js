@@ -1,4 +1,4 @@
-const Database = require('better-sqlite3');
+const { Database } = require('bun:sqlite');
 const fs = require('fs');
 const path = require('path');
 const config = require('../config');
@@ -24,7 +24,7 @@ function initializeDatabase() {
 
     db = new Database(dbPath);
     
-    db.pragma('foreign_keys = ON');
+    db.exec('PRAGMA foreign_keys = ON');
     
     const schemaPath = path.join(__dirname, 'schema.sql');
     if (fs.existsSync(schemaPath)) {

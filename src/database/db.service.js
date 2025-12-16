@@ -18,6 +18,11 @@ const { logger } = require('../utils/logger.util');
 function getOrCreateSong(songData) {
     const db = getDatabase();
     
+    // Validate content is provided
+    if (!songData || !songData.content) {
+        throw new Error('Song content is required');
+    }
+    
     // Try to find existing song by content
     let song = db.prepare('SELECT id FROM songs WHERE content = ?').get(songData.content);
     
@@ -156,21 +161,32 @@ function addQueueItem(itemData) {
     const db = getDatabase();
     
     // Get or create song
-    const songId = getOrCreateSong({
-        content: itemData.content,
-        title: itemData.title,
-        artist: itemData.artist,
-        channel: itemData.channel,
-        duration: itemData.duration,
-        thumbnail_path: itemData.thumbnail_path,
-        thumbnail_url: itemData.thumbnail_url
-    });
+    // If song_id is provided directly, use it; otherwise create/get song from content
+    let songId = itemData.song_id;
+    if (!songId) {
+        if (!itemData.content) {
+            throw new Error('Either song_id or content must be provided');
+        }
+        songId = getOrCreateSong({
+            content: itemData.content,
+            title: itemData.title,
+            artist: itemData.artist,
+            channel: itemData.channel,
+            duration: itemData.duration,
+            thumbnail_path: itemData.thumbnail_path,
+            thumbnail_url: itemData.thumbnail_url
+        });
+    }
     
     // Get or create requester
-    const requesterId = getOrCreateRequester(
-        itemData.requester || itemData.requester_name || 'Unknown',
-        itemData.sender || itemData.sender_id
-    );
+    // If requester_id is provided directly, use it; otherwise create/get requester
+    let requesterId = itemData.requester_id;
+    if (!requesterId) {
+        requesterId = getOrCreateRequester(
+            itemData.requester || itemData.requester_name || 'Unknown',
+            itemData.sender || itemData.sender_id
+        );
+    }
     
     // Get max position
     const maxPos = db.prepare('SELECT COALESCE(MAX(position), -1) + 1 as next_pos FROM queue_items').get();
@@ -589,7 +605,7 @@ function updateGroupName(id, name) {
  */
 function getPriorityUsers() {
     const db = getDatabase();
-    return db.prepare('SELECT whatsapp_id as id, name FROM priority_users ORDER BY added_at DESC').all();
+    return db.prepare('SELECT whatsapp_id, name FROM priority_users ORDER BY added_at DESC').all();
 }
 
 /**
