@@ -1,4 +1,4 @@
-const { sendMessageWithMention } = require('../../utils/helpers');
+const { sendMessageWithMention } = require('../../utils/helpers.util');
 
 /**
  * !help command - Show available commands

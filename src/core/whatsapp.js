@@ -1,8 +1,8 @@
 const { default: makeWASocket, useMultiFileAuthState, DisconnectReason } = require('@whiskeysockets/baileys');
 const { pino } = require('pino');
 const config = require('../config');
-const { logger } = require('../utils/logger');
-const { sendMessageWithMention } = require('../utils/helpers');
+const { logger } = require('../utils/logger.util');
+const { sendMessageWithMention } = require('../utils/helpers.util');
 const { handleCommand } = require('../commands/handler');
 const queueManager = require('./queue');
 const { processQueueItem, prefetchNext } = require('./player');

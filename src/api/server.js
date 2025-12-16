@@ -1,7 +1,7 @@
 const express = require('express');
 const path = require('path');
 const config = require('../config');
-const { logger } = require('../utils/logger');
+const { logger } = require('../utils/logger.util');
 const { router: statusRouter, updateAuthStatus } = require('./routes/status.routes');
 const { router: queueRouter } = require('./routes/queue.routes');
 const { router: priorityRouter, setWhatsAppSocket: setPrioritySocket } = require('./routes/priority.routes');

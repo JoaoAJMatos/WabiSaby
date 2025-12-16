@@ -1,6 +1,6 @@
 const express = require('express');
 const { getLyrics } = require('../../services/lyrics.service');
-const { logger } = require('../../utils/logger');
+const { logger } = require('../../utils/logger.util');
 
 const router = express.Router();
 

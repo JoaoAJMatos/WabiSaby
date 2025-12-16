@@ -2,7 +2,7 @@ const fs = require('fs');
 const path = require('path');
 const { downloadMediaMessage, getContentType } = require('@whiskeysockets/baileys');
 const config = require('../config');
-const { logger } = require('../utils/logger');
+const { logger } = require('../utils/logger.util');
 
 /**
  * Media Service

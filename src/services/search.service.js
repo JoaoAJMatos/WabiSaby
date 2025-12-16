@@ -1,5 +1,5 @@
 const play = require('play-dl');
-const { logger } = require('../utils/logger');
+const { logger } = require('../utils/logger.util');
 const { searchYouTubeAPI, isConfigured: isYouTubeAPIConfigured, hasQuotaAvailable } = require('./youtube-api.service');
 const { CacheManager } = require('../utils/cache.util');
 const { isRateLimitError, createRateLimitError } = require('../utils/rate-limit.util');

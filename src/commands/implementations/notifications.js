@@ -1,5 +1,5 @@
 const notificationService = require('../../services/notification.service');
-const { sendMessageWithMention } = require('../../utils/helpers');
+const { sendMessageWithMention } = require('../../utils/helpers.util');
 
 /**
  * !notifications command - Toggle or check notification status

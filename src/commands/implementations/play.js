@@ -2,8 +2,8 @@ const queueManager = require('../../core/queue');
 const { searchYouTube } = require('../../services/search.service');
 const { isSpotifyUrl, isYouTubeUrl } = require('../../utils/url.util');
 const { getTrackInfo, getSpotifyMetadata } = require('../../services/metadata.service');
-const { logger } = require('../../utils/logger');
-const { sendMessageWithMention } = require('../../utils/helpers');
+const { logger } = require('../../utils/logger.util');
+const { sendMessageWithMention } = require('../../utils/helpers.util');
 
 /**
  * !play command - Add a track to the queue

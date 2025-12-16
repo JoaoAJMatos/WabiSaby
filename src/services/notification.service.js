@@ -1,7 +1,7 @@
-const { logger } = require('../utils/logger');
+const { logger } = require('../utils/logger.util');
 const queueManager = require('../core/queue');
 const config = require('../config');
-const { sendMessageWithMention } = require('../utils/helpers');
+const { sendMessageWithMention } = require('../utils/helpers.util');
 
 /**
  * Notification Service

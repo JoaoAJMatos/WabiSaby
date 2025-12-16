@@ -1,6 +1,6 @@
 const groupsService = require('../../services/groups.service');
-const { sendMessageWithMention } = require('../../utils/helpers');
-const { logger } = require('../../utils/logger');
+const { sendMessageWithMention } = require('../../utils/helpers.util');
+const { logger } = require('../../utils/logger.util');
 
 /**
  * !ping command - Request to add group to monitoring list

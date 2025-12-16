@@ -1,10 +1,10 @@
-const pino = require('pino');
-const config = require('../config');
-
 /**
  * Logger Utility
  * Configures and exports the logger instance with web dashboard integration
  */
+
+const pino = require('pino');
+const config = require('../config');
 
 // Create base pino logger
 const baseLogger = pino({
@@ -88,7 +88,7 @@ const logger = new Proxy(baseLogger, {
                     
                     message = message.trim();
                     
-                    // Send to logs service (without going through console to avoid loops)
+
                     service.addLogDirect(levelMap[prop] || 'info', message, source);
                 }
             };
@@ -99,3 +99,4 @@ const logger = new Proxy(baseLogger, {
 });
 
 module.exports = { logger };
+

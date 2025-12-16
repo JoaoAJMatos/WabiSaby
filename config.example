@@ -1,16 +1,11 @@
 # ======================
-# WppMusicBot Configuration
+# WabiSaby Configuration
 # ======================
 # Copy this file to .env and configure your API keys and secrets
-#
-# NOTE: All other settings (audio quality, playback settings, etc.) are now managed
-# through the web UI and stored in storage/data/settings.json
-# ======================
 
 # ==================
 # Server Configuration
 # ==================
-# These can also be set via environment variables (takes precedence over UI settings)
 
 # Port for the web dashboard (default: 3000)
 PORT=3000

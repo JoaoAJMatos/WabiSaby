@@ -1,4 +1,4 @@
-const { logger } = require('../utils/logger');
+const { logger } = require('../utils/logger.util');
 const { isRateLimitError } = require('../utils/rate-limit.util');
 
 /**

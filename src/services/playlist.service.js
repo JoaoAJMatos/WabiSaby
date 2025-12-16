@@ -1,6 +1,6 @@
 const axios = require('axios');
 const { exec } = require('child_process');
-const { logger } = require('../utils/logger');
+const { logger } = require('../utils/logger.util');
 const { getSpotifyAccessToken, clearToken } = require('./spotify-auth.service');
 const { isSpotifyPlaylist, isYouTubePlaylist, isPlaylistUrl } = require('../utils/url.util');
 

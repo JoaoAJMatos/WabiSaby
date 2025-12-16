@@ -4,7 +4,7 @@ const fs = require('fs');
 const queueManager = require('../../core/queue');
 const { getAudioDuration } = require('../../services/metadata.service');
 const statsService = require('../../services/stats.service');
-const { getThumbnailUrl } = require('../../utils/helpers');
+const { getThumbnailUrl } = require('../../utils/helpers.util');
 
 const router = express.Router();
 

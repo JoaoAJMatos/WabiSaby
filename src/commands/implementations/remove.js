@@ -1,5 +1,5 @@
 const queueManager = require('../../core/queue');
-const { sendMessageWithMention } = require('../../utils/helpers');
+const { sendMessageWithMention } = require('../../utils/helpers.util');
 
 /**
  * !remove command - Remove a song from the queue

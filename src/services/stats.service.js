@@ -1,5 +1,5 @@
-const { logger } = require('../utils/logger');
-const { getThumbnailUrl } = require('../utils/helpers');
+const { logger } = require('../utils/logger.util');
+const { getThumbnailUrl } = require('../utils/helpers.util');
 const dbService = require('../database/db.service');
 
 /**

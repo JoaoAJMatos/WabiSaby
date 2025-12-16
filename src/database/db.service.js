@@ -1,5 +1,5 @@
 const { getDatabase } = require('./index');
-const { logger } = require('../utils/logger');
+const { logger } = require('../utils/logger.util');
 
 /**
  * Database Service Layer

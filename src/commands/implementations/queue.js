@@ -1,5 +1,5 @@
 const queueManager = require('../../core/queue');
-const { sendMessageWithMention } = require('../../utils/helpers');
+const { sendMessageWithMention } = require('../../utils/helpers.util');
 
 /**
  * !queue command - Display the current queue

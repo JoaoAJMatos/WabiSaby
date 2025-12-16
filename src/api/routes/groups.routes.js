@@ -1,7 +1,7 @@
 const express = require('express');
 const groupsService = require('../../services/groups.service');
 const { getPendingConfirmations, removePendingConfirmation } = require('../../commands/implementations/ping');
-const { logger } = require('../../utils/logger');
+const { logger } = require('../../utils/logger.util');
 
 const router = express.Router();
 

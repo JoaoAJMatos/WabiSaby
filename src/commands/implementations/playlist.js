@@ -3,8 +3,8 @@ const { checkPriority } = require('../../services/priority.service');
 const { getPlaylistTracks } = require('../../services/playlist.service');
 const { isPlaylistUrl } = require('../../utils/url.util');
 const { searchYouTube } = require('../../services/search.service');
-const { logger } = require('../../utils/logger');
-const { sendMessageWithMention } = require('../../utils/helpers');
+const { logger } = require('../../utils/logger.util');
+const { sendMessageWithMention } = require('../../utils/helpers.util');
 
 /**
  * !playlist command - Add all tracks from a playlist to the queue (VIP only)

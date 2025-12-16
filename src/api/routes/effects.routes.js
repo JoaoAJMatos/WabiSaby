@@ -1,7 +1,7 @@
 const express = require('express');
 const effectsService = require('../../services/effects.service');
 const queueManager = require('../../core/queue');
-const { logger } = require('../../utils/logger');
+const { logger } = require('../../utils/logger.util');
 const player = require('../../core/player');
 
 const router = express.Router();

@@ -1,6 +1,6 @@
 require('dotenv').config();
 const open = require('open');
-const { logger } = require('../utils/logger');
+const { logger } = require('../utils/logger.util');
 const { initializeDatabase } = require('../database');
 const config = require('../config');
 const { startServer } = require('../api/server');

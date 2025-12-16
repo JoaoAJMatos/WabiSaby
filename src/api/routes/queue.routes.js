@@ -3,7 +3,7 @@ const queueManager = require('../../core/queue');
 const { getTrackInfo } = require('../../services/metadata.service');
 const { searchYouTube } = require('../../services/search.service');
 const { isSpotifyUrl, isYouTubeUrl } = require('../../utils/url.util');
-const { logger } = require('../../utils/logger');
+const { logger } = require('../../utils/logger.util');
 const { prefetchAll } = require('../../core/player');
 
 const router = express.Router();

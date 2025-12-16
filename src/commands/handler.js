@@ -1,5 +1,5 @@
-const { logger } = require('../utils/logger');
-const { sendMessageWithMention } = require('../utils/helpers');
+const { logger } = require('../utils/logger.util');
+const { sendMessageWithMention } = require('../utils/helpers.util');
 const playCommand = require('./implementations/play');
 const skipCommand = require('./implementations/skip');
 const queueCommand = require('./implementations/queue');
