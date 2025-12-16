@@ -49,7 +49,7 @@ class Config {
             port: process.env.PORT ? parseInt(process.env.PORT, 10) : defaults.server.port,
             host: process.env.HOST || defaults.server.host,
         };
-        this.whatsapp = { 
+        this.whatsapp = {
             ...defaults.whatsapp,
             targetGroupId: process.env.TARGET_GROUP_ID || null,
         };

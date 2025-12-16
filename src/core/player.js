@@ -65,6 +65,7 @@ function isCommandAvailable(command) {
 
 /**
  * Detect and select the best available audio backend
+ * @returns {string|null} 'mpv', 'ffplay', or null if neither is available
  */
 function detectBackend() {
     if (audioBackend) return audioBackend;
@@ -77,7 +78,8 @@ function detectBackend() {
         logger.info('🎵 Audio backend: ffplay (effect changes may cause brief interruption)');
         logger.info('   For seamless effects, install MPV: brew install mpv (or see docs/adr/001-audio-player-backend.md)');
     } else {
-        throw new Error('No audio backend available. Please install mpv or ffmpeg.');
+        audioBackend = null;
+        logger.warn('⚠️  No audio backend available. Please install mpv or ffmpeg.');
     }
 
     return audioBackend;
@@ -608,7 +610,14 @@ async function playFileWithFfplay(filePath, startOffset = 0) {
 async function playFile(filePath, startOffset = 0) {
     const playbackController = require('./playback.controller');
     
-    detectBackend();
+    const backend = detectBackend();
+    
+    if (!backend) {
+        const error = new Error('No audio backend available. Please install mpv or ffmpeg.');
+        logger.error('Playback error:', error);
+        playbackController.emit(PLAYBACK_ERROR, { filePath, error });
+        throw error;
+    }
     
     try {
         if (audioBackend === 'mpv') {
