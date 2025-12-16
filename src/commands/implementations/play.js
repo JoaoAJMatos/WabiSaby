@@ -1,15 +1,24 @@
-const queueManager = require('../../core/queue');
-const { searchYouTube } = require('../../services/search.service');
-const { isSpotifyUrl, isYouTubeUrl } = require('../../utils/url.util');
-const { getTrackInfo, getSpotifyMetadata } = require('../../services/metadata.service');
-const { logger } = require('../../utils/logger.util');
-const { sendMessageWithMention } = require('../../utils/helpers.util');
+const { deps: defaultDeps } = require('../dependencies');
 
 /**
  * !play command - Add a track to the queue
  * Accepts either a URL (YouTube/Spotify) or a search query (song name and artist)
+ * @param {Object} sock - WhatsApp socket
+ * @param {Object} msg - Message object
+ * @param {Array} args - Command arguments
+ * @param {Object} deps - Dependencies (injected, defaults to production dependencies)
  */
-async function playCommand(sock, msg, args) {
+async function playCommand(sock, msg, args, deps = defaultDeps) {
+    const {
+        queueManager,
+        searchYouTube,
+        isSpotifyUrl,
+        isYouTubeUrl,
+        getTrackInfo,
+        getSpotifyMetadata,
+        logger,
+        sendMessageWithMention
+    } = deps;
     const remoteJid = msg.key.remoteJid;
     const sender = msg.key.participant || msg.key.remoteJid;
     const input = args.join(' ');

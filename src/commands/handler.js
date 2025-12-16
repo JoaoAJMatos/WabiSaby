@@ -1,5 +1,6 @@
 const { logger } = require('../utils/logger.util');
 const { sendMessageWithMention } = require('../utils/helpers.util');
+const { deps } = require('./dependencies');
 const playCommand = require('./implementations/play');
 const skipCommand = require('./implementations/skip');
 const queueCommand = require('./implementations/queue');
@@ -41,39 +42,39 @@ async function handleCommand(sock, msg, text) {
     try {
         switch (command) {
             case COMMANDS.PLAY:
-                await playCommand(sock, msg, args);
+                await playCommand(sock, msg, args, deps);
                 break;
 
             case COMMANDS.SKIP:
-                await skipCommand(sock, msg, args);
+                await skipCommand(sock, msg, args, deps);
                 break;
 
             case COMMANDS.QUEUE:
-                await queueCommand(sock, msg, args);
+                await queueCommand(sock, msg, args, deps);
                 break;
 
             case COMMANDS.REMOVE:
-                await removeCommand(sock, msg, args);
+                await removeCommand(sock, msg, args, deps);
                 break;
 
             case COMMANDS.NP:
-                await nowPlayingCommand(sock, msg, args);
+                await nowPlayingCommand(sock, msg, args, deps);
                 break;
                 
             case COMMANDS.HELP:
-                await helpCommand(sock, msg, args);
+                await helpCommand(sock, msg, args, deps);
                 break;
                 
             case COMMANDS.NOTIFICATIONS:
-                await notificationsCommand(sock, msg, args);
+                await notificationsCommand(sock, msg, args, deps);
                 break;
                 
             case COMMANDS.PLAYLIST:
-                await playlistCommand(sock, msg, args);
+                await playlistCommand(sock, msg, args, deps);
                 break;
                 
             case COMMANDS.PING:
-                await pingCommand(sock, msg);
+                await pingCommand(sock, msg, deps);
                 break;
                 
             default:

@@ -1,16 +1,23 @@
-const queueManager = require('../../core/queue');
-const { checkPriority } = require('../../services/priority.service');
-const { getPlaylistTracks } = require('../../services/playlist.service');
-const { isPlaylistUrl } = require('../../utils/url.util');
-const { searchYouTube } = require('../../services/search.service');
-const { logger } = require('../../utils/logger.util');
-const { sendMessageWithMention } = require('../../utils/helpers.util');
+const { deps: defaultDeps } = require('../dependencies');
 
 /**
  * !playlist command - Add all tracks from a playlist to the queue (VIP only)
  * Accepts Spotify or YouTube playlist URLs
+ * @param {Object} sock - WhatsApp socket
+ * @param {Object} msg - Message object
+ * @param {Array} args - Command arguments
+ * @param {Object} deps - Dependencies (injected, defaults to production dependencies)
  */
-async function playlistCommand(sock, msg, args) {
+async function playlistCommand(sock, msg, args, deps = defaultDeps) {
+    const {
+        queueManager,
+        checkPriority,
+        getPlaylistTracks,
+        isPlaylistUrl,
+        searchYouTube,
+        logger,
+        sendMessageWithMention
+    } = deps;
     const remoteJid = msg.key.remoteJid;
     const sender = msg.key.participant || msg.key.remoteJid;
     const url = args.join(' ').trim();

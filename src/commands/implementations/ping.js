@@ -1,7 +1,3 @@
-const groupsService = require('../../services/groups.service');
-const { sendMessageWithMention } = require('../../utils/helpers.util');
-const { logger } = require('../../utils/logger.util');
-
 /**
  * !ping command - Request to add group to monitoring list
  * Confirmation happens in the web dashboard
@@ -42,8 +38,15 @@ function removePendingConfirmation(groupId) {
 
 /**
  * !ping command handler
+ * @param {Object} sock - WhatsApp socket
+ * @param {Object} msg - Message object
+ * @param {Object} deps - Dependencies (injected, defaults to production dependencies)
  */
-async function pingCommand(sock, msg) {
+async function pingCommand(sock, msg, deps) {
+    const { deps: defaultDeps } = require('../dependencies');
+    const actualDeps = deps || defaultDeps;
+    const { groupsService, sendMessageWithMention, logger } = actualDeps;
+    
     const remoteJid = msg.key.remoteJid;
     const sender = msg.key.participant || msg.key.remoteJid;
     const senderName = msg.pushName || 'Unknown User';
