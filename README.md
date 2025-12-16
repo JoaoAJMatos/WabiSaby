@@ -91,6 +91,17 @@ Perfect for:
 
 </details>
 
+<details>
+<summary><b>SQLite Database</b></summary>
+
+WabiSaby uses SQLite for data storage. **No additional setup is required** - the database is automatically created and initialized on first run.
+
+- The database file is created at `storage/data/wabisaby.db`
+- The `better-sqlite3` package (already included) handles all SQLite operations
+- **No system-level SQLite installation needed** - everything is handled by the Node.js package
+
+</details>
+
 ### Installation
 
 ```bash
@@ -194,6 +205,7 @@ cp config.example .env
 
 - `PORT` - Port for web dashboard (default: 3000)
 - `HOST` - Host address (default: localhost)
+- `STORAGE_DIR` - Storage directory path (default: ./storage)
 - `TARGET_GROUP_ID` - Restrict bot to specific WhatsApp group (optional)
 - `SPOTIFY_CLIENT_ID` / `SPOTIFY_CLIENT_SECRET` - Required for Spotify playlists
 - `YOUTUBE_API_KEY` - Optional, improves search accuracy
@@ -263,7 +275,25 @@ docker-compose logs -f
 
 The `docker-compose.yml` mounts:
 
-- `./storage:/app/storage` - Persistent data (auth, queue, stats, etc.)
+- `./storage:/app/storage` - Persistent data (auth, database, queue, stats, etc.)
+  - Database file: `storage/data/wabisaby.db`
+  - WhatsApp auth: `storage/auth/`
+  - Media files: `storage/media/`
+
+**Custom Storage Location:**
+
+You can use a custom storage directory by setting `STORAGE_DIR` in your `.env` file:
+
+```bash
+STORAGE_DIR=/var/lib/wabisaby
+```
+
+Then update `docker-compose.yml` to mount your custom path:
+
+```yaml
+volumes:
+  - /var/lib/wabisaby:/app/storage
+```
 
 ### Audio Playback in Docker
 
@@ -370,4 +400,3 @@ bun start
 - Built with [Bun](https://bun.sh) for blazing-fast performance
 - WhatsApp integration powered by [Baileys](https://github.com/WhiskeySockets/Baileys)
 - Audio processing with [FFmpeg](https://ffmpeg.org/)
-
