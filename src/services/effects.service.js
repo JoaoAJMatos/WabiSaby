@@ -1,7 +1,5 @@
-const fs = require('fs');
-const path = require('path');
-const config = require('../config');
 const { logger } = require('../utils/logger');
+const dbService = require('../database/db.service');
 const EventEmitter = require('events');
 
 /**
@@ -12,7 +10,6 @@ const EventEmitter = require('events');
 class EffectsService extends EventEmitter {
     constructor() {
         super();
-        this.effectsFile = path.join(config.paths.data, 'effects.json');
         this.effects = this.getDefaultEffects();
         this.presets = this.getPresets();
         this.load();
@@ -213,17 +210,14 @@ class EffectsService extends EventEmitter {
     }
 
     /**
-     * Load effects from file
+     * Load effects from database
      */
     load() {
         try {
-            if (fs.existsSync(this.effectsFile)) {
-                const data = fs.readFileSync(this.effectsFile, 'utf8');
-                const loaded = JSON.parse(data);
-                // Merge with defaults to ensure all fields exist
-                this.effects = this.mergeWithDefaults(loaded);
-                logger.info('Effects settings loaded');
-            }
+            const loaded = dbService.getEffects();
+            // Merge with defaults to ensure all fields exist
+            this.effects = this.mergeWithDefaults(loaded);
+            logger.info('Effects settings loaded from database');
         } catch (err) {
             logger.error('Failed to load effects settings:', err);
             this.effects = this.getDefaultEffects();
@@ -249,12 +243,12 @@ class EffectsService extends EventEmitter {
     }
 
     /**
-     * Save effects to file
+     * Save effects to database
      */
     save() {
         try {
-            fs.writeFileSync(this.effectsFile, JSON.stringify(this.effects, null, 2));
-            logger.info('Effects settings saved');
+            dbService.updateEffects(this.effects);
+            logger.info('Effects settings saved to database');
         } catch (err) {
             logger.error('Failed to save effects settings:', err);
         }

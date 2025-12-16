@@ -1,35 +1,15 @@
-const fs = require('fs');
-const path = require('path');
-const config = require('../config');
 const { logger } = require('../utils/logger');
 const { getThumbnailUrl } = require('../utils/helpers');
+const dbService = require('../database/db.service');
 
 /**
  * Stats Service
- * Manages analytics and statistics with file persistence
+ * Manages analytics and statistics with database persistence
  */
 
-const STATS_FILE = config.files.stats;
-
-// In-memory cache
-let statsCache = null;
+// Track start time for uptime calculation
 let startTime = Date.now();
 
-/**
- * Get default stats structure
- */
-function getDefaultStats() {
-    return {
-        startTime: Date.now(),
-        songsPlayed: 0,
-        totalDuration: 0, // Total playback time in ms
-        requesters: {}, // { requesterName: count }
-        artists: {}, // { artistName: count }
-        channels: {}, // { channelName: count } - YouTube channels
-        hourlyPlays: {}, // { hour: count } - 0-23
-        history: [], // Array of played songs (last 100)
-    };
-}
 
 /**
  * Extract artist name from title
@@ -57,53 +37,23 @@ function extractArtist(title) {
 }
 
 /**
- * Load stats from file
- * @returns {Object} Stats data
- */
-function loadStats() {
-    if (statsCache) return statsCache;
-    
-    if (fs.existsSync(STATS_FILE)) {
-        try {
-            const data = JSON.parse(fs.readFileSync(STATS_FILE, 'utf8'));
-            statsCache = {
-                ...getDefaultStats(),
-                ...data,
-            };
-            startTime = statsCache.startTime || Date.now();
-            logger.info('Loaded stats from file');
-            return statsCache;
-        } catch (e) {
-            logger.error('Error reading stats file:', e);
-        }
-    }
-    
-    statsCache = getDefaultStats();
-    return statsCache;
-}
-
-/**
- * Save stats to file
- */
-function saveStats() {
-    if (!statsCache) return;
-    
-    try {
-        fs.writeFileSync(STATS_FILE, JSON.stringify(statsCache, null, 2));
-    } catch (e) {
-        logger.error('Error saving stats file:', e);
-    }
-}
-
-/**
  * Get all stats
  * @returns {Object} Current stats
  */
 function getStats() {
-    const stats = loadStats();
+    const overview = dbService.getStatsOverview();
+    const playbackState = dbService.getPlaybackState();
+    
     return {
-        ...stats,
+        startTime: startTime,
+        songsPlayed: overview.songsPlayed,
+        totalDuration: overview.totalDuration,
         uptime: Date.now() - startTime,
+        requesters: {}, // Legacy format - computed on demand
+        artists: {}, // Legacy format - computed on demand
+        channels: {}, // Legacy format - computed on demand
+        hourlyPlays: overview.hourlyDistribution,
+        history: [] // Legacy format - use getHistory() instead
     };
 }
 
@@ -112,56 +62,13 @@ function getStats() {
  * @param {Object} song - Song data
  */
 function recordSongPlayed(song) {
-    const stats = loadStats();
-    
     const requester = song.requester || 'Unknown';
     const title = song.title || song.content || 'Unknown';
     const duration = song.duration || 0;
     const channel = song.channel || song.artist || null;
     
-    // Increment songs played
-    stats.songsPlayed++;
-    
-    // Add to total duration
-    if (duration) {
-        stats.totalDuration = (stats.totalDuration || 0) + duration;
-    }
-    
-    // Update requester count
-    if (!stats.requesters[requester]) {
-        stats.requesters[requester] = 0;
-    }
-    stats.requesters[requester]++;
-    
     // Track artist (extracted from title or provided)
     const artist = extractArtist(title) || channel;
-    if (artist) {
-        if (!stats.artists) stats.artists = {};
-        if (!stats.artists[artist]) {
-            stats.artists[artist] = 0;
-        }
-        stats.artists[artist]++;
-    }
-    
-    // Track channel/source
-    if (channel) {
-        if (!stats.channels) stats.channels = {};
-        if (!stats.channels[channel]) {
-            stats.channels[channel] = 0;
-        }
-        stats.channels[channel]++;
-    }
-    
-    // Track hourly plays
-    const hour = new Date().getHours();
-    if (!stats.hourlyPlays) stats.hourlyPlays = {};
-    if (!stats.hourlyPlays[hour]) {
-        stats.hourlyPlays[hour] = 0;
-    }
-    stats.hourlyPlays[hour]++;
-    
-    // Store song content for later updates
-    const songId = song.content || title;
     
     // Get thumbnail URL - check both thumbnailUrl and thumbnail (file path)
     let thumbnailUrl = song.thumbnailUrl || null;
@@ -170,23 +77,20 @@ function recordSongPlayed(song) {
         thumbnailUrl = getThumbnailUrl(song.thumbnail);
     }
     
-    // Add to history
-    stats.history.push({
-        id: songId,
+    // Add to play history in database
+    dbService.addPlayHistory({
+        content: song.content || title,
         title: title,
         artist: artist,
+        channel: channel,
         requester: requester,
-        thumbnailUrl: thumbnailUrl,
+        sender: song.sender || song.sender_id,
+        thumbnail_url: thumbnailUrl,
+        thumbnail_path: song.thumbnail,
         duration: duration,
-        playedAt: Date.now(),
+        played_at: Date.now()
     });
     
-    // Keep only last 100 songs
-    if (stats.history.length > 100) {
-        stats.history = stats.history.slice(-100);
-    }
-    
-    saveStats();
     logger.info(`Recorded song: ${title} by ${requester} (artist: ${artist || 'unknown'})`);
 }
 
@@ -198,63 +102,35 @@ function recordSongPlayed(song) {
 function updateLastSong(songId, updates) {
     if (!songId || !updates) return;
     
-    const stats = loadStats();
+    // Get the most recent history entry
+    const history = dbService.getPlayHistory(1, 0);
+    if (history.length === 0) return;
     
-    // Find the most recent song in history that needs updating
-    // Match by id, title, or just update the most recent if it has no duration
-    for (let i = stats.history.length - 1; i >= 0; i--) {
-        const item = stats.history[i];
-        
-        // Check various ways to match
-        const matchById = item.id && songId.includes(item.id);
-        const matchByIdReverse = songId && item.id && item.id.includes(songId);
-        const matchByTitle = item.title && songId.toLowerCase().includes(item.title.toLowerCase());
-        const matchByContent = songId.includes(item.title?.replace(/[^a-zA-Z0-9]/g, '_') || '');
-        
-        // Also match if this is the most recent song and it needs duration
-        const isMostRecent = i === stats.history.length - 1;
-        const needsDuration = !item.duration || item.duration === 0;
-        
-        if (matchById || matchByIdReverse || matchByTitle || matchByContent || (isMostRecent && needsDuration)) {
-            let updated = false;
-            
-            // Update duration if provided and not already set (0 counts as not set)
-            if (updates.duration && updates.duration > 0 && (!item.duration || item.duration === 0)) {
-                stats.history[i].duration = updates.duration;
-                stats.totalDuration = (stats.totalDuration || 0) + updates.duration;
-                
-                // Also set the id if missing
-                if (!stats.history[i].id) {
-                    stats.history[i].id = songId;
-                }
-                
-                logger.info(`Updated song duration: ${updates.duration}ms for "${item.title}"`);
-                updated = true;
+    const lastEntry = history[0];
+    
+    // Update song record if needed
+    if (updates.duration || updates.artist || updates.thumbnailUrl) {
+        const song = dbService.getSong(lastEntry.song_id);
+        if (song) {
+            const songUpdates = {};
+            if (updates.duration && (!song.duration || song.duration === 0)) {
+                songUpdates.duration = updates.duration;
+            }
+            if (updates.artist && !song.artist) {
+                songUpdates.artist = updates.artist;
+            }
+            if (updates.thumbnailUrl && !song.thumbnail_url) {
+                songUpdates.thumbnail_url = updates.thumbnailUrl;
             }
             
-            // Update artist if provided and not already set
-            if (updates.artist && !item.artist) {
-                stats.history[i].artist = updates.artist;
-                
-                if (!stats.artists) stats.artists = {};
-                if (!stats.artists[updates.artist]) {
-                    stats.artists[updates.artist] = 0;
-                }
-                stats.artists[updates.artist]++;
-                updated = true;
+            if (Object.keys(songUpdates).length > 0) {
+                dbService.getOrCreateSong({
+                    content: song.content,
+                    title: song.title,
+                    ...songUpdates
+                });
+                logger.info(`Updated song data for "${song.title}"`);
             }
-            
-            // Update thumbnail if provided and not already set
-            if (updates.thumbnailUrl && !item.thumbnailUrl) {
-                stats.history[i].thumbnailUrl = updates.thumbnailUrl;
-                logger.info(`Updated thumbnail for "${item.title}"`);
-                updated = true;
-            }
-            
-            if (updated) {
-                saveStats();
-            }
-            break;
         }
     }
 }
@@ -265,16 +141,7 @@ function updateLastSong(songId, updates) {
  * @returns {Array} Top requesters sorted by count
  */
 function getTopRequesters(limit = 20) {
-    const stats = loadStats();
-    
-    return Object.entries(stats.requesters)
-        .sort(([, a], [, b]) => b - a)
-        .slice(0, limit)
-        .map(([name, count], index) => ({
-            rank: index + 1,
-            name,
-            count,
-        }));
+    return dbService.getTopRequesters(limit);
 }
 
 /**
@@ -283,8 +150,16 @@ function getTopRequesters(limit = 20) {
  * @returns {Array} Recent songs
  */
 function getHistory(limit = 20) {
-    const stats = loadStats();
-    return stats.history.slice(-limit).reverse();
+    const history = dbService.getPlayHistory(limit, 0);
+    return history.map(item => ({
+        id: item.content,
+        title: item.title,
+        artist: item.artist,
+        requester: item.requester_name,
+        thumbnailUrl: item.thumbnail_url,
+        duration: item.duration,
+        playedAt: item.played_at * 1000 // Convert to milliseconds
+    }));
 }
 
 /**
@@ -293,18 +168,7 @@ function getHistory(limit = 20) {
  * @returns {Array} Top artists sorted by count
  */
 function getTopArtists(limit = 10) {
-    const stats = loadStats();
-    
-    if (!stats.artists) return [];
-    
-    return Object.entries(stats.artists)
-        .sort(([, a], [, b]) => b - a)
-        .slice(0, limit)
-        .map(([name, count], index) => ({
-            rank: index + 1,
-            name,
-            count,
-        }));
+    return dbService.getTopArtists(limit);
 }
 
 /**
@@ -313,18 +177,7 @@ function getTopArtists(limit = 10) {
  * @returns {Array} Top channels sorted by count
  */
 function getTopChannels(limit = 10) {
-    const stats = loadStats();
-    
-    if (!stats.channels) return [];
-    
-    return Object.entries(stats.channels)
-        .sort(([, a], [, b]) => b - a)
-        .slice(0, limit)
-        .map(([name, count], index) => ({
-            rank: index + 1,
-            name,
-            count,
-        }));
+    return dbService.getTopChannels(limit);
 }
 
 /**
@@ -332,37 +185,16 @@ function getTopChannels(limit = 10) {
  * @returns {Object} Hour to count mapping
  */
 function getHourlyDistribution() {
-    const stats = loadStats();
-    return stats.hourlyPlays || {};
+    return dbService.getHourlyDistribution();
 }
 
 /**
  * Recalculate stats from history (fixes any inconsistencies)
+ * Note: With database, stats are always calculated from history, so this is mainly for compatibility
  */
 function recalculateFromHistory() {
-    const stats = loadStats();
-    
-    // Recalculate totalDuration from history
-    // NOTE: This logic is flawed because history triggers only last 100 songs
-    // Calculating total duration from just 100 songs will wipe out the lifetime duration
-    // We should only use this for validation or if totalDuration is 0/missing
-    
-    if (!stats.totalDuration || stats.totalDuration === 0) {
-        let totalDuration = 0;
-        for (const song of stats.history) {
-            if (song.duration && song.duration > 0) {
-                totalDuration += song.duration;
-            }
-        }
-        
-        if (totalDuration > 0) {
-            logger.info(`Restored totalDuration from history: ${totalDuration}`);
-            stats.totalDuration = totalDuration;
-            saveStats();
-        }
-    }
-    
-    return stats;
+    // Stats are always calculated from database, so just return current stats
+    return getStats();
 }
 
 /**
@@ -370,54 +202,10 @@ function recalculateFromHistory() {
  * @returns {Object} Overview data
  */
 function getOverview() {
-    // Recalculate to ensure accuracy
-    const stats = recalculateFromHistory();
-    
-    // Count songs with valid duration for accurate average
-    let songsWithDuration = 0;
-    let totalDurationFromHistory = 0;
-    
-    for (const song of stats.history) {
-        if (song.duration && song.duration > 0) {
-            songsWithDuration++;
-            totalDurationFromHistory += song.duration;
-        }
-    }
-    
-    // Calculate average song duration (only from songs with known duration)
-    const avgDuration = songsWithDuration > 0 
-        ? Math.floor(totalDurationFromHistory / songsWithDuration) 
-        : 0;
-    
-    // Find peak hour
-    let peakHour = null;
-    let peakCount = 0;
-    if (stats.hourlyPlays) {
-        for (const [hour, count] of Object.entries(stats.hourlyPlays)) {
-            if (count > peakCount) {
-                peakCount = count;
-                peakHour = parseInt(hour);
-            }
-        }
-    }
-    
-    // Get unique requesters count
-    const uniqueRequesters = Object.keys(stats.requesters || {}).length;
-    
-    // Get unique artists count
-    const uniqueArtists = Object.keys(stats.artists || {}).length;
-    
+    const overview = dbService.getStatsOverview();
     return {
-        songsPlayed: stats.songsPlayed,
-        totalDuration: totalDurationFromHistory,
-        avgDuration,
-        uniqueRequesters,
-        uniqueArtists,
-        peakHour,
-        peakHourCount: peakCount,
-        topArtists: getTopArtists(5),
-        topChannels: getTopChannels(5),
-        hourlyDistribution: stats.hourlyPlays || {},
+        ...overview,
+        uptime: getUptime()
     };
 }
 
@@ -426,8 +214,7 @@ function getOverview() {
  */
 function resetStats() {
     startTime = Date.now();
-    statsCache = getDefaultStats();
-    saveStats();
+    dbService.resetStats();
     logger.info('Stats reset');
 }
 
@@ -438,9 +225,6 @@ function resetStats() {
 function getUptime() {
     return Date.now() - startTime;
 }
-
-// Load stats on module init
-loadStats();
 
 module.exports = {
     getStats,

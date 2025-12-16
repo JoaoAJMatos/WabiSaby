@@ -1,42 +1,31 @@
-const fs = require('fs');
-const config = require('../config');
 const { logger } = require('../utils/logger');
+const dbService = require('../database/db.service');
 
 /**
  * Priority Service
  * Manages VIP/priority users
  */
 
-const PRIORITY_FILE = config.files.priority;
-
 /**
  * Get all priority users
  * @returns {Array<{id: string, name: string|null}>} - Array of priority users
  */
 function getPriorityUsers() {
-    if (fs.existsSync(PRIORITY_FILE)) {
-        try {
-            const data = JSON.parse(fs.readFileSync(PRIORITY_FILE, 'utf8'));
-            const users = data.priorityUsers || [];
-            return users;
-        } catch (e) {
-            logger.error('Error reading priority file:', e);
-            return [];
-        }
+    try {
+        return dbService.getPriorityUsers();
+    } catch (e) {
+        logger.error('Error reading priority users:', e);
+        return [];
     }
-    return [];
 }
 
 /**
- * Save priority users to file
+ * Save priority users to database (legacy function for compatibility)
  * @param {Array<{id: string, name: string|null}>} users - Array of priority users
  */
 function savePriorityUsers(users) {
-    try {
-        fs.writeFileSync(PRIORITY_FILE, JSON.stringify({ priorityUsers: users }, null, 2));
-    } catch (e) {
-        logger.error('Error saving priority file:', e);
-    }
+    // This function is kept for compatibility but users are saved individually via addPriorityUser
+    logger.info(`Priority users are managed individually via addPriorityUser/removePriorityUser`);
 }
 
 /**
@@ -46,16 +35,7 @@ function savePriorityUsers(users) {
  */
 function checkPriority(sender) {
     if (!sender) return false;
-    
-    const users = getPriorityUsers();
-    if (!users || users.length === 0) return false;
-    
-    // Support both old format (array of strings) and new format (array of objects)
-    if (typeof users[0] === 'string') {
-        return users.includes(sender);
-    } else {
-        return users.some(user => user.id === sender);
-    }
+    return dbService.isPriorityUser(sender);
 }
 
 /**
@@ -67,14 +47,16 @@ function checkPriority(sender) {
 function addPriorityUser(id, name = null) {
     if (!id) return false;
     
-    const users = getPriorityUsers();
-    if (!users.find(u => u.id === id)) {
-        users.push({ id, name });
-        savePriorityUsers(users);
-        logger.info(`Added priority user: ${id} (${name || 'no name'})`);
-        return true;
+    try {
+        const added = dbService.addPriorityUser(id, name);
+        if (added) {
+            logger.info(`Added priority user: ${id} (${name || 'no name'})`);
+        }
+        return added;
+    } catch (e) {
+        logger.error('Error adding priority user:', e);
+        return false;
     }
-    return false;
 }
 
 /**
@@ -85,16 +67,16 @@ function addPriorityUser(id, name = null) {
 function removePriorityUser(id) {
     if (!id) return false;
     
-    let users = getPriorityUsers();
-    const initialLength = users.length;
-    users = users.filter(u => u.id !== id);
-    
-    if (users.length < initialLength) {
-        savePriorityUsers(users);
-        logger.info(`Removed priority user: ${id}`);
-        return true;
+    try {
+        const removed = dbService.removePriorityUser(id);
+        if (removed) {
+            logger.info(`Removed priority user: ${id}`);
+        }
+        return removed;
+    } catch (e) {
+        logger.error('Error removing priority user:', e);
+        return false;
     }
-    return false;
 }
 
 /**
@@ -105,13 +87,11 @@ function removePriorityUser(id) {
 function updateVipName(id, name) {
     if (!name) return;
     
-    const users = getPriorityUsers();
-    const vip = users.find(u => u.id === id);
-    
-    if (vip && vip.name !== name) {
-        vip.name = name;
-        savePriorityUsers(users);
+    try {
+        dbService.updateVipName(id, name);
         logger.info(`Updated VIP name: ${id} -> ${name}`);
+    } catch (e) {
+        logger.error('Error updating VIP name:', e);
     }
 }
 

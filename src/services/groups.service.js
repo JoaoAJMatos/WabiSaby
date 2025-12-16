@@ -1,34 +1,32 @@
-const fs = require('fs');
 const config = require('../config');
 const { logger } = require('../utils/logger');
+const dbService = require('../database/db.service');
 
 /**
  * Groups Service
  * Manages monitored WhatsApp groups
  */
 
-const GROUPS_FILE = config.files.groups;
-
 /**
  * Get all monitored groups
  * @returns {Array<{id: string, name: string, addedAt: string}>} - Array of monitored groups
  */
 function getGroups() {
-    if (fs.existsSync(GROUPS_FILE)) {
-        try {
-            const data = JSON.parse(fs.readFileSync(GROUPS_FILE, 'utf8'));
-            const groups = data.groups || [];
-            return groups;
-        } catch (e) {
-            logger.error('Error reading groups file:', e);
-            return [];
-        }
+    try {
+        const groups = dbService.getGroups();
+        return groups.map(group => ({
+            id: group.id,
+            name: group.name,
+            addedAt: new Date(group.added_at * 1000).toISOString()
+        }));
+    } catch (e) {
+        logger.error('Error reading groups:', e);
+        return [];
     }
-    return [];
 }
 
 /**
- * Load groups from file (alias for getGroups for consistency)
+ * Load groups from database (alias for getGroups for consistency)
  * @returns {Array<{id: string, name: string, addedAt: string}>} - Array of monitored groups
  */
 function loadGroups() {
@@ -36,16 +34,12 @@ function loadGroups() {
 }
 
 /**
- * Save groups to file
+ * Save groups to database (legacy function for compatibility)
  * @param {Array<{id: string, name: string, addedAt: string}>} groups - Array of groups
  */
 function saveGroups(groups) {
-    try {
-        fs.writeFileSync(GROUPS_FILE, JSON.stringify({ groups }, null, 2));
-        logger.info(`Saved ${groups.length} groups to file`);
-    } catch (e) {
-        logger.error('Error saving groups file:', e);
-    }
+    // This function is kept for compatibility but groups are saved individually via addGroup
+    logger.info(`Groups are managed individually via addGroup/removeGroup`);
 }
 
 /**
@@ -78,18 +72,16 @@ function isGroupMonitored(groupId) {
 function addGroup(id, name = 'Unknown Group') {
     if (!id) return false;
     
-    const groups = getGroups();
-    if (!groups.find(g => g.id === id)) {
-        groups.push({
-            id,
-            name,
-            addedAt: new Date().toISOString()
-        });
-        saveGroups(groups);
-        logger.info(`Added group: ${id} (${name})`);
-        return true;
+    try {
+        const added = dbService.addGroup(id, name);
+        if (added) {
+            logger.info(`Added group: ${id} (${name})`);
+        }
+        return added;
+    } catch (e) {
+        logger.error('Error adding group:', e);
+        return false;
     }
-    return false;
 }
 
 /**
@@ -100,16 +92,16 @@ function addGroup(id, name = 'Unknown Group') {
 function removeGroup(id) {
     if (!id) return false;
     
-    let groups = getGroups();
-    const initialLength = groups.length;
-    groups = groups.filter(g => g.id !== id);
-    
-    if (groups.length < initialLength) {
-        saveGroups(groups);
-        logger.info(`Removed group: ${id}`);
-        return true;
+    try {
+        const removed = dbService.removeGroup(id);
+        if (removed) {
+            logger.info(`Removed group: ${id}`);
+        }
+        return removed;
+    } catch (e) {
+        logger.error('Error removing group:', e);
+        return false;
     }
-    return false;
 }
 
 /**
@@ -120,13 +112,11 @@ function removeGroup(id) {
 function updateGroupName(id, name) {
     if (!name || !id) return;
     
-    const groups = getGroups();
-    const group = groups.find(g => g.id === id);
-    
-    if (group && group.name !== name) {
-        group.name = name;
-        saveGroups(groups);
+    try {
+        dbService.updateGroupName(id, name);
         logger.info(`Updated group name: ${id} -> ${name}`);
+    } catch (e) {
+        logger.error('Error updating group name:', e);
     }
 }
 
