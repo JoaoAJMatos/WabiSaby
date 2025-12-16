@@ -4,7 +4,7 @@ const { logger } = require('../utils/logger.util');
 const { initializeDatabase } = require('../database');
 const config = require('../config');
 const { startServer } = require('../api/server');
-const { connectToWhatsApp } = require('../core/whatsapp');
+const systemCoordinator = require('../core/coordinator');
 const { initializeErrorHandlers } = require('../error');
 
 logger.info('Initializing database...');
@@ -24,7 +24,11 @@ startServer(async (url) => {
     }
 });
 
-connectToWhatsApp();
+// Initialize system via coordinator
+systemCoordinator.initialize().catch(err => {
+    logger.error('Failed to initialize system:', err);
+    process.exit(1);
+});
 
 logger.info('WabiSaby is running...');
 

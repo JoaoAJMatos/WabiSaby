@@ -1,5 +1,6 @@
 const path = require('path');
 const fs = require('fs');
+const os = require('os');
 require('dotenv').config();
 
 /**
@@ -13,7 +14,7 @@ class Config {
         const storagePath = process.env.STORAGE_DIR || process.env.STORAGE_PATH;
         this.storageDir = storagePath 
             ? (path.isAbsolute(storagePath) ? storagePath : path.join(this.rootDir, storagePath))
-            : path.join(this.rootDir, 'storage');
+            : this.getDefaultStorageDir();
         
         this.paths = {
             storage: this.storageDir,
@@ -51,6 +52,29 @@ class Config {
         
         this.initializeStorage();
         this.loadSettings();
+    }
+    
+    /**
+     * Get platform-specific default storage directory
+     * @returns {string} Path to default storage directory
+     */
+    getDefaultStorageDir() {
+        const appName = 'wabi-saby';
+        const homeDir = os.homedir();
+        const platform = process.platform;
+        
+        // Use platform-specific standard locations
+        if (platform === 'darwin') {
+            // macOS: ~/Library/Application Support/wabi-saby
+            return path.join(homeDir, 'Library', 'Application Support', appName);
+        } else if (platform === 'win32') {
+            // Windows: %APPDATA%\wabi-saby
+            const appData = process.env.APPDATA || path.join(homeDir, 'AppData', 'Roaming');
+            return path.join(appData, appName);
+        } else {
+            // Linux and other Unix-like systems: ~/.local/share/wabi-saby
+            return path.join(homeDir, '.local', 'share', appName);
+        }
     }
     
     /**
