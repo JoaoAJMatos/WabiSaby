@@ -13,7 +13,11 @@ PORT=3000
 # Host for the web server (default: localhost)
 HOST=localhost
 
-# Storage directory path (default: ./storage)
+# Storage directory path
+# If not set, uses platform-specific standard location:
+#   macOS: ~/Library/Application Support/wabi-saby
+#   Linux: ~/.local/share/wabi-saby
+#   Windows: %APPDATA%\wabi-saby
 # Can be absolute or relative to project root
 # Example: /var/lib/wabisaby or ./data or ../storage
 STORAGE_DIR=

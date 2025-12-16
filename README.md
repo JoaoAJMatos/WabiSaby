@@ -96,9 +96,9 @@ Perfect for:
 
 WabiSaby uses SQLite for data storage. **No additional setup is required** - the database is automatically created and initialized on first run.
 
-- The database file is created at `storage/data/wabisaby.db`
-- The `better-sqlite3` package (already included) handles all SQLite operations
-- **No system-level SQLite installation needed** - everything is handled by the Node.js package
+- The database file is created at `{STORAGE_DIR}/data/wabisaby.db` (default location depends on platform)
+- Uses Bun's built-in SQLite support (`bun:sqlite`) - no external dependencies needed
+- **No system-level SQLite installation needed** - everything is handled by Bun's native SQLite
 
 </details>
 
@@ -205,7 +205,7 @@ cp config.example .env
 
 - `PORT` - Port for web dashboard (default: 3000)
 - `HOST` - Host address (default: localhost)
-- `STORAGE_DIR` - Storage directory path (default: ./storage)
+- `STORAGE_DIR` - Storage directory path (default: platform-specific standard location)
 - `TARGET_GROUP_ID` - Restrict bot to specific WhatsApp group (optional)
 - `SPOTIFY_CLIENT_ID` / `SPOTIFY_CLIENT_SECRET` - Required for Spotify playlists
 - `YOUTUBE_API_KEY` - Optional, improves search accuracy

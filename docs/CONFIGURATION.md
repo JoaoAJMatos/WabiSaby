@@ -8,7 +8,7 @@ This guide provides comprehensive documentation for all environment variables us
 |----------|----------|---------|---------|
 | `PORT` | No | `3000` | Port for the web dashboard server |
 | `HOST` | No | `localhost` | Host address for the web server |
-| `STORAGE_DIR` | No | `./storage` | Storage directory path (absolute or relative) |
+| `STORAGE_DIR` | No | Platform-specific | Storage directory path (absolute or relative) |
 | `TARGET_GROUP_ID` | No | `null` | Restrict bot to a specific WhatsApp group |
 | `SPOTIFY_CLIENT_ID` | No* | `null` | Spotify API Client ID (required for playlists) |
 | `SPOTIFY_CLIENT_SECRET` | No* | `null` | Spotify API Client Secret (required for playlists) |
@@ -78,12 +78,15 @@ HOST=0.0.0.0  # Allow external connections
 
 - **Type**: String (path)
 - **Required**: No
-- **Default**: `./storage` (relative to project root)
+- **Default**: Platform-specific standard location (see below)
 - **Purpose**: Configure the storage directory location for all persistent data
 
 **Fallback Behavior:**
 
-- If not set, defaults to `./storage` relative to the project root
+- If not set, defaults to platform-specific standard locations:
+  - **macOS**: `~/Library/Application Support/wabi-saby`
+  - **Linux**: `~/.local/share/wabi-saby`
+  - **Windows**: `%APPDATA%\wabi-saby` (typically `C:\Users\<username>\AppData\Roaming\wabi-saby`)
 - Supports both absolute and relative paths
 - All storage subdirectories (data, auth, media, thumbnails, temp) are created within this directory
 
@@ -94,6 +97,7 @@ HOST=0.0.0.0  # Allow external connections
 - Useful for Docker deployments, separating data from application code, or using external storage volumes
 - The directory and all required subdirectories are created automatically if they don't exist
 - Database file location: `{STORAGE_DIR}/data/wabisaby.db`
+- Using platform-specific defaults follows OS conventions and keeps data separate from application code
 
 **Examples:**
 
@@ -101,11 +105,14 @@ HOST=0.0.0.0  # Allow external connections
 # Use absolute path (recommended for production)
 STORAGE_DIR=/var/lib/wabisaby
 
-# Use relative path
+# Use relative path (relative to project root)
 STORAGE_DIR=./data
 
 # Use parent directory
 STORAGE_DIR=../wabisaby-storage
+
+# Leave empty to use platform-specific default location
+STORAGE_DIR=
 ```
 
 ---
@@ -275,8 +282,8 @@ WabiSaby uses **SQLite** for persistent data storage, replacing the previous JSO
 
 **No manual setup is required** - the database is automatically created and initialized when you first start the bot.
 
-- **Database Location**: `{STORAGE_DIR}/data/wabisaby.db` (default: `storage/data/wabisaby.db`)
-- **Package**: Uses `better-sqlite3` (already included in dependencies)
+- **Database Location**: `{STORAGE_DIR}/data/wabisaby.db` (default location depends on platform)
+- **Package**: Uses Bun's built-in SQLite support (`bun:sqlite`) - no external dependencies needed
 - **System Requirements**: No system-level SQLite installation needed
 
 ### Database Benefits
@@ -293,7 +300,7 @@ WabiSaby uses **SQLite** for persistent data storage, replacing the previous JSO
 
 - Ensure `storage/data/` directory exists and is writable
 - Check file permissions on the storage directory
-- Verify `better-sqlite3` package is installed: `bun install`
+- Verify you're using Bun runtime (SQLite is built-in, no package installation needed)
 
 </details>
 
