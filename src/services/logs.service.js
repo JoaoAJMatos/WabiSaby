@@ -68,7 +68,7 @@ class LogsService extends EventEmitter {
      * Used to avoid circular calls through console
      */
     addLogDirect(level, message, source) {
-        this.addLogEntry(level, message, this.getCallerInfoForLogger() || source);
+        this.addLogEntry(level, message, source || this.getCallerInfoForLogger());
     }
 
     /**
@@ -196,7 +196,7 @@ class LogsService extends EventEmitter {
             const searchLower = search.toLowerCase();
             filteredLogs = filteredLogs.filter(log => 
                 log.message.toLowerCase().includes(searchLower) ||
-                log.source.toLowerCase().includes(searchLower)
+                (log.source && log.source.toLowerCase().includes(searchLower))
             );
         }
         

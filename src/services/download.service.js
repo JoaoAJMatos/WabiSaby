@@ -283,5 +283,6 @@ async function downloadTrack(url, progressCallback = null) {
 
 module.exports = {
     downloadTrack,
+    downloadWithYtDlp,
     clearCaches
 };

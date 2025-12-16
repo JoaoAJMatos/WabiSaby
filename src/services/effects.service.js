@@ -217,6 +217,14 @@ class EffectsService extends EventEmitter {
             const loaded = dbService.getEffects();
             // Merge with defaults to ensure all fields exist
             this.effects = this.mergeWithDefaults(loaded);
+            
+            // Validate preset exists, reset to default if invalid
+            if (this.effects.preset && !this.presets[this.effects.preset]) {
+                logger.warn(`Invalid preset "${this.effects.preset}" found in database, resetting to default`);
+                this.effects.preset = 'normal';
+                this.effects = this.mergeWithDefaults(this.effects);
+            }
+            
             logger.info('Effects settings loaded from database');
         } catch (err) {
             logger.error('Failed to load effects settings:', err);

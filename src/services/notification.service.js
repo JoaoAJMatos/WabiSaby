@@ -1,7 +1,9 @@
 const { logger } = require('../utils/logger.util');
 const queueManager = require('../core/queue');
+const playbackController = require('../core/playback.controller');
 const config = require('../config');
-const { sendMessageWithMention } = require('../utils/helpers.util');
+const helpersUtil = require('../utils/helpers.util');
+const { PLAYBACK_STARTED, QUEUE_UPDATED } = require('../core/events');
 
 /**
  * Notification Service
@@ -31,12 +33,12 @@ class NotificationService {
      */
     setupListeners() {
         // Listen for when a new song starts playing
-        queueManager.on('play_next', async (currentSong) => {
+        playbackController.on(PLAYBACK_STARTED, async () => {
             await this.checkAndNotifyUpcomingSongs();
         });
 
         // Listen for queue updates (when songs are added)
-        queueManager.on('queue_updated', async () => {
+        queueManager.on(QUEUE_UPDATED, async () => {
             await this.checkAndNotifyUpcomingSongs();
         });
     }
@@ -50,7 +52,7 @@ class NotificationService {
         }
 
         const queue = queueManager.getQueue();
-        const currentSong = queueManager.getCurrent();
+        const currentSong = playbackController.getCurrent();
 
         // Only proceed if there's a current song playing
         if (!currentSong) {
@@ -73,7 +75,7 @@ class NotificationService {
                     const positionInQueue = notifyIndex + 1;
                     const message = this.formatUpcomingMessage(songToNotify, positionInQueue);
                     const userJid = songToNotify.sender;
-                    await sendMessageWithMention(this.sock, songToNotify.remoteJid, message, userJid);
+                    await helpersUtil.sendMessageWithMention(this.sock, songToNotify.remoteJid, message, userJid);
                     
                     // Mark this song as notified
                     this.notifiedSongs.add(notificationId);

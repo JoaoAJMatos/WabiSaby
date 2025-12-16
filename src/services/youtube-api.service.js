@@ -222,6 +222,7 @@ module.exports = {
     isConfigured,
     hasQuotaAvailable,
     getQuotaStatus,
-    resetQuota
+    resetQuota,
+    parseDuration
 };
 
