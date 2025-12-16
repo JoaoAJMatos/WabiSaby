@@ -18,6 +18,11 @@ PORT=3000
 # Host for the web server (default: localhost)
 HOST=localhost
 
+# Storage directory path (default: ./storage)
+# Can be absolute or relative to project root
+# Example: /var/lib/wabisaby or ./data or ../storage
+STORAGE_DIR=
+
 # ==================
 # WhatsApp Configuration
 # ==================

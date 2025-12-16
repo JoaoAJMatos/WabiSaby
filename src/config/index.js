@@ -9,32 +9,22 @@ require('dotenv').config();
 
 class Config {
     constructor() {
-        // Base paths
         this.rootDir = process.cwd();
-        this.storageDir = path.join(this.rootDir, 'storage');
+        const storagePath = process.env.STORAGE_DIR || process.env.STORAGE_PATH;
+        this.storageDir = storagePath 
+            ? (path.isAbsolute(storagePath) ? storagePath : path.join(this.rootDir, storagePath))
+            : path.join(this.rootDir, 'storage');
         
-        // Storage structure
         this.paths = {
-            // Root storage directory
             storage: this.storageDir,
-            
-            // Temporary files (cleared on startup)
             temp: path.join(this.storageDir, 'temp'),
-            
-            // Persistent data files
             data: path.join(this.storageDir, 'data'),
-            
-            // WhatsApp authentication
+            database: path.join(this.storageDir, 'data', 'wabisaby.db'),
             auth: path.join(this.storageDir, 'auth'),
-            
-            // Downloaded media (optional - for keeping files)
             media: path.join(this.storageDir, 'media'),
-            
-            // Thumbnails cache
             thumbnails: path.join(this.storageDir, 'thumbnails'),
         };
         
-        // File paths for persistent data
         this.files = {
             queue: path.join(this.paths.data, 'queue.json'),
             priority: path.join(this.paths.data, 'priority.json'),
@@ -42,24 +32,15 @@ class Config {
             groups: path.join(this.paths.data, 'groups.json'),
             settings: path.join(this.paths.data, 'settings.json'),
         };
-        
-        // Secrets only - loaded from .env
-        // Spotify API configuration (for playlist support)
         this.spotify = {
             clientId: process.env.SPOTIFY_CLIENT_ID || null,
             clientSecret: process.env.SPOTIFY_CLIENT_SECRET || null,
         };
-        
-        // YouTube Data API configuration (for improved search)
         this.youtube = {
             apiKey: process.env.YOUTUBE_API_KEY || null,
         };
-        
-        // Settings will be loaded from storage/data/settings.json
-        // These are placeholders that will be overwritten by loadSettings()
         this.server = {};
         this.whatsapp = {
-            // targetGroupId is a secret from .env, will be set in loadSettings()
             targetGroupId: process.env.TARGET_GROUP_ID || null,
         };
         this.download = {};
@@ -68,10 +49,7 @@ class Config {
         this.performance = {};
         this.notifications = {};
         
-        // Initialize storage directories
         this.initializeStorage();
-        
-        // Load settings from persisted file (with fallback to defaults)
         this.loadSettings();
     }
     
@@ -119,19 +97,34 @@ class Config {
     }
     
     /**
-     * Load settings from persisted file
+     * Load settings from database (or fallback to JSON file)
      */
     loadSettings() {
-        const settingsFile = this.files.settings;
         let loadedSettings = {};
         
-        // Try to load from file
-        if (fs.existsSync(settingsFile)) {
-            try {
-                const fileContent = fs.readFileSync(settingsFile, 'utf8');
-                loadedSettings = JSON.parse(fileContent);
-            } catch (err) {
-                console.warn('Failed to load settings file, using defaults:', err.message);
+        // Try to load from database first
+        try {
+            const dbService = require('../database/db.service');
+            const dbSettings = dbService.getAllSettings();
+            
+            // Convert flat key-value to nested structure
+            if (dbSettings.server) loadedSettings.server = dbSettings.server;
+            if (dbSettings.whatsapp) loadedSettings.whatsapp = dbSettings.whatsapp;
+            if (dbSettings.download) loadedSettings.download = dbSettings.download;
+            if (dbSettings.playback) loadedSettings.playback = dbSettings.playback;
+            if (dbSettings.logging) loadedSettings.logging = dbSettings.logging;
+            if (dbSettings.performance) loadedSettings.performance = dbSettings.performance;
+            if (dbSettings.notifications) loadedSettings.notifications = dbSettings.notifications;
+        } catch (err) {
+            // Database not initialized yet or no settings - try JSON file as fallback
+            const settingsFile = this.files.settings;
+            if (fs.existsSync(settingsFile)) {
+                try {
+                    const fileContent = fs.readFileSync(settingsFile, 'utf8');
+                    loadedSettings = JSON.parse(fileContent);
+                } catch (fileErr) {
+                    console.warn('Failed to load settings file, using defaults:', fileErr.message);
+                }
             }
         }
         
@@ -139,11 +132,11 @@ class Config {
         const defaults = this.getDefaultSettings();
         
         // Merge settings (loaded settings override defaults)
-        // PORT and HOST can be set via .env (takes precedence) or settings.json
+        // PORT and HOST can be set via .env (takes precedence) or settings
         this.server = { 
             ...defaults.server, 
             ...loadedSettings.server,
-            // Environment variables take precedence over settings.json
+            // Environment variables take precedence over settings
             port: process.env.PORT ? parseInt(process.env.PORT, 10) : (loadedSettings.server?.port || defaults.server.port),
             host: process.env.HOST || loadedSettings.server?.host || defaults.server.host,
         };
@@ -161,37 +154,41 @@ class Config {
     }
     
     /**
-     * Save current settings to file
+     * Save current settings to database
      */
     saveSettings() {
-        const settingsFile = this.files.settings;
-        
-        // Build server settings object - only include PORT/HOST if not set via .env
-        const serverSettings = {};
-        if (!process.env.PORT) {
-            serverSettings.port = this.server.port;
-        }
-        if (!process.env.HOST) {
-            serverSettings.host = this.server.host;
-        }
-        
-        const settingsToSave = {
-            // Only include server object if it has properties
-            ...(Object.keys(serverSettings).length > 0 ? { server: serverSettings } : {}),
-            whatsapp: {
-                browserName: this.whatsapp.browserName,
-                browserVersion: this.whatsapp.browserVersion,
-                // Don't save targetGroupId (it's a secret from .env)
-            },
-            download: this.download,
-            playback: this.playback,
-            logging: this.logging,
-            performance: this.performance,
-            notifications: this.notifications,
-        };
-        
         try {
-            fs.writeFileSync(settingsFile, JSON.stringify(settingsToSave, null, 2));
+            const dbService = require('../database/db.service');
+            
+            // Build server settings object - only include PORT/HOST if not set via .env
+            const serverSettings = {};
+            if (!process.env.PORT) {
+                serverSettings.port = this.server.port;
+            }
+            if (!process.env.HOST) {
+                serverSettings.host = this.server.host;
+            }
+            
+            const settingsToSave = {
+                // Only include server object if it has properties
+                ...(Object.keys(serverSettings).length > 0 ? { server: serverSettings } : {}),
+                whatsapp: {
+                    browserName: this.whatsapp.browserName,
+                    browserVersion: this.whatsapp.browserVersion,
+                    // Don't save targetGroupId (it's a secret from .env)
+                },
+                download: this.download,
+                playback: this.playback,
+                logging: this.logging,
+                performance: this.performance,
+                notifications: this.notifications,
+            };
+            
+            // Save each section as a separate setting
+            Object.entries(settingsToSave).forEach(([key, value]) => {
+                dbService.setSetting(key, value);
+            });
+            
             return true;
         } catch (err) {
             console.error('Failed to save settings:', err);

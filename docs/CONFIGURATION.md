@@ -8,6 +8,7 @@ This guide provides comprehensive documentation for all environment variables us
 |----------|----------|---------|---------|
 | `PORT` | No | `3000` | Port for the web dashboard server |
 | `HOST` | No | `localhost` | Host address for the web server |
+| `STORAGE_DIR` | No | `./storage` | Storage directory path (absolute or relative) |
 | `TARGET_GROUP_ID` | No | `null` | Restrict bot to a specific WhatsApp group |
 | `SPOTIFY_CLIENT_ID` | No* | `null` | Spotify API Client ID (required for playlists) |
 | `SPOTIFY_CLIENT_SECRET` | No* | `null` | Spotify API Client Secret (required for playlists) |
@@ -69,6 +70,42 @@ PORT=8080
 
 ```bash
 HOST=0.0.0.0  # Allow external connections
+```
+
+---
+
+#### `STORAGE_DIR`
+
+- **Type**: String (path)
+- **Required**: No
+- **Default**: `./storage` (relative to project root)
+- **Purpose**: Configure the storage directory location for all persistent data
+
+**Fallback Behavior:**
+
+- If not set, defaults to `./storage` relative to the project root
+- Supports both absolute and relative paths
+- All storage subdirectories (data, auth, media, thumbnails, temp) are created within this directory
+
+**Notes:**
+
+- **Absolute paths**: Use full system path (e.g., `/var/lib/wabisaby`)
+- **Relative paths**: Relative to the project root (e.g., `./data` or `../storage`)
+- Useful for Docker deployments, separating data from application code, or using external storage volumes
+- The directory and all required subdirectories are created automatically if they don't exist
+- Database file location: `{STORAGE_DIR}/data/wabisaby.db`
+
+**Examples:**
+
+```bash
+# Use absolute path (recommended for production)
+STORAGE_DIR=/var/lib/wabisaby
+
+# Use relative path
+STORAGE_DIR=./data
+
+# Use parent directory
+STORAGE_DIR=../wabisaby-storage
 ```
 
 ---
@@ -229,6 +266,45 @@ YOUTUBE_API_KEY=your_api_key_here
    ```
 
 3. Restart the bot for changes to take effect
+
+## Database Configuration
+
+WabiSaby uses **SQLite** for persistent data storage, replacing the previous JSON file-based storage system.
+
+### Automatic Setup
+
+**No manual setup is required** - the database is automatically created and initialized when you first start the bot.
+
+- **Database Location**: `{STORAGE_DIR}/data/wabisaby.db` (default: `storage/data/wabisaby.db`)
+- **Package**: Uses `better-sqlite3` (already included in dependencies)
+- **System Requirements**: No system-level SQLite installation needed
+
+### Database Benefits
+
+- **Better Performance**: Faster queries and operations
+- **Data Integrity**: Foreign key constraints and transactions
+- **Scalability**: Handles large play history without performance degradation
+- **Reliability**: ACID compliance ensures data consistency
+
+### Troubleshooting Database Issues
+
+<details>
+<summary><b>Database file not created</b></summary>
+
+- Ensure `storage/data/` directory exists and is writable
+- Check file permissions on the storage directory
+- Verify `better-sqlite3` package is installed: `bun install`
+
+</details>
+
+<details>
+<summary><b>Database locked errors</b></summary>
+
+- Ensure only one instance of the bot is running
+- Check if another process is accessing the database file
+- Verify file permissions on `storage/data/wabisaby.db`
+
+</details>
 
 ## Configuration Priority
 
