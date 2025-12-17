@@ -532,25 +532,17 @@ async function playFileWithFfplay(filePath, startOffset = 0) {
                 }
                 
                 if (pauseResult === 'effects') {
-                    // Update currentOffset based on elapsed time up to when we paused
-                    if (playbackStartTime && pauseStartTime) {
-                        const elapsed = pauseStartTime - playbackStartTime;
-                        currentOffset = currentOffset + elapsed;
-                        // Reset playbackStartTime since we've incorporated the elapsed time into currentOffset
-                        playbackStartTime = null;
-                        logger.info(`Effects changed while paused, updated position to ${currentOffset}ms`);
-                    }
+                    // currentOffset was already updated when we paused, so it's already correct
+                    // Just continue to restart playback with new effects
+                    logger.info(`Effects changed while paused, restarting at position ${currentOffset}ms`);
                     continue;
                 }
                 
                 if (pauseResult === 'resume') {
                     isPaused = false;
-                    // Adjust playback start time to account for pause duration
-                    if (pauseStartTime && playbackStartTime) {
-                        const pauseDuration = Date.now() - pauseStartTime;
-                        playbackStartTime += pauseDuration;
-                    }
+                    // currentOffset was already updated when we paused, so we can just resume
                     pauseStartTime = null;
+                    playbackStartTime = null; // Will be reset when we start the new ffplay process
                 }
             }
             
@@ -568,6 +560,13 @@ async function playFileWithFfplay(filePath, startOffset = 0) {
                         killReason = 'paused';
                         isPaused = true;
                         pauseStartTime = Date.now();
+                        // Calculate current position before killing
+                        if (playbackStartTime) {
+                            const elapsed = Date.now() - playbackStartTime;
+                            currentOffset = currentOffset + elapsed;
+                            logger.info(`Paused at position ${currentOffset}ms`);
+                            playbackStartTime = null; // Reset so effects change logic knows we're paused
+                        }
                         p.kill('SIGKILL');
                     },
                     [PLAYBACK_SKIP]: () => {
