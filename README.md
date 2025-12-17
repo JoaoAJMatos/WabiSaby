@@ -47,6 +47,14 @@ Perfect for:
 - **VIP management** - Control priority users from the web interface
 - **System logs** - Monitor everything in real-time
 
+### 📱 Mobile VIP Access
+
+- **Mobile-optimized interface** - Access from your phone or tablet
+- **Real-time queue viewing** - See current song and upcoming tracks
+- **Audio effects control** - Adjust speed, EQ, and effects on the go
+- **Device-bound security** - Links are secured to your device
+- **Automatic access** - VIPs receive a mobile access link via WhatsApp
+
 ### 🎛️ Audio Effects
 
 - Real-time audio effects (EQ, reverb, echo, speed control)
@@ -67,6 +75,7 @@ Perfect for:
 - Skip any song (not just own requests)
 - Playlist support (Spotify/YouTube playlists)
 - Profile picture display
+- **Mobile access** - Dedicated mobile interface for viewing queue and controlling effects
 
 ### 🎼 Lyrics
 
@@ -259,6 +268,15 @@ VIPs can add entire playlists using `!playlist <url>`:
 - **YouTube**: Public playlists (no credentials needed)
 
 All tracks are added with VIP priority. Progress updates sent every 10 tracks.
+
+### Mobile VIP Access
+
+When a user is granted VIP status, they automatically receive a mobile access link via WhatsApp. This link provides:
+
+- **Mobile-optimized interface** at `/mobile/vip?token=...`
+- **Real-time updates** - Current song, queue, and connection status
+- **Audio effects control** - Full control over speed, EQ, reverb, echo, distortion, and compressor
+- **Device security** - Link is bound to the first device that accesses it for security
 
 ---
 
