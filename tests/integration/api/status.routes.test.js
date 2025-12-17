@@ -117,15 +117,30 @@ test('GET /api/status should include current song with elapsed time', async () =
 test('GET /api/status should handle paused song elapsed time', async () => {
     testServer = await startTestServer(createTestApp(router));
     
-    const pausedAt = Date.now() - 10000;
+    const startTime = Date.now() - 60000; // 60 seconds ago
+    
+    // Stub state persistence to prevent database operations during tests
+    // The controller now uses event-driven persistence, so we stub the persistence handler
+    expect(playbackController.statePersistence).toBeDefined();
+    const saveStateStub = sinon.stub(playbackController.statePersistence, 'saveState');
+    
+    // Set up playback state properly
     playbackController.isPlaying = true;
-    playbackController.isPaused = true;
     playbackController.currentSong = {
         content: 'https://youtube.com/watch?v=test1',
         title: 'Test Song',
-        startTime: Date.now() - 60000, // 60 seconds ago
-        pausedAt: pausedAt
+        startTime: startTime
     };
+    
+    // Use the pause() method to properly set paused state
+    // This ensures pausedAt is set correctly and emits state_changed event
+    const paused = playbackController.pause();
+    expect(paused).toBe(true);
+    expect(playbackController.isPaused).toBe(true);
+    expect(playbackController.currentSong.pausedAt).toBeTruthy();
+    
+    // Capture the pausedAt time that was set by pause()
+    const pausedAt = playbackController.currentSong.pausedAt;
     
     getStatsStub.returns({ songsPlayed: 0 });
     getUptimeStub.returns(0);
@@ -134,8 +149,12 @@ test('GET /api/status should handle paused song elapsed time', async () => {
     expect(response.status).toBe(200);
     
     const data = await parseJsonResponse(response);
+    expect(data.queue.currentSong).not.toBeNull();
     expect(data.queue.currentSong.isPaused).toBe(true);
     expect(data.queue.isPaused).toBe(true);
+    expect(data.queue.currentSong.elapsed).toBe(pausedAt - startTime);
+    
+    saveStateStub.restore();
 });
 
 test('GET /api/status should add streamUrl for file type songs', async () => {

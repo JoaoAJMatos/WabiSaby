@@ -8,6 +8,7 @@ const { downloadTrack } = require('../services/download.service');
 const statsService = require('../services/stats.service');
 const dbService = require('../database/db.service');
 const { isRateLimitError } = require('../utils/rate-limit.util');
+const PlaybackStatePersistence = require('./playback-state-persistence');
 const {
     QUEUE_ITEM_ADDED,
     PLAYBACK_REQUESTED,
@@ -54,6 +55,9 @@ class PlaybackController extends EventEmitter {
         
         // Set up event listeners
         this.setupListeners();
+        
+        // Initialize state persistence handler
+        this.statePersistence = new PlaybackStatePersistence(this);
     }
     
     /**
@@ -92,30 +96,11 @@ class PlaybackController extends EventEmitter {
     }
     
     /**
-     * Save playback state to database
+     * Emit state changed event for persistence
+     * State persistence is handled by PlaybackStatePersistence listener
      */
-    saveState() {
-        try {
-            dbService.updatePlaybackState({
-                is_playing: this.isPlaying ? 1 : 0,
-                is_paused: this.isPaused ? 1 : 0,
-                current_song_id: this.currentSong ? dbService.getOrCreateSong({
-                    content: this.currentSong.content,
-                    title: this.currentSong.title,
-                    artist: this.currentSong.artist,
-                    channel: this.currentSong.channel,
-                    duration: this.currentSong.duration,
-                    thumbnail_path: this.currentSong.thumbnail,
-                    thumbnail_url: this.currentSong.thumbnailUrl
-                }) : null,
-                start_time: this.currentSong?.startTime ? Math.floor(this.currentSong.startTime / 1000) : null,
-                paused_at: this.currentSong?.pausedAt ? Math.floor(this.currentSong.pausedAt / 1000) : null,
-                seek_position: this.currentSong?.elapsed || null,
-                songs_played: this.songsPlayed
-            });
-        } catch (e) {
-            logger.error('Failed to save playback state:', e);
-        }
+    emitStateChanged() {
+        this.emit('state_changed');
     }
     
     /**
@@ -232,7 +217,7 @@ class PlaybackController extends EventEmitter {
                     startTime: Date.now(),
                     pausedAt: null
                 };
-                this.saveState();
+                this.emitStateChanged();
                 
                 // Record song in stats
                 statsService.recordSongPlayed(this.currentSong);
@@ -305,7 +290,7 @@ class PlaybackController extends EventEmitter {
         if (success) {
             this.songsPlayed++;
         }
-        this.saveState();
+        this.emitStateChanged();
         
         // Emit playback ended event
         this.emit(PLAYBACK_ENDED, { success });
@@ -323,7 +308,7 @@ class PlaybackController extends EventEmitter {
         if (this.isPlaying && !this.isPaused && this.currentSong) {
             this.isPaused = true;
             this.currentSong.pausedAt = Date.now();
-            this.saveState();
+            this.emitStateChanged();
             this.emit(PLAYBACK_PAUSE);
             return true;
         }
@@ -341,7 +326,7 @@ class PlaybackController extends EventEmitter {
                 this.currentSong.startTime += pauseDuration;
                 this.currentSong.pausedAt = null;
             }
-            this.saveState();
+            this.emitStateChanged();
             this.emit(PLAYBACK_RESUME);
             return true;
         }
@@ -370,7 +355,7 @@ class PlaybackController extends EventEmitter {
                 this.isPaused = false;
             }
             
-            this.saveState();
+            this.emitStateChanged();
             this.emit(PLAYBACK_SEEK, { positionMs: seekTime });
             return true;
         }
@@ -418,7 +403,7 @@ class PlaybackController extends EventEmitter {
             // Ignore errors if modules aren't loaded yet
         }
         
-        this.saveState();
+        this.emitStateChanged();
         return true;
     }
     

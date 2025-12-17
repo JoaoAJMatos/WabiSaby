@@ -1,7 +1,8 @@
 const { logger } = require('../utils/logger.util');
 const dbService = require('../database/db.service');
 const config = require('../config');
-const { sendMessageWithMention, sendMessageWithLinkPreview, getLocalIPv4 } = require('../utils/helpers.util');
+const { sendMessageWithMention, sendMessageWithLinkPreview } = require('../utils/helpers.util');
+const helpersUtil = require('../utils/helpers.util');
 
 /**
  * Priority Service
@@ -65,7 +66,7 @@ async function getMobileAccessLink(whatsappId) {
     const configHost = config.server.host;
     const host = (configHost && configHost !== 'localhost' && configHost !== '127.0.0.1') 
         ? configHost 
-        : await getLocalIPv4();
+        : await helpersUtil.getLocalIPv4();
     const port = config.server.port || 3000;
     return `http://${host}:${port}/mobile/vip?token=${token}`;
 }

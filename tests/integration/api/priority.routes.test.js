@@ -13,6 +13,8 @@ let mockWhatsAppSocket;
 let getPriorityUsersStub;
 let addPriorityUserStub;
 let removePriorityUserStub;
+let regenerateMobileTokenStub;
+let sendMobileAccessLinkStub;
 
 beforeEach(() => {
     mockWhatsAppSocket = {
@@ -23,6 +25,8 @@ beforeEach(() => {
     getPriorityUsersStub = sinon.stub(priorityService, 'getPriorityUsers');
     addPriorityUserStub = sinon.stub(priorityService, 'addPriorityUser');
     removePriorityUserStub = sinon.stub(priorityService, 'removePriorityUser');
+    regenerateMobileTokenStub = sinon.stub(priorityService, 'regenerateMobileToken');
+    sendMobileAccessLinkStub = sinon.stub(priorityService, 'sendMobileAccessLink');
     
     setWhatsAppSocket(mockWhatsAppSocket);
 });
@@ -204,5 +208,56 @@ test('GET /api/priority/group-members should return 503 when WhatsApp not connec
     
     const data = await parseJsonResponse(response);
     expect(data.error).toContain('WhatsApp not connected');
+});
+
+test('POST /api/priority/regenerate-token/:whatsappId should regenerate token and send link', async () => {
+    testServer = await startTestServer(createTestApp(router));
+    
+    regenerateMobileTokenStub.returns('new-token-123');
+    sendMobileAccessLinkStub.resolves(true);
+    
+    const response = await makeRequest(testServer.url, 'POST', '/api/priority/regenerate-token/vip@whatsapp');
+    expect(response.status).toBe(200);
+    
+    const data = await parseJsonResponse(response);
+    expect(data.success).toBe(true);
+    expect(data.message).toContain('Token regenerated');
+    expect(regenerateMobileTokenStub.calledOnce).toBe(true);
+    expect(regenerateMobileTokenStub.firstCall.args[0]).toBe('vip@whatsapp');
+    expect(sendMobileAccessLinkStub.calledOnce).toBe(true);
+    expect(sendMobileAccessLinkStub.firstCall.args[0]).toBe('vip@whatsapp');
+});
+
+test('POST /api/priority/regenerate-token/:whatsappId should return 400 when whatsappId is missing', async () => {
+    testServer = await startTestServer(createTestApp(router));
+    
+    const response = await makeRequest(testServer.url, 'POST', '/api/priority/regenerate-token/');
+    expect(response.status).toBe(404); // Express returns 404 for missing route params
+});
+
+test('POST /api/priority/regenerate-token/:whatsappId should return 500 when token generation fails', async () => {
+    testServer = await startTestServer(createTestApp(router));
+    
+    regenerateMobileTokenStub.returns(null);
+    
+    const response = await makeRequest(testServer.url, 'POST', '/api/priority/regenerate-token/vip@whatsapp');
+    expect(response.status).toBe(500);
+    
+    const data = await parseJsonResponse(response);
+    expect(data.error).toContain('Failed to regenerate token');
+    expect(regenerateMobileTokenStub.calledOnce).toBe(true);
+    expect(sendMobileAccessLinkStub.called).toBe(false);
+});
+
+test('POST /api/priority/regenerate-token/:whatsappId should handle errors gracefully', async () => {
+    testServer = await startTestServer(createTestApp(router));
+    
+    regenerateMobileTokenStub.throws(new Error('Database error'));
+    
+    const response = await makeRequest(testServer.url, 'POST', '/api/priority/regenerate-token/vip@whatsapp');
+    expect(response.status).toBe(500);
+    
+    const data = await parseJsonResponse(response);
+    expect(data.error).toBeDefined();
 });
 

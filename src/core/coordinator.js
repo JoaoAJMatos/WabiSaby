@@ -120,6 +120,7 @@ class SystemCoordinator {
      */
     setupPlaybackControllerListeners() {
         // PlaybackController already sets up its own listeners in setupListeners()
+        // State persistence is handled by PlaybackStatePersistence in the controller constructor
         // This method is here for future expansion if needed
     }
 }

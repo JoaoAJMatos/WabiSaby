@@ -708,7 +708,7 @@ function setMobileToken(whatsappId, token) {
 function getVipByToken(token) {
     if (!token) return null;
     const db = getDatabase();
-    const result = db.prepare('SELECT whatsapp_id, name, device_fingerprint FROM priority_users WHERE mobile_token = ?').get(token);
+    const result = db.prepare('SELECT whatsapp_id, name, device_fingerprint, fingerprint_created_at FROM priority_users WHERE mobile_token = ?').get(token);
     return result || null;
 }
 
