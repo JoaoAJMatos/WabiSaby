@@ -5,6 +5,7 @@
 
 const fs = require('fs');
 const path = require('path');
+const os = require('os');
 const config = require('../config');
 
 /**
@@ -65,10 +66,45 @@ function getThumbnailUrl(thumbnailPath) {
     return `/thumbnails/${urlPath}`;
 }
 
+/**
+ * Get local IPv4 address for network access
+ * @returns {string} Local IPv4 address or 'localhost' as fallback
+ */
+function getLocalIPv4() {
+    try {
+        const interfaces = os.networkInterfaces();
+        
+        // Priority order: non-internal, IPv4, not loopback
+        for (const name of Object.keys(interfaces)) {
+            for (const iface of interfaces[name]) {
+                // Skip internal (i.e. 127.0.0.1) and non-IPv4 addresses
+                if (iface.family === 'IPv4' && !iface.internal) {
+                    return iface.address;
+                }
+            }
+        }
+        
+        // Fallback: try to find any IPv4 address
+        for (const name of Object.keys(interfaces)) {
+            for (const iface of interfaces[name]) {
+                if (iface.family === 'IPv4') {
+                    return iface.address;
+                }
+            }
+        }
+    } catch (error) {
+        // If we can't get the IP, fall back to localhost
+    }
+    
+    // Final fallback
+    return 'localhost';
+}
+
 module.exports = {
     delay,
     getRandomDelay,
     sendMessageWithMention,
-    getThumbnailUrl
+    getThumbnailUrl,
+    getLocalIPv4
 };
 

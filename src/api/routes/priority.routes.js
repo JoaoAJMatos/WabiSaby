@@ -37,15 +37,19 @@ router.get('/priority', (req, res) => {
  * Add priority user
  * POST /api/priority/add
  */
-router.post('/priority/add', (req, res) => {
+router.post('/priority/add', async (req, res) => {
     const { id, name } = req.body;
     
     if (!id) {
         return res.status(400).json({ error: 'ID required' });
     }
     
-    priorityService.addPriorityUser(id, name);
-    res.json({ success: true });
+    const added = await priorityService.addPriorityUser(id, name);
+    if (added) {
+        res.json({ success: true });
+    } else {
+        res.status(500).json({ error: 'Failed to add priority user' });
+    }
 });
 
 /**
@@ -178,6 +182,31 @@ router.get('/priority/group-members', async (req, res) => {
             error: 'Failed to fetch group members',
             message: error.message 
         });
+    }
+});
+
+/**
+ * Regenerate mobile token for a VIP
+ * POST /api/priority/regenerate-token/:whatsappId
+ */
+router.post('/priority/regenerate-token/:whatsappId', async (req, res) => {
+    const { whatsappId } = req.params;
+    
+    if (!whatsappId) {
+        return res.status(400).json({ error: 'WhatsApp ID required' });
+    }
+    
+    try {
+        const token = priorityService.regenerateMobileToken(whatsappId);
+        if (token) {
+            // Send new link via WhatsApp
+            await priorityService.sendMobileAccessLink(whatsappId);
+            res.json({ success: true, message: 'Token regenerated and sent via WhatsApp' });
+        } else {
+            res.status(500).json({ error: 'Failed to regenerate token' });
+        }
+    } catch (error) {
+        res.status(500).json({ error: error.message });
     }
 });
 

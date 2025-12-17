@@ -1,0 +1,202 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>WabiSaby Mobile</title>
+    <link rel="icon" type="image/svg+xml" href="../assets/favicon.svg">
+    <link rel="alternate icon" href="../assets/favicon.ico">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="../styles/style.css">
+    <link rel="stylesheet" href="../styles/mobile.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+</head>
+<body class="mobile-body">
+    <div class="bg-overlay"></div>
+    
+    <!-- Authentication Screen -->
+    <div id="auth-screen" class="mobile-auth-screen">
+        <div class="mobile-auth-card">
+            <div class="mobile-auth-icon">
+                <i class="fas fa-music"></i>
+            </div>
+            <h2>WabiSaby Mobile</h2>
+            <p id="auth-message">Authenticating...</p>
+            <div id="auth-error" class="mobile-auth-error hidden"></div>
+        </div>
+    </div>
+
+    <!-- Main Mobile Interface -->
+    <div id="mobile-interface" class="mobile-container hidden">
+        <header class="mobile-navbar">
+            <div class="mobile-logo">
+                <i class="fas fa-leaf"></i>
+                <h1>Wabi<span class="highlight">Saby</span></h1>
+            </div>
+            <div class="mobile-status-badge" id="mobile-connection-status">
+                <span class="dot"></span> <span>LIVE</span>
+            </div>
+        </header>
+
+        <main class="mobile-main">
+            <!-- Now Playing Card -->
+            <section id="mobile-now-playing" class="mobile-card mobile-now-playing">
+                <div class="mobile-card-header">
+                    <i class="fas fa-play-circle"></i>
+                    <h2>Now Playing</h2>
+                </div>
+                <div class="mobile-np-content">
+                    <div id="mobile-np-artwork" class="mobile-np-artwork">
+                        <i class="fas fa-compact-disc"></i>
+                    </div>
+                    <div id="mobile-np-info" class="mobile-np-info">
+                        <div class="mobile-np-idle">
+                            <span>READY TO PLAY</span>
+                            <p>Waiting for music...</p>
+                        </div>
+                    </div>
+                </div>
+                <div id="mobile-np-progress" class="mobile-np-progress hidden">
+                    <div class="mobile-progress-bar-container">
+                        <div id="mobile-progress-bar" class="mobile-progress-bar"></div>
+                    </div>
+                    <div class="mobile-time-display">
+                        <span id="mobile-current-time">0:00</span>
+                        <span id="mobile-total-time">0:00</span>
+                    </div>
+                </div>
+            </section>
+
+            <!-- Queue Card -->
+            <section id="mobile-queue" class="mobile-card">
+                <div class="mobile-card-header">
+                    <i class="fas fa-list"></i>
+                    <h2>Queue</h2>
+                    <span class="mobile-badge" id="mobile-queue-count">0</span>
+                </div>
+                <div class="mobile-queue-container">
+                    <ul id="mobile-queue-list" class="mobile-queue-list">
+                        <li class="mobile-queue-empty">No songs in queue</li>
+                    </ul>
+                </div>
+            </section>
+
+            <!-- Effects Card -->
+            <section id="mobile-effects" class="mobile-card mobile-effects">
+                <div class="mobile-card-header">
+                    <i class="fas fa-sliders-h"></i>
+                    <h2>Effects</h2>
+                    <div class="mobile-effects-badge" id="mobile-effects-badge">
+                        <span>Normal</span>
+                    </div>
+                </div>
+                
+                <!-- Presets Row -->
+                <div class="mobile-presets-row">
+                    <div id="mobile-presets-grid" class="mobile-presets-grid">
+                        <!-- Presets populated by JavaScript -->
+                    </div>
+                </div>
+                
+                <!-- Expandable Effects -->
+                <div class="mobile-effects-toggle">
+                    <button id="mobile-effects-expand-btn" class="mobile-expand-btn">
+                        <i class="fas fa-chevron-down"></i>
+                        <span>More Controls</span>
+                    </button>
+                </div>
+                
+                <div id="mobile-effects-expanded" class="mobile-effects-expanded hidden">
+                    <!-- Speed Control -->
+                    <div class="mobile-effect-section">
+                        <div class="mobile-effect-label">
+                            <i class="fas fa-tachometer-alt"></i>
+                            <span>Speed</span>
+                            <span id="mobile-speed-value" class="mobile-effect-value">1.0x</span>
+                        </div>
+                        <input type="range" id="mobile-effect-speed" class="mobile-effect-slider" min="0.5" max="2" step="0.05" value="1">
+                    </div>
+                    
+                    <!-- EQ Controls -->
+                    <div class="mobile-effect-section">
+                        <div class="mobile-effect-label">
+                            <i class="fas fa-sliders-h"></i>
+                            <span>Equalizer</span>
+                        </div>
+                        <div class="mobile-eq-controls">
+                            <div class="mobile-eq-band">
+                                <label>Bass</label>
+                                <input type="range" id="mobile-effect-eq-bass" class="mobile-eq-slider" min="-20" max="20" step="1" value="0">
+                                <span id="mobile-eq-bass-value" class="mobile-eq-value">0</span>
+                            </div>
+                            <div class="mobile-eq-band">
+                                <label>Mid</label>
+                                <input type="range" id="mobile-effect-eq-mid" class="mobile-eq-slider" min="-20" max="20" step="1" value="0">
+                                <span id="mobile-eq-mid-value" class="mobile-eq-value">0</span>
+                            </div>
+                            <div class="mobile-eq-band">
+                                <label>Treble</label>
+                                <input type="range" id="mobile-effect-eq-treble" class="mobile-eq-slider" min="-20" max="20" step="1" value="0">
+                                <span id="mobile-eq-treble-value" class="mobile-eq-value">0</span>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <!-- Effect Toggles -->
+                    <div class="mobile-effect-section">
+                        <div class="mobile-effect-label">
+                            <i class="fas fa-magic"></i>
+                            <span>Effects</span>
+                        </div>
+                        <div class="mobile-effects-toggles">
+                            <!-- Reverb -->
+                            <div class="mobile-effect-toggle-item">
+                                <label class="mobile-toggle-switch">
+                                    <input type="checkbox" id="mobile-effect-reverb-enabled">
+                                    <span class="mobile-toggle-slider"></span>
+                                </label>
+                                <span>Reverb</span>
+                            </div>
+                            <!-- Echo -->
+                            <div class="mobile-effect-toggle-item">
+                                <label class="mobile-toggle-switch">
+                                    <input type="checkbox" id="mobile-effect-echo-enabled">
+                                    <span class="mobile-toggle-slider"></span>
+                                </label>
+                                <span>Echo</span>
+                            </div>
+                            <!-- Distortion -->
+                            <div class="mobile-effect-toggle-item">
+                                <label class="mobile-toggle-switch">
+                                    <input type="checkbox" id="mobile-effect-distortion-enabled">
+                                    <span class="mobile-toggle-slider"></span>
+                                </label>
+                                <span>Distortion</span>
+                            </div>
+                            <!-- Compressor -->
+                            <div class="mobile-effect-toggle-item">
+                                <label class="mobile-toggle-switch">
+                                    <input type="checkbox" id="mobile-effect-compressor-enabled">
+                                    <span class="mobile-toggle-slider"></span>
+                                </label>
+                                <span>Compressor</span>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </section>
+        </main>
+    </div>
+
+    <!-- Core Modules -->
+    <script src="../js/core/config.js"></script>
+    <script src="../js/core/utils.js"></script>
+    <script src="../js/core/device-fingerprint.js"></script>
+    
+    <!-- Mobile Page Script -->
+    <script src="../js/pages/mobile.js"></script>
+</body>
+</html>
+

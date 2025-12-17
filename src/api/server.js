@@ -12,7 +12,8 @@ const { router: settingsRouter } = require('./routes/settings.routes');
 const { router: logsRouter } = require('./routes/logs.routes');
 const { router: effectsRouter } = require('./routes/effects.routes');
 const { router: groupsRouter, setWhatsAppSocket: setGroupsSocket } = require('./routes/groups.routes');
-const { updateVipName } = require('../services/priority.service');
+const { router: mobileRouter } = require('./routes/mobile.routes');
+const { updateVipName, setWhatsAppSocket: setPriorityServiceSocket } = require('../services/priority.service');
 
 const app = express();
 const PORT = config.server.port;
@@ -34,6 +35,12 @@ app.use('/api', settingsRouter);
 app.use('/api', logsRouter);
 app.use('/api', effectsRouter);
 app.use('/api', groupsRouter);
+app.use('/api', mobileRouter);
+
+// Serve mobile VIP page
+app.get('/mobile/vip', (req, res) => {
+    res.sendFile(path.join(process.cwd(), 'public', 'pages', 'mobile.html'));
+});
 
 function startServer(callback) {
     app.listen(PORT, () => {
@@ -53,6 +60,7 @@ function startServer(callback) {
 function setWhatsAppSocket(sock) {
     setPrioritySocket(sock);
     setGroupsSocket(sock);
+    setPriorityServiceSocket(sock);
 }
 
 module.exports = { 

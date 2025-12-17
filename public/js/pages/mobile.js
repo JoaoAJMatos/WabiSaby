@@ -1,0 +1,487 @@
+/**
+ * Mobile VIP Access Page
+ * Handles authentication, real-time updates, and mobile interactions
+ */
+
+// Global state
+let mobileToken = null;
+let deviceFingerprint = null;
+let isAuthenticated = false;
+let updateInterval = null;
+let currentEffects = null;
+let effectsPresets = [];
+
+// Extract token from URL
+function getTokenFromURL() {
+    const params = new URLSearchParams(window.location.search);
+    return params.get('token');
+}
+
+// Format time helper
+function formatTime(ms) {
+    if (!ms || isNaN(ms)) return '0:00';
+    const totalSeconds = Math.floor(ms / 1000);
+    const minutes = Math.floor(totalSeconds / 60);
+    const seconds = totalSeconds % 60;
+    return `${minutes}:${seconds.toString().padStart(2, '0')}`;
+}
+
+// Show error message
+function showError(message) {
+    const errorEl = document.getElementById('auth-error');
+    const messageEl = document.getElementById('auth-message');
+    if (errorEl) {
+        errorEl.textContent = message;
+        errorEl.classList.remove('hidden');
+    }
+    if (messageEl) {
+        messageEl.textContent = 'Authentication failed';
+    }
+}
+
+// Show success and hide auth screen
+function showMainInterface() {
+    const authScreen = document.getElementById('auth-screen');
+    const mainInterface = document.getElementById('mobile-interface');
+    if (authScreen) authScreen.classList.add('hidden');
+    if (mainInterface) mainInterface.classList.remove('hidden');
+}
+
+// Authenticate with token and fingerprint
+async function authenticate() {
+    const token = getTokenFromURL();
+    if (!token) {
+        showError('No access token found in URL');
+        return false;
+    }
+    
+    mobileToken = token;
+    
+    try {
+        // Generate device fingerprint
+        deviceFingerprint = await generateDeviceFingerprint();
+        
+        // Send authentication request
+        const response = await fetch('/api/mobile/auth', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json'
+            },
+            body: JSON.stringify({
+                token: mobileToken,
+                fingerprint: deviceFingerprint
+            })
+        });
+        
+        const data = await response.json();
+        
+        if (response.ok && data.success) {
+            isAuthenticated = true;
+            showMainInterface();
+            initializeMobileInterface();
+            return true;
+        } else {
+            showError(data.message || data.error || 'Authentication failed');
+            return false;
+        }
+    } catch (error) {
+        console.error('Authentication error:', error);
+        showError('Failed to connect to server');
+        return false;
+    }
+}
+
+// Initialize mobile interface after authentication
+function initializeMobileInterface() {
+    // Load initial data
+    fetchMobileStatus();
+    loadMobileEffects();
+    
+    // Set up periodic updates
+    updateInterval = setInterval(() => {
+        fetchMobileStatus();
+    }, 2000); // Update every 2 seconds
+    
+    // Set up effects controls
+    setupEffectsControls();
+    
+    // Set up expand/collapse for effects
+    const expandBtn = document.getElementById('mobile-effects-expand-btn');
+    const expandedContent = document.getElementById('mobile-effects-expanded');
+    if (expandBtn && expandedContent) {
+        expandBtn.addEventListener('click', () => {
+            expandedContent.classList.toggle('hidden');
+            const icon = expandBtn.querySelector('i');
+            if (icon) {
+                icon.classList.toggle('fa-chevron-down');
+                icon.classList.toggle('fa-chevron-up');
+            }
+        });
+    }
+}
+
+// Fetch mobile status
+async function fetchMobileStatus() {
+    if (!isAuthenticated || !mobileToken) return;
+    
+    try {
+        const response = await fetch(`/api/mobile/status?token=${mobileToken}`, {
+            headers: {
+                'X-Device-Fingerprint': deviceFingerprint
+            }
+        });
+        
+        if (response.ok) {
+            const data = await response.json();
+            updateMobileUI(data);
+        } else if (response.status === 401 || response.status === 403) {
+            // Authentication failed, redirect to auth screen
+            isAuthenticated = false;
+            showError('Session expired. Please refresh the page.');
+        }
+    } catch (error) {
+        console.error('Error fetching mobile status:', error);
+    }
+}
+
+// Update mobile UI with status data
+function updateMobileUI(data) {
+    const { queue, currentSong, auth } = data;
+    
+    // Update connection status
+    const statusBadge = document.getElementById('mobile-connection-status');
+    if (statusBadge) {
+        if (auth && auth.isConnected) {
+            statusBadge.classList.add('online');
+            statusBadge.classList.remove('offline');
+        } else {
+            statusBadge.classList.add('offline');
+            statusBadge.classList.remove('online');
+        }
+    }
+    
+    // Update now playing
+    updateNowPlaying(currentSong);
+    
+    // Update queue
+    updateQueue(queue.queue || []);
+}
+
+// Update now playing section
+function updateNowPlaying(currentSong) {
+    const artworkEl = document.getElementById('mobile-np-artwork');
+    const infoEl = document.getElementById('mobile-np-info');
+    const progressEl = document.getElementById('mobile-np-progress');
+    const progressBar = document.getElementById('mobile-progress-bar');
+    const currentTimeEl = document.getElementById('mobile-current-time');
+    const totalTimeEl = document.getElementById('mobile-total-time');
+    
+    if (!currentSong) {
+        // Show idle state
+        if (infoEl) {
+            infoEl.innerHTML = `
+                <div class="mobile-np-idle">
+                    <span>READY TO PLAY</span>
+                    <p>Waiting for music...</p>
+                </div>
+            `;
+        }
+        if (progressEl) progressEl.classList.add('hidden');
+        if (artworkEl) {
+            artworkEl.innerHTML = '<i class="fas fa-compact-disc"></i>';
+        }
+        return;
+    }
+    
+    // Update artwork
+    if (artworkEl) {
+        if (currentSong.thumbnailUrl) {
+            artworkEl.innerHTML = `<img src="${currentSong.thumbnailUrl}" alt="${currentSong.title || 'Song'}">`;
+        } else {
+            artworkEl.innerHTML = '<i class="fas fa-compact-disc"></i>';
+        }
+    }
+    
+    // Update info
+    const title = currentSong.title || 'Unknown Title';
+    const artist = currentSong.artist || '';
+    if (infoEl) {
+        infoEl.innerHTML = `
+            <div class="mobile-np-title">${title}</div>
+            ${artist ? `<div class="mobile-np-artist">${artist}</div>` : ''}
+        `;
+    }
+    
+    // Update progress
+    if (currentSong.duration && currentSong.elapsed !== undefined) {
+        if (progressEl) progressEl.classList.remove('hidden');
+        
+        const progress = Math.min((currentSong.elapsed / currentSong.duration) * 100, 100);
+        if (progressBar) {
+            progressBar.style.width = `${progress}%`;
+        }
+        
+        if (currentTimeEl) {
+            currentTimeEl.textContent = formatTime(currentSong.elapsed);
+        }
+        if (totalTimeEl) {
+            totalTimeEl.textContent = formatTime(currentSong.duration);
+        }
+    } else {
+        if (progressEl) progressEl.classList.add('hidden');
+    }
+}
+
+// Update queue list
+function updateQueue(queue) {
+    const queueList = document.getElementById('mobile-queue-list');
+    const queueCount = document.getElementById('mobile-queue-count');
+    
+    if (queueCount) {
+        queueCount.textContent = queue.length;
+    }
+    
+    if (!queueList) return;
+    
+    if (queue.length === 0) {
+        queueList.innerHTML = '<li class="mobile-queue-empty">No songs in queue</li>';
+        return;
+    }
+    
+    queueList.innerHTML = queue.map((item, index) => {
+        const title = item.title || 'Unknown Title';
+        const artist = item.artist || '';
+        const thumbnail = item.thumbnailUrl ? `<img src="${item.thumbnailUrl}" alt="${title}">` : '<i class="fas fa-music"></i>';
+        
+        return `
+            <li class="mobile-queue-item">
+                <div class="mobile-queue-artwork">${thumbnail}</div>
+                <div class="mobile-queue-info">
+                    <div class="mobile-queue-title">${title}</div>
+                    ${artist ? `<div class="mobile-queue-artist">${artist}</div>` : ''}
+                </div>
+                <div class="mobile-queue-position">#${index + 1}</div>
+            </li>
+        `;
+    }).join('');
+}
+
+// Load mobile effects
+async function loadMobileEffects() {
+    if (!isAuthenticated || !mobileToken) return;
+    
+    try {
+        const response = await fetch(`/api/mobile/effects?token=${mobileToken}`, {
+            headers: {
+                'X-Device-Fingerprint': deviceFingerprint
+            }
+        });
+        
+        if (response.ok) {
+            const data = await response.json();
+            currentEffects = data.effects;
+            effectsPresets = data.presets || [];
+            updateMobileEffectsUI(currentEffects);
+            renderMobilePresets(effectsPresets, currentEffects.preset);
+        }
+    } catch (error) {
+        console.error('Error loading mobile effects:', error);
+    }
+}
+
+// Update mobile effects UI
+function updateMobileEffectsUI(effects) {
+    if (!effects) return;
+    
+    // Speed
+    const speedSlider = document.getElementById('mobile-effect-speed');
+    const speedValue = document.getElementById('mobile-speed-value');
+    if (speedSlider) {
+        speedSlider.value = effects.speed || 1;
+        if (speedValue) speedValue.textContent = `${(effects.speed || 1).toFixed(2)}x`;
+    }
+    
+    // EQ
+    updateMobileEQ('bass', effects.eq?.bass || 0);
+    updateMobileEQ('mid', effects.eq?.mid || 0);
+    updateMobileEQ('treble', effects.eq?.treble || 0);
+    
+    // Effect toggles
+    const reverbToggle = document.getElementById('mobile-effect-reverb-enabled');
+    const echoToggle = document.getElementById('mobile-effect-echo-enabled');
+    const distortionToggle = document.getElementById('mobile-effect-distortion-enabled');
+    const compressorToggle = document.getElementById('mobile-effect-compressor-enabled');
+    
+    if (reverbToggle) reverbToggle.checked = effects.reverb?.enabled || false;
+    if (echoToggle) echoToggle.checked = effects.echo?.enabled || false;
+    if (distortionToggle) distortionToggle.checked = effects.distortion?.enabled || false;
+    if (compressorToggle) compressorToggle.checked = effects.compressor?.enabled || false;
+    
+    // Update badge
+    const badge = document.getElementById('mobile-effects-badge');
+    if (badge) {
+        const presetName = effects.preset || 'Normal';
+        badge.querySelector('span').textContent = presetName;
+    }
+}
+
+// Update mobile EQ slider
+function updateMobileEQ(band, value) {
+    const slider = document.getElementById(`mobile-effect-eq-${band}`);
+    const valueEl = document.getElementById(`mobile-eq-${band}-value`);
+    if (slider) {
+        slider.value = value;
+        if (valueEl) valueEl.textContent = value;
+    }
+}
+
+// Render mobile presets
+function renderMobilePresets(presets, currentPreset) {
+    const presetsGrid = document.getElementById('mobile-presets-grid');
+    if (!presetsGrid) return;
+    
+    if (!presets || presets.length === 0) {
+        presetsGrid.innerHTML = '';
+        return;
+    }
+    
+    presetsGrid.innerHTML = presets.map(preset => {
+        const isActive = preset.id === currentPreset;
+        return `
+            <button class="mobile-preset-btn ${isActive ? 'active' : ''}" 
+                    data-preset-id="${preset.id}"
+                    onclick="applyMobilePreset('${preset.id}')">
+                ${preset.name}
+            </button>
+        `;
+    }).join('');
+}
+
+// Apply mobile preset
+async function applyMobilePreset(presetId) {
+    if (!isAuthenticated || !mobileToken) return;
+    
+    try {
+        const response = await fetch(`/api/mobile/effects/preset/${presetId}?token=${mobileToken}`, {
+            method: 'POST',
+            headers: {
+                'X-Device-Fingerprint': deviceFingerprint
+            }
+        });
+        
+        if (response.ok) {
+            const data = await response.json();
+            currentEffects = data.effects;
+            updateMobileEffectsUI(currentEffects);
+            renderMobilePresets(effectsPresets, currentEffects.preset);
+        }
+    } catch (error) {
+        console.error('Error applying preset:', error);
+    }
+}
+
+// Make applyMobilePreset available globally
+window.applyMobilePreset = applyMobilePreset;
+
+// Setup effects controls
+function setupEffectsControls() {
+    // Speed slider
+    const speedSlider = document.getElementById('mobile-effect-speed');
+    if (speedSlider) {
+        speedSlider.addEventListener('input', (e) => {
+            const value = parseFloat(e.target.value);
+            const valueEl = document.getElementById('mobile-speed-value');
+            if (valueEl) valueEl.textContent = `${value.toFixed(2)}x`;
+            debounceUpdateEffects({ speed: value });
+        });
+    }
+    
+    // EQ sliders
+    ['bass', 'mid', 'treble'].forEach(band => {
+        const slider = document.getElementById(`mobile-effect-eq-${band}`);
+        if (slider) {
+            slider.addEventListener('input', (e) => {
+                const value = parseInt(e.target.value);
+                const valueEl = document.getElementById(`mobile-eq-${band}-value`);
+                if (valueEl) valueEl.textContent = value;
+                debounceUpdateEffects({
+                    eq: {
+                        ...(currentEffects?.eq || {}),
+                        [band]: value
+                    }
+                });
+            });
+        }
+    });
+    
+    // Effect toggles
+    ['reverb', 'echo', 'distortion', 'compressor'].forEach(effect => {
+        const toggle = document.getElementById(`mobile-effect-${effect}-enabled`);
+        if (toggle) {
+            toggle.addEventListener('change', (e) => {
+                debounceUpdateEffects({
+                    [effect]: {
+                        ...(currentEffects?.[effect] || {}),
+                        enabled: e.target.checked
+                    }
+                });
+            });
+        }
+    });
+}
+
+// Debounce effects updates
+let effectsUpdateTimeout = null;
+function debounceUpdateEffects(partialEffects) {
+    if (effectsUpdateTimeout) {
+        clearTimeout(effectsUpdateTimeout);
+    }
+    
+    effectsUpdateTimeout = setTimeout(() => {
+        if (!isAuthenticated || !mobileToken || !currentEffects) return;
+        
+        const updatedEffects = {
+            ...currentEffects,
+            ...partialEffects
+        };
+        
+        updateMobileEffects(updatedEffects);
+    }, 300);
+}
+
+// Update mobile effects on server
+async function updateMobileEffects(newEffects) {
+    if (!isAuthenticated || !mobileToken) return;
+    
+    try {
+        const response = await fetch(`/api/mobile/effects?token=${mobileToken}`, {
+            method: 'PUT',
+            headers: {
+                'Content-Type': 'application/json',
+                'X-Device-Fingerprint': deviceFingerprint
+            },
+            body: JSON.stringify(newEffects)
+        });
+        
+        if (response.ok) {
+            const data = await response.json();
+            currentEffects = data.effects;
+            updateMobileEffectsUI(currentEffects);
+        }
+    } catch (error) {
+        console.error('Error updating mobile effects:', error);
+    }
+}
+
+// Initialize on page load
+document.addEventListener('DOMContentLoaded', () => {
+    authenticate();
+});
+
+// Cleanup on page unload
+window.addEventListener('beforeunload', () => {
+    if (updateInterval) {
+        clearInterval(updateInterval);
+    }
+});
+
