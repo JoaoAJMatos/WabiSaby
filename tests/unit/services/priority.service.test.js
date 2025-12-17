@@ -58,27 +58,27 @@ test('checkPriority should return true for priority user', () => {
     expect(priorityService.checkPriority('vip@whatsapp')).toBe(true);
 });
 
-test('addPriorityUser should return false for null/undefined id', () => {
-    expect(priorityService.addPriorityUser(null)).toBe(false);
-    expect(priorityService.addPriorityUser(undefined)).toBe(false);
-    expect(priorityService.addPriorityUser('')).toBe(false);
+test('addPriorityUser should return false for null/undefined id', async () => {
+    expect(await priorityService.addPriorityUser(null)).toBe(false);
+    expect(await priorityService.addPriorityUser(undefined)).toBe(false);
+    expect(await priorityService.addPriorityUser('')).toBe(false);
 });
 
-test('addPriorityUser should add priority user successfully', () => {
-    const result = priorityService.addPriorityUser('vip@whatsapp', 'VIP User');
+test('addPriorityUser should add priority user successfully', async () => {
+    const result = await priorityService.addPriorityUser('vip@whatsapp', 'VIP User');
     expect(result).toBe(true);
     expect(priorityService.checkPriority('vip@whatsapp')).toBe(true);
 });
 
-test('addPriorityUser should add priority user without name', () => {
-    const result = priorityService.addPriorityUser('vip2@whatsapp');
+test('addPriorityUser should add priority user without name', async () => {
+    const result = await priorityService.addPriorityUser('vip2@whatsapp');
     expect(result).toBe(true);
     expect(priorityService.checkPriority('vip2@whatsapp')).toBe(true);
 });
 
-test('addPriorityUser should handle database errors gracefully', () => {
+test('addPriorityUser should handle database errors gracefully', async () => {
     // Test normal successful path
-    const result = priorityService.addPriorityUser('test@whatsapp', 'Test');
+    const result = await priorityService.addPriorityUser('test@whatsapp', 'Test');
     expect(typeof result).toBe('boolean');
     expect(result).toBe(true);
 });

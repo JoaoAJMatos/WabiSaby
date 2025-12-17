@@ -57,6 +57,8 @@ test('GET /api/priority should return priority users', async () => {
 test('POST /api/priority/add should add priority user', async () => {
     testServer = await startTestServer(createTestApp(router));
     
+    addPriorityUserStub.resolves(true);
+    
     const response = await makeRequest(testServer.url, 'POST', '/api/priority/add', {
         body: { id: 'user1@whatsapp', name: 'User 1' }
     });
