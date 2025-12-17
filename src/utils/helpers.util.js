@@ -6,6 +6,7 @@
 const fs = require('fs');
 const path = require('path');
 const os = require('os');
+const dgram = require('dgram');
 const config = require('../config');
 
 /**
@@ -44,6 +45,69 @@ async function sendMessageWithMention(sock, remoteJid, text, mentions = null) {
 }
 
 /**
+ * Send a WhatsApp message with link preview support
+ * Tries multiple strategies to make the link clickable
+ * @param {Object} sock - WhatsApp socket instance
+ * @param {string} remoteJid - Target JID (group or user)
+ * @param {string} text - Message text containing the URL
+ * @param {string} url - URL to generate preview for (should be included in text)
+ * @param {string} title - Optional title for the link preview
+ * @param {string} description - Optional description for the link preview
+ * @param {string|Array<string>} mentions - User JID(s) to mention (optional)
+ * @returns {Promise<void>}
+ */
+async function sendMessageWithLinkPreview(sock, remoteJid, text, url, title = null, description = null, mentions = null) {
+    // Strategy: Send introduction first, then clean URL for easy copying
+    // This provides better UX and link detection
+    try {
+        // First, send the introduction message
+        const messageOptions = { text: text };
+        
+        if (mentions) {
+            const mentionArray = Array.isArray(mentions) ? mentions : [mentions];
+            messageOptions.mentions = mentionArray;
+        }
+        
+        await sock.sendMessage(remoteJid, messageOptions);
+        
+        // Small delay between messages
+        await delay(300);
+        
+        // Then send just the clean URL for easy copying and link detection
+        await sock.sendMessage(remoteJid, { text: url });
+    } catch (error) {
+        // Fallback: Try with extendedTextMessage format
+        try {
+            const messageOptions = {
+                extendedTextMessage: {
+                    text: text,
+                    matchedText: url,
+                    canonicalUrl: url,
+                    title: title || 'WabiSaby Mobile Access',
+                    description: description || 'Access your VIP music bot dashboard',
+                    previewType: 0
+                }
+            };
+            
+            if (mentions) {
+                const mentionArray = Array.isArray(mentions) ? mentions : [mentions];
+                messageOptions.mentions = mentionArray;
+            }
+            
+            await sock.sendMessage(remoteJid, messageOptions);
+        } catch (fallbackError) {
+            // Final fallback: simple text message with URL
+            const messageOptions = { text: text };
+            if (mentions) {
+                const mentionArray = Array.isArray(mentions) ? mentions : [mentions];
+                messageOptions.mentions = mentionArray;
+            }
+            await sock.sendMessage(remoteJid, messageOptions);
+        }
+    }
+}
+
+/**
  * Convert thumbnail file path to URL for serving
  * @param {string} thumbnailPath - Full path to thumbnail file
  * @returns {string|null} URL path or null if file doesn't exist or path is invalid
@@ -68,42 +132,60 @@ function getThumbnailUrl(thumbnailPath) {
 
 /**
  * Get local IPv4 address for network access
- * @returns {string} Local IPv4 address or 'localhost' as fallback
+ * Uses UDP socket to determine the actual interface used for external traffic
+ * This is the most reliable method as it uses the OS routing table
+ * @returns {Promise<string>} Local IPv4 address or 'localhost' as fallback
  */
 function getLocalIPv4() {
-    try {
-        const interfaces = os.networkInterfaces();
+    return new Promise((resolve) => {
+        let resolved = false;
+        const socket = dgram.createSocket('udp4');
         
-        // Priority order: non-internal, IPv4, not loopback
-        for (const name of Object.keys(interfaces)) {
-            for (const iface of interfaces[name]) {
-                // Skip internal (i.e. 127.0.0.1) and non-IPv4 addresses
-                if (iface.family === 'IPv4' && !iface.internal) {
-                    return iface.address;
+        const safeResolve = (value) => {
+            if (resolved) return;
+            resolved = true;
+            try {
+                if (socket) {
+                    socket.close();
                 }
+            } catch (error) {
+                // Ignore errors when closing already-closed socket
             }
-        }
+            resolve(value);
+        };
         
-        // Fallback: try to find any IPv4 address
-        for (const name of Object.keys(interfaces)) {
-            for (const iface of interfaces[name]) {
-                if (iface.family === 'IPv4') {
-                    return iface.address;
+        socket.on('error', () => {
+            safeResolve('localhost');
+        });
+        
+        // Connect to a public DNS server (doesn't actually send data)
+        // This asks the OS which interface it would use for external traffic
+        socket.connect(53, '8.8.8.8', () => {
+            try {
+                const address = socket.address();
+                
+                if (address && address.address && address.address !== '0.0.0.0') {
+                    safeResolve(address.address);
+                } else {
+                    safeResolve('localhost');
                 }
+            } catch (error) {
+                safeResolve('localhost');
             }
-        }
-    } catch (error) {
-        // If we can't get the IP, fall back to localhost
-    }
-    
-    // Final fallback
-    return 'localhost';
+        });
+        
+        // Timeout after 1 second
+        setTimeout(() => {
+            safeResolve('localhost');
+        }, 1000);
+    });
 }
 
 module.exports = {
     delay,
     getRandomDelay,
     sendMessageWithMention,
+    sendMessageWithLinkPreview,
     getThumbnailUrl,
     getLocalIPv4
 };

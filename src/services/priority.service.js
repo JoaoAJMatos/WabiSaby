@@ -1,7 +1,7 @@
 const { logger } = require('../utils/logger.util');
 const dbService = require('../database/db.service');
 const config = require('../config');
-const { sendMessageWithMention, getLocalIPv4 } = require('../utils/helpers.util');
+const { sendMessageWithMention, sendMessageWithLinkPreview, getLocalIPv4 } = require('../utils/helpers.util');
 
 /**
  * Priority Service
@@ -54,9 +54,9 @@ function checkPriority(sender) {
 /**
  * Generate mobile access link for a VIP
  * @param {string} whatsappId - WhatsApp user ID
- * @returns {string|null} Mobile access link or null
+ * @returns {Promise<string|null>} Mobile access link or null
  */
-function getMobileAccessLink(whatsappId) {
+async function getMobileAccessLink(whatsappId) {
     const token = dbService.getMobileToken(whatsappId);
     if (!token) return null;
     
@@ -65,7 +65,7 @@ function getMobileAccessLink(whatsappId) {
     const configHost = config.server.host;
     const host = (configHost && configHost !== 'localhost' && configHost !== '127.0.0.1') 
         ? configHost 
-        : getLocalIPv4();
+        : await getLocalIPv4();
     const port = config.server.port || 3000;
     return `http://${host}:${port}/mobile/vip?token=${token}`;
 }
@@ -83,24 +83,30 @@ async function sendMobileAccessLink(whatsappId, name = null) {
     }
     
     try {
-        const link = getMobileAccessLink(whatsappId);
+        const link = await getMobileAccessLink(whatsappId);
         if (!link) {
             logger.error(`No mobile token found for VIP: ${whatsappId}`);
             return false;
         }
         
         const userName = name || 'VIP User';
-        const message = `🎵 *WabiSaby Mobile Access*\n\n` +
-            `Hello ${userName}! You've been granted VIP access to the music bot.\n\n` +
-            `📱 *Mobile Access Link:*\n${link}\n\n` +
-            `This link is unique to your device. Save it to access the bot from your phone!\n\n` +
-            `You can:\n` +
-            `• View the current song\n` +
-            `• See the queue\n` +
-            `• Control audio effects\n\n` +
-            `*Note:* This link is bound to your device for security.`;
+        const introduction = `🎵 *WabiSaby Mobile Access*\n\n` +
+            `👋 Hello ${userName}! You've been granted VIP access to the music bot.\n\n` +
+            `📱 Your mobile access link will appear in the next message.\n\n` +
+            `✨ *What you can do:*\n` +
+            `🎶 View the current song\n` +
+            `📋 See the queue\n` +
+            `🎚️ Control audio effects\n\n` +
+            `🔒 *Security Note:* This link will be bound to your device for security.`;
         
-        await sendMessageWithMention(whatsappSocket, whatsappId, message);
+        await sendMessageWithLinkPreview(
+            whatsappSocket,
+            whatsappId,
+            introduction,
+            link,
+            'WabiSaby Mobile Access',
+            `VIP access to your music bot dashboard. View current song, queue, and control audio effects.`
+        );
         logger.info(`Sent mobile access link to VIP: ${whatsappId}`);
         return true;
     } catch (error) {
