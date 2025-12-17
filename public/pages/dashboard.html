@@ -37,15 +37,57 @@
         <main class="dashboard-grid">
             <!-- Login / QR Section (Hidden by default) -->
             <section id="auth-section" class="card full-width hidden">
-                 <div class="card-header">
-                    <i class="fas fa-qrcode"></i>
+                <div class="card-header">
+                    <i class="fas fa-lock"></i>
                     <h2>SYSTEM AUTHENTICATION</h2>
                 </div>
-                <div class="auth-content">
-                    <p>Scan the QR code to connect the bot to WhatsApp</p>
-                    <div id="qr-container">
-                        <div class="qr-placeholder">
-                            <i class="fas fa-circle-notch fa-spin"></i> Waiting for QR...
+                <div class="auth-content auth-content-horizontal">
+                    <!-- Left Column: QR Code -->
+                    <div class="auth-qr-column">
+                        <div class="auth-qr-wrapper">
+                            <div id="qr-container">
+                                <div class="qr-placeholder">
+                                    <i class="fas fa-circle-notch fa-spin"></i>
+                                    <span>Waiting for QR...</span>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <!-- Vertical Separator -->
+                    <div class="auth-separator"></div>
+                    
+                    <!-- Right Column: Instructions -->
+                    <div class="auth-instructions-column">
+                        <div class="auth-header-text">
+                            <h3>Connect WhatsApp</h3>
+                            <p>Scan the QR code with your phone to link your WhatsApp account</p>
+                        </div>
+                        
+                        <div class="auth-instructions">
+                            <ol class="auth-steps">
+                                <li>
+                                    <div class="auth-step-number">1</div>
+                                    <div class="auth-step-content">
+                                        <strong>Open WhatsApp</strong>
+                                        <span>Go to Settings → Linked Devices on your phone</span>
+                                    </div>
+                                </li>
+                                <li>
+                                    <div class="auth-step-number">2</div>
+                                    <div class="auth-step-content">
+                                        <strong>Scan QR Code</strong>
+                                        <span>Tap "Link a Device" and scan the code shown here</span>
+                                    </div>
+                                </li>
+                                <li>
+                                    <div class="auth-step-number">3</div>
+                                    <div class="auth-step-content">
+                                        <strong>You're Connected!</strong>
+                                        <span>Start adding music to the queue</span>
+                                    </div>
+                                </li>
+                            </ol>
                         </div>
                     </div>
                 </div>

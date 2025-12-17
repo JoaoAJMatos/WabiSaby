@@ -155,9 +155,24 @@ function toggleVipPasswordVisibility() {
 async function fetchPriorityUsers() {
     try {
         const response = await fetch('/api/priority');
-        const users = await response.json();
+        if (!response.ok) {
+            throw new Error(`HTTP error! status: ${response.status}`);
+        }
+        let users = await response.json();
+        
+        // Ensure users is an array
+        if (!Array.isArray(users)) {
+            console.error('Invalid response format from /api/priority:', users);
+            users = [];
+        }
+        
         const list = document.getElementById('vip-list');
         const countBadge = document.getElementById('vip-count-badge');
+        if (!list) {
+            console.error('VIP list element not found');
+            return;
+        }
+        
         list.innerHTML = '';
         
         // Update count badge
@@ -168,15 +183,23 @@ async function fetchPriorityUsers() {
         // Fetch profile pictures for all users in parallel
         const usersWithPictures = await Promise.all(users.map(async (user) => {
             // Handle both old format (string) and new format (object with id and name)
-            const userId = typeof user === 'string' ? user : user.id;
-            const userName = typeof user === 'object' ? user.name : null;
+            const userId = typeof user === 'string' ? user : (user?.id || null);
+            const userName = typeof user === 'object' && user ? user.name : null;
+            
+            // Skip if userId is invalid
+            if (!userId) {
+                console.warn('Skipping invalid user:', user);
+                return null;
+            }
             
             // Fetch profile picture
             let profilePicUrl = null;
             try {
                 const picResponse = await fetch(`/api/priority/profile-picture/${encodeURIComponent(userId)}`);
-                const picData = await picResponse.json();
-                profilePicUrl = picData.url;
+                if (picResponse.ok) {
+                    const picData = await picResponse.json();
+                    profilePicUrl = picData.url;
+                }
             } catch (error) {
                 console.error('Error fetching profile picture for', userId, error);
             }
@@ -184,8 +207,13 @@ async function fetchPriorityUsers() {
             return { userId, userName, profilePicUrl };
         }));
         
+        // Filter out null entries
+        const validUsers = usersWithPictures.filter(u => u !== null);
+        
         // Create VIP cards with new design
-        usersWithPictures.forEach(({ userId, userName, profilePicUrl }) => {
+        validUsers.forEach(({ userId, userName, profilePicUrl }) => {
+            if (!userId) return; // Safety check
+            
             const card = document.createElement('li');
             card.className = 'vip-user-card';
             
@@ -196,7 +224,7 @@ async function fetchPriorityUsers() {
             
             // Create display text
             const displayName = userName || 'VIP User';
-            const displayId = userId.length > 20 ? userId.substring(0, 20) + '...' : userId;
+            const displayId = userId && userId.length > 20 ? userId.substring(0, 20) + '...' : (userId || 'Unknown');
             
             card.innerHTML = `
                 <div class="vip-user-avatar">
@@ -309,8 +337,11 @@ async function fetchGroupMembers() {
         
         // Get current VIP IDs
         const vipResponse = await fetch('/api/priority');
-        const vipUsers = await vipResponse.json();
-        currentVipIds = vipUsers.map(u => typeof u === 'string' ? u : u.id);
+        let vipUsers = await vipResponse.json();
+        if (!Array.isArray(vipUsers)) {
+            vipUsers = [];
+        }
+        currentVipIds = vipUsers.map(u => typeof u === 'string' ? u : (u?.id || null)).filter(id => id !== null);
         
         displayMembers(allGroupMembers);
     } catch (error) {

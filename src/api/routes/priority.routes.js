@@ -24,7 +24,13 @@ function setWhatsAppSocket(sock) {
  * GET /api/priority
  */
 router.get('/priority', (req, res) => {
-    res.json(priorityService.getPriorityUsers());
+    const users = priorityService.getPriorityUsers();
+    // Transform database format (whatsapp_id) to API format (id)
+    const transformed = users.map(user => ({
+        id: user.whatsapp_id || user.id,
+        name: user.name || null
+    }));
+    res.json(transformed);
 });
 
 /**

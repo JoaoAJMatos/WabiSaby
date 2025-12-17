@@ -1,5 +1,4 @@
 require('dotenv').config();
-const open = require('open');
 const { logger } = require('../utils/logger.util');
 const { initializeDatabase } = require('../database');
 const config = require('../config');
@@ -20,6 +19,7 @@ logger.info(`Server will run at http://${config.server.host}:${config.server.por
 
 startServer(async (url) => {
     try {
+        const { default: open } = await import('open');
         await open(url);
     } catch (err) {
         logger.warn(`Failed to open browser automatically: ${err.message}`);
