@@ -26,29 +26,19 @@ function initializeDatabase() {
     
     db.exec('PRAGMA foreign_keys = ON');
     
-    const schemaPath = path.join(__dirname, 'schema.sql');
-    if (fs.existsSync(schemaPath)) {
-        const schema = fs.readFileSync(schemaPath, 'utf8');
-        db.exec(schema);
-        logger.info('Database schema initialized');
-    } else {
-        logger.error('Schema file not found:', schemaPath);
-        throw new Error('Database schema file not found');
-    }
-
-    const playbackState = db.prepare('SELECT COUNT(*) as count FROM playback_state').get();
-    if (playbackState.count === 0) {
-        db.prepare('INSERT INTO playback_state (id) VALUES (1)').run();
-    }
-
-    const effects = db.prepare('SELECT COUNT(*) as count FROM effects').get();
-    if (effects.count === 0) {
-        db.prepare('INSERT INTO effects (id) VALUES (1)').run();
+    try {
+        const { runMigrations } = require('./migrator');
+        runMigrations(db).catch(err => {
+            logger.error('Failed to run migrations:', err);
+        });
+    } catch (error) {
+        logger.error('Error setting up migrations:', error);
     }
 
     logger.info(`Database initialized at: ${dbPath}`);
     return db;
 }
+
 
 /**
  * Get database instance (initialize if needed)

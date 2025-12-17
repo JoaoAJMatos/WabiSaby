@@ -665,6 +665,87 @@ function updateVipName(whatsappId, name) {
     db.prepare('UPDATE priority_users SET name = ? WHERE whatsapp_id = ?').run(name, whatsappId);
 }
 
+/**
+ * Generate a secure mobile token
+ * @returns {string} Base64url encoded token
+ */
+function generateMobileToken() {
+    const crypto = require('crypto');
+    return crypto.randomBytes(32).toString('base64url');
+}
+
+/**
+ * Get mobile token for a VIP user
+ * @param {string} whatsappId - WhatsApp user ID
+ * @returns {string|null} Mobile token or null if not found
+ */
+function getMobileToken(whatsappId) {
+    if (!whatsappId) return null;
+    const db = getDatabase();
+    const result = db.prepare('SELECT mobile_token FROM priority_users WHERE whatsapp_id = ?').get(whatsappId);
+    return result ? result.mobile_token : null;
+}
+
+/**
+ * Set mobile token for a VIP user
+ * @param {string} whatsappId - WhatsApp user ID
+ * @param {string} token - Mobile token
+ * @returns {boolean} True if successful
+ */
+function setMobileToken(whatsappId, token) {
+    if (!whatsappId || !token) return false;
+    const db = getDatabase();
+    const now = Math.floor(Date.now() / 1000);
+    db.prepare('UPDATE priority_users SET mobile_token = ?, token_created_at = ? WHERE whatsapp_id = ?').run(token, now, whatsappId);
+    return true;
+}
+
+/**
+ * Get VIP user by mobile token
+ * @param {string} token - Mobile token
+ * @returns {Object|null} VIP user info or null
+ */
+function getVipByToken(token) {
+    if (!token) return null;
+    const db = getDatabase();
+    const result = db.prepare('SELECT whatsapp_id, name, device_fingerprint FROM priority_users WHERE mobile_token = ?').get(token);
+    return result || null;
+}
+
+/**
+ * Store device fingerprint for a token
+ * @param {string} token - Mobile token
+ * @param {string} fingerprint - Device fingerprint hash
+ * @returns {boolean} True if successful
+ */
+function storeDeviceFingerprint(token, fingerprint) {
+    if (!token || !fingerprint) return false;
+    const db = getDatabase();
+    const now = Math.floor(Date.now() / 1000);
+    db.prepare('UPDATE priority_users SET device_fingerprint = ?, fingerprint_created_at = ? WHERE mobile_token = ?').run(fingerprint, now, token);
+    return true;
+}
+
+/**
+ * Verify device fingerprint for a token
+ * @param {string} token - Mobile token
+ * @param {string} fingerprint - Device fingerprint hash to verify
+ * @returns {boolean} True if fingerprint matches or no fingerprint is set (first access)
+ */
+function verifyDeviceFingerprint(token, fingerprint) {
+    if (!token || !fingerprint) return false;
+    const db = getDatabase();
+    const result = db.prepare('SELECT device_fingerprint FROM priority_users WHERE mobile_token = ?').get(token);
+    
+    if (!result) return false;
+    
+    // If no fingerprint is set, this is first access (allow it)
+    if (!result.device_fingerprint) return true;
+    
+    // Verify fingerprint matches
+    return result.device_fingerprint === fingerprint;
+}
+
 // ============================================
 // Playlists Operations
 // ============================================
@@ -970,6 +1051,14 @@ module.exports = {
     addPriorityUser,
     removePriorityUser,
     updateVipName,
+    
+    // Mobile Access
+    generateMobileToken,
+    getMobileToken,
+    setMobileToken,
+    getVipByToken,
+    storeDeviceFingerprint,
+    verifyDeviceFingerprint,
     
     // Playlists
     getPlaylists,
