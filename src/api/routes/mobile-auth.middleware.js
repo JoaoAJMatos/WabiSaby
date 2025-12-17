@@ -15,7 +15,8 @@ const { logger } = require('../../utils/logger.util');
 function authenticateMobile(req, res, next) {
     // Extract token from query parameter or header
     const token = req.query.token || req.headers['x-mobile-token'];
-    const fingerprint = req.headers['x-device-fingerprint'] || req.body.fingerprint;
+    // Extract fingerprint from query parameter, header, or body (for different request types)
+    const fingerprint = req.query.fingerprint || req.headers['x-device-fingerprint'] || (req.body && req.body.fingerprint);
     
     if (!token) {
         return res.status(401).json({ error: 'Mobile token required' });

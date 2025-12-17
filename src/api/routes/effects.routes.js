@@ -4,6 +4,7 @@ const playbackController = require('../../core/playback.controller');
 const { logger } = require('../../utils/logger.util');
 const player = require('../../core/player');
 const { EFFECTS_CHANGED } = require('../../core/events');
+const { authenticateMobile } = require('./mobile-auth.middleware');
 
 const router = express.Router();
 
@@ -122,6 +123,74 @@ router.get('/effects/presets', (req, res) => {
         res.status(500).json({ error: 'Failed to get presets' });
     }
 });
+
+/**
+ * Optional mobile authentication middleware
+ * Only authenticates if token is present, otherwise allows access
+ */
+function optionalMobileAuth(req, res, next) {
+    const token = req.query.token || req.headers['x-mobile-token'];
+    if (token) {
+        // Token present - use mobile authentication
+        authenticateMobile(req, res, next);
+    } else {
+        // No token - allow regular dashboard access
+        next();
+    }
+}
+
+/**
+ * GET /api/effects/stream
+ * Server-Sent Events endpoint for real-time effects updates
+ * Supports both regular dashboard users and authenticated mobile users
+ */
+router.get('/effects/stream', optionalMobileAuth, setupSSEConnection);
+
+/**
+ * Setup SSE connection for effects streaming
+ */
+function setupSSEConnection(req, res) {
+    // Set SSE headers
+    res.setHeader('Content-Type', 'text/event-stream');
+    res.setHeader('Cache-Control', 'no-cache');
+    res.setHeader('Connection', 'keep-alive');
+    res.setHeader('X-Accel-Buffering', 'no'); // Disable nginx buffering
+    
+    // Send initial connection event
+    res.write(`event: connected\ndata: {"status": "connected"}\n\n`);
+    
+    // Add this response to clients
+    effectsService.addClient(res);
+    
+    // Send current effects as initial data
+    const currentEffects = effectsService.getEffects();
+    const presets = effectsService.getPresetsInfo();
+    const initialData = JSON.stringify({
+        type: 'EFFECTS_UPDATE',
+        effects: currentEffects,
+        presets: presets
+    });
+    res.write(`data: ${initialData}\n\n`);
+    
+    // Handle client disconnect
+    req.on('close', () => {
+        effectsService.removeClient(res);
+    });
+    
+    // Keep connection alive with periodic heartbeat
+    const heartbeat = setInterval(() => {
+        try {
+            res.write(`:heartbeat\n\n`);
+        } catch {
+            clearInterval(heartbeat);
+            effectsService.removeClient(res);
+        }
+    }, 30000);
+    
+    req.on('close', () => {
+        clearInterval(heartbeat);
+    });
+}
 
 /**
  * Trigger effects update in player

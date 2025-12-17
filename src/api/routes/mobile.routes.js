@@ -130,6 +130,10 @@ router.get('/mobile/status', authenticateMobile, async (req, res) => {
         const queueWithThumbnails = queue.map(addThumbnailUrl);
         const isConnected = whatsappAdapter.getConnectionStatus();
         
+        // Include effects for cross-device synchronization
+        const effects = effectsService.getEffects();
+        const effectsPresets = effectsService.getPresetsInfo();
+        
         res.json({
             auth: {
                 isConnected
@@ -138,6 +142,10 @@ router.get('/mobile/status', authenticateMobile, async (req, res) => {
                 queue: queueWithThumbnails,
                 currentSong: current,
                 isPaused: isPaused
+            },
+            effects: {
+                effects: effects,
+                presets: effectsPresets
             }
         });
     } catch (error) {

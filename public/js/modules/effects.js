@@ -8,6 +8,8 @@ let effectsPresets = [];
 let effectsUpdateTimeout = null;
 let effectsBackend = 'ffplay';
 let effectsSeamless = false;
+let effectsPollInterval = null;
+let effectsUpdateInProgress = false; // Flag to prevent overwriting local changes
 
 // Broadcast Channel for syncing effects with player
 const effectsBroadcast = new BroadcastChannel('wabisaby_audio_channel');
@@ -29,10 +31,56 @@ async function loadEffects() {
             updateBackendIndicator();
             // Broadcast initial effects
             effectsBroadcast.postMessage({ type: 'EFFECTS_UPDATE', effects: currentEffects });
+            
+            // Start periodic polling for cross-device synchronization
+            startEffectsPolling();
         }
     } catch (err) {
         console.error('Failed to load effects:', err);
     }
+}
+
+/**
+ * Periodically poll for effects updates to sync across devices
+ */
+async function pollEffects() {
+    // Don't poll if a local update is in progress
+    if (effectsUpdateInProgress) return;
+    
+    try {
+        const response = await fetch('/api/effects');
+        if (response.ok) {
+            const data = await response.json();
+            const newEffects = data.effects;
+            
+            // Only update if effects have actually changed
+            if (JSON.stringify(newEffects) !== JSON.stringify(currentEffects)) {
+                currentEffects = newEffects;
+                if (data.presets && data.presets.length > 0) {
+                    effectsPresets = data.presets;
+                }
+                updateEffectsUI(currentEffects);
+                renderEffectsPresets(effectsPresets, currentEffects.preset);
+                updateCurrentPresetDisplay(currentEffects.preset);
+                // Don't broadcast here to avoid loops - the change came from another device
+            }
+        }
+    } catch (err) {
+        // Silently fail - polling errors shouldn't be disruptive
+    }
+}
+
+/**
+ * Start periodic polling for effects updates (every 3 seconds)
+ */
+function startEffectsPolling() {
+    // Clear any existing interval
+    if (effectsPollInterval) {
+        clearInterval(effectsPollInterval);
+    }
+    
+    // Poll every 3 seconds for cross-device synchronization
+    effectsPollInterval = setInterval(pollEffects, 3000);
 }
 
 /**
@@ -53,6 +101,9 @@ function updateBackendIndicator() {
  * Update effects settings on server
  */
 async function updateEffects(newSettings) {
+    // Set flag to prevent polling from overwriting our changes
+    effectsUpdateInProgress = true;
+    
     try {
         const response = await fetch('/api/effects', {
             method: 'PUT',
@@ -70,6 +121,11 @@ async function updateEffects(newSettings) {
         }
     } catch (err) {
         console.error('Failed to update effects:', err);
+    } finally {
+        // Clear the flag after update completes
+        setTimeout(() => {
+            effectsUpdateInProgress = false;
+        }, 500);
     }
 }
 
@@ -77,6 +133,9 @@ async function updateEffects(newSettings) {
  * Apply a preset
  */
 async function applyEffectsPreset(presetId) {
+    // Set flag to prevent polling from overwriting our changes
+    effectsUpdateInProgress = true;
+    
     try {
         const response = await fetch(`/api/effects/preset/${presetId}`, {
             method: 'POST'
@@ -93,6 +152,11 @@ async function applyEffectsPreset(presetId) {
         }
     } catch (err) {
         console.error('Failed to apply preset:', err);
+    } finally {
+        // Clear the flag after update completes
+        setTimeout(() => {
+            effectsUpdateInProgress = false;
+        }, 500);
     }
 }
 
@@ -100,6 +164,9 @@ async function applyEffectsPreset(presetId) {
  * Reset all effects to default
  */
 async function resetAllEffects() {
+    // Set flag to prevent polling from overwriting our changes
+    effectsUpdateInProgress = true;
+    
     try {
         const response = await fetch('/api/effects/reset', {
             method: 'POST'
@@ -116,6 +183,11 @@ async function resetAllEffects() {
         }
     } catch (err) {
         console.error('Failed to reset effects:', err);
+    } finally {
+        // Clear the flag after update completes
+        setTimeout(() => {
+            effectsUpdateInProgress = false;
+        }, 500);
     }
 }
 

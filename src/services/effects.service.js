@@ -12,6 +12,7 @@ class EffectsService extends EventEmitter {
         super();
         this.effects = this.getDefaultEffects();
         this.presets = this.getPresets();
+        this.clients = new Set(); // SSE clients for real-time updates
         this.load();
     }
 
@@ -289,6 +290,7 @@ class EffectsService extends EventEmitter {
         this.effects.preset = 'custom'; // Mark as custom when manually changed
         this.save();
         this.emit('effects_changed', this.effects);
+        this.broadcastToClients(this.effects);
         return this.effects;
     }
 
@@ -303,6 +305,7 @@ class EffectsService extends EventEmitter {
         this.effects = { ...preset.settings };
         this.save();
         this.emit('effects_changed', this.effects);
+        this.broadcastToClients(this.effects);
         return this.effects;
     }
 
@@ -313,6 +316,7 @@ class EffectsService extends EventEmitter {
         this.effects = this.getDefaultEffects();
         this.save();
         this.emit('effects_changed', this.effects);
+        this.broadcastToClients(this.effects);
         return this.effects;
     }
 
@@ -425,6 +429,39 @@ class EffectsService extends EventEmitter {
         }
 
         return errors;
+    }
+
+    /**
+     * Add SSE client
+     */
+    addClient(client) {
+        this.clients.add(client);
+    }
+
+    /**
+     * Remove SSE client
+     */
+    removeClient(client) {
+        this.clients.delete(client);
+    }
+
+    /**
+     * Broadcast effects update to all SSE clients
+     */
+    broadcastToClients(effectsData) {
+        const data = JSON.stringify({
+            type: 'EFFECTS_UPDATE',
+            effects: effectsData,
+            presets: this.getPresetsInfo()
+        });
+        this.clients.forEach(client => {
+            try {
+                client.write(`data: ${data}\n\n`);
+            } catch (err) {
+                // Client disconnected, remove it
+                this.clients.delete(client);
+            }
+        });
     }
 }
 

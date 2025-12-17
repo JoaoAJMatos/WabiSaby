@@ -10,6 +10,10 @@ let isAuthenticated = false;
 let updateInterval = null;
 let currentEffects = null;
 let effectsPresets = [];
+let effectsEventSource = null;
+
+// Broadcast Channel for syncing effects across devices
+const effectsBroadcast = new BroadcastChannel('wabisaby_audio_channel');
 
 // Extract token from URL
 function getTokenFromURL() {
@@ -105,6 +109,12 @@ function initializeMobileInterface() {
     // Set up effects controls
     setupEffectsControls();
     
+    // Set up BroadcastChannel listener for effects updates (same-browser tabs)
+    setupEffectsBroadcastListener();
+    
+    // Set up SSE connection for cross-device effects updates
+    connectEffectsSSE();
+    
     // Set up expand/collapse for effects
     const expandBtn = document.getElementById('mobile-effects-expand-btn');
     const expandedContent = document.getElementById('mobile-effects-expanded');
@@ -146,7 +156,8 @@ async function fetchMobileStatus() {
 
 // Update mobile UI with status data
 function updateMobileUI(data) {
-    const { queue, currentSong, auth } = data;
+    const { queue, auth } = data;
+    const currentSong = queue?.currentSong;
     
     // Update connection status
     const statusBadge = document.getElementById('mobile-connection-status');
@@ -164,7 +175,7 @@ function updateMobileUI(data) {
     updateNowPlaying(currentSong);
     
     // Update queue
-    updateQueue(queue.queue || []);
+    updateQueue(queue?.queue || []);
 }
 
 // Update now playing section
@@ -283,6 +294,8 @@ async function loadMobileEffects() {
             effectsPresets = data.presets || [];
             updateMobileEffectsUI(currentEffects);
             renderMobilePresets(effectsPresets, currentEffects.preset);
+            // Broadcast initial effects to sync with other tabs/devices
+            effectsBroadcast.postMessage({ type: 'EFFECTS_UPDATE', effects: currentEffects });
         }
     } catch (error) {
         console.error('Error loading mobile effects:', error);
@@ -374,6 +387,8 @@ async function applyMobilePreset(presetId) {
             currentEffects = data.effects;
             updateMobileEffectsUI(currentEffects);
             renderMobilePresets(effectsPresets, currentEffects.preset);
+            // Broadcast update to sync with other devices/tabs
+            effectsBroadcast.postMessage({ type: 'EFFECTS_UPDATE', effects: currentEffects });
         }
     } catch (error) {
         console.error('Error applying preset:', error);
@@ -382,6 +397,75 @@ async function applyMobilePreset(presetId) {
 
 // Make applyMobilePreset available globally
 window.applyMobilePreset = applyMobilePreset;
+
+// Setup BroadcastChannel listener for effects updates from other devices
+function setupEffectsBroadcastListener() {
+    effectsBroadcast.onmessage = (event) => {
+        const msg = event.data;
+        
+        // Only process EFFECTS_UPDATE messages
+        if (msg.type === 'EFFECTS_UPDATE' && msg.effects) {
+            // Update local state and UI
+            currentEffects = msg.effects;
+            updateMobileEffectsUI(currentEffects);
+            renderMobilePresets(effectsPresets, currentEffects.preset);
+        }
+    };
+}
+
+// Connect to SSE stream for cross-device effects updates
+function connectEffectsSSE() {
+    if (effectsEventSource) {
+        effectsEventSource.close();
+    }
+    
+    if (!isAuthenticated || !mobileToken || !deviceFingerprint) return;
+    
+    // Build SSE URL with token and fingerprint for mobile authentication
+    // Note: EventSource doesn't support custom headers, so we use query params
+    const sseUrl = `/api/effects/stream?token=${encodeURIComponent(mobileToken)}&fingerprint=${encodeURIComponent(deviceFingerprint)}`;
+    effectsEventSource = new EventSource(sseUrl);
+    
+    effectsEventSource.onopen = () => {
+        console.log('Effects SSE connection opened');
+    };
+    
+    effectsEventSource.onerror = () => {
+        console.error('Effects SSE connection error');
+        
+        // Try to reconnect after 3 seconds
+        setTimeout(() => {
+            if (effectsEventSource && effectsEventSource.readyState === EventSource.CLOSED) {
+                connectEffectsSSE();
+            }
+        }, 3000);
+    };
+    
+    effectsEventSource.onmessage = (event) => {
+        try {
+            const data = JSON.parse(event.data);
+            
+            if (data.type === 'EFFECTS_UPDATE' && data.effects) {
+                // Update local state and UI
+                currentEffects = data.effects;
+                if (data.presets && data.presets.length > 0) {
+                    effectsPresets = data.presets;
+                }
+                updateMobileEffectsUI(currentEffects);
+                renderMobilePresets(effectsPresets, currentEffects.preset);
+                
+                // Also broadcast to same-browser tabs via BroadcastChannel
+                effectsBroadcast.postMessage({ type: 'EFFECTS_UPDATE', effects: currentEffects });
+            }
+        } catch (e) {
+            console.error('Failed to parse effects SSE data:', e);
+        }
+    };
+    
+    effectsEventSource.addEventListener('connected', () => {
+        console.log('Effects SSE connected');
+    });
+}
 
 // Setup effects controls
 function setupEffectsControls() {
@@ -467,6 +551,9 @@ async function updateMobileEffects(newEffects) {
             const data = await response.json();
             currentEffects = data.effects;
             updateMobileEffectsUI(currentEffects);
+            renderMobilePresets(effectsPresets, currentEffects.preset);
+            // Broadcast update to sync with other devices/tabs
+            effectsBroadcast.postMessage({ type: 'EFFECTS_UPDATE', effects: currentEffects });
         }
     } catch (error) {
         console.error('Error updating mobile effects:', error);
@@ -482,6 +569,10 @@ document.addEventListener('DOMContentLoaded', () => {
 window.addEventListener('beforeunload', () => {
     if (updateInterval) {
         clearInterval(updateInterval);
+    }
+    if (effectsEventSource) {
+        effectsEventSource.close();
+        effectsEventSource = null;
     }
 });
 
