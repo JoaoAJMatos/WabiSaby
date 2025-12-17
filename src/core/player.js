@@ -494,6 +494,8 @@ async function playFileWithFfplay(filePath, startOffset = 0) {
     
     let currentOffset = startOffset;
     let isPaused = false;
+    let playbackStartTime = null;
+    let pauseStartTime = null;
     
     await new Promise(async (resolve) => {
         let finished = false;
@@ -525,17 +527,37 @@ async function playFileWithFfplay(filePath, startOffset = 0) {
                     break;
                 }
                 
-                if (pauseResult === 'seek' || pauseResult === 'effects') {
+                if (pauseResult === 'seek') {
+                    continue;
+                }
+                
+                if (pauseResult === 'effects') {
+                    // Update currentOffset based on elapsed time up to when we paused
+                    if (playbackStartTime && pauseStartTime) {
+                        const elapsed = pauseStartTime - playbackStartTime;
+                        currentOffset = currentOffset + elapsed;
+                        // Reset playbackStartTime since we've incorporated the elapsed time into currentOffset
+                        playbackStartTime = null;
+                        logger.info(`Effects changed while paused, updated position to ${currentOffset}ms`);
+                    }
                     continue;
                 }
                 
                 if (pauseResult === 'resume') {
                     isPaused = false;
+                    // Adjust playback start time to account for pause duration
+                    if (pauseStartTime && playbackStartTime) {
+                        const pauseDuration = Date.now() - pauseStartTime;
+                        playbackStartTime += pauseDuration;
+                    }
+                    pauseStartTime = null;
                 }
             }
             
             // Start ffplay
             const result = await new Promise((resPlay) => {
+                playbackStartTime = Date.now();
+                pauseStartTime = null;
                 const p = startFfplay(filePath, currentOffset);
                 let killed = false;
                 let killReason = null;
@@ -545,6 +567,7 @@ async function playFileWithFfplay(filePath, startOffset = 0) {
                         killed = true;
                         killReason = 'paused';
                         isPaused = true;
+                        pauseStartTime = Date.now();
                         p.kill('SIGKILL');
                     },
                     [PLAYBACK_SKIP]: () => {
@@ -556,13 +579,25 @@ async function playFileWithFfplay(filePath, startOffset = 0) {
                         killed = true;
                         killReason = 'seek';
                         currentOffset = positionMs;
+                        playbackStartTime = null;
                         p.kill('SIGKILL');
                     },
                     [EFFECTS_CHANGED]: () => {
                         killed = true;
                         killReason = 'effects';
+                        // Calculate current position before killing
+                        if (playbackStartTime) {
+                            const elapsed = isPaused && pauseStartTime
+                                ? pauseStartTime - playbackStartTime
+                                : Date.now() - playbackStartTime;
+                            currentOffset = currentOffset + elapsed;
+                            logger.info(`Restarting ffplay with new effects at position ${currentOffset}ms`);
+                        } else {
+                            // If playbackStartTime is null, we're likely in pause state
+                            // currentOffset should already be correct, just log
+                            logger.info(`Restarting ffplay with new effects at position ${currentOffset}ms`);
+                        }
                         p.kill('SIGKILL');
-                        logger.info('Restarting ffplay with new effects');
                     }
                 };
                 
