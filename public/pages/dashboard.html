@@ -513,6 +513,9 @@
                             <i class="fas fa-sliders-h"></i>
                         </div>
                         <h2>Settings</h2>
+                        <button type="button" id="settings-reset-all" class="settings-reset-btn-icon" title="Reset All Settings">
+                            <i class="fas fa-undo"></i>
+                        </button>
                     </div>
                     
                     <div class="settings-search-wrapper">
@@ -555,18 +558,20 @@
                             <span class="nav-indicator"></span>
                         </li>
                     </ul>
-                    
-                    <div class="settings-sidebar-footer">
-                        <button type="button" id="settings-reset-all" class="settings-reset-btn">
-                            <i class="fas fa-undo"></i>
-                            <span>Reset All</span>
-                        </button>
-                    </div>
                 </nav>
                 
                 <!-- Main Content Area -->
                 <div class="settings-main">
                     <div class="settings-main-header">
+                        <div class="settings-main-header-content">
+                            <div class="panel-icon" id="settings-main-header-icon">
+                                <i class="fas fa-download"></i>
+                            </div>
+                            <div class="panel-title" id="settings-main-header-title">
+                                <h3>Download Settings</h3>
+                                <p>Configure audio format, quality, and download behavior</p>
+                            </div>
+                        </div>
                         <button id="settings-modal-close" class="modal-close-btn">
                             <i class="fas fa-times"></i>
                         </button>
@@ -804,7 +809,7 @@
                                 </div>
                             </div>
                             
-                            <div class="settings-info-card">
+                            <div class="settings-info-card performance">
                                 <i class="fas fa-lightbulb"></i>
                                 <div>
                                     <strong>Pro Tip</strong>
@@ -857,7 +862,7 @@
                                 </div>
                             </div>
                             
-                            <div class="settings-info-card accent">
+                            <div class="settings-info-card notifications">
                                 <i class="fas fa-info-circle"></i>
                                 <div>
                                     <strong>How it works</strong>
@@ -905,6 +910,14 @@
                                 </div>
                             </div>
                             
+                            <div class="settings-info-card groups">
+                                <i class="fas fa-info-circle"></i>
+                                <div>
+                                    <strong>How to add groups</strong>
+                                    <p>Send <code>!ping</code> in any WhatsApp group you want to add. The request will appear here for confirmation. You can also manually add groups using the form above.</p>
+                                </div>
+                            </div>
+                            
                             <div class="groups-list-container">
                                 <div class="groups-list-header">
                                     <span>Monitored Groups (<span id="groups-count">0</span>)</span>
@@ -914,14 +927,6 @@
                                         <i class="fas fa-circle-notch fa-spin"></i>
                                         <span>Loading groups...</span>
                                     </div>
-                                </div>
-                            </div>
-                            
-                            <div class="settings-info-card accent">
-                                <i class="fas fa-info-circle"></i>
-                                <div>
-                                    <strong>How to add groups</strong>
-                                    <p>Send <code>!ping</code> in any WhatsApp group you want to add. The request will appear here for confirmation. You can also manually add groups using the form above.</p>
                                 </div>
                             </div>
                         </div>
@@ -952,11 +957,21 @@
                                 </div>
                             </div>
                             
-                            <div class="settings-info-card warning">
+                            <div class="settings-info-card system">
                                 <i class="fas fa-exclamation-circle"></i>
                                 <div>
                                     <strong>Warning</strong>
                                     <p>Starting a new session is destructive. All playback history, stats, and the current queue will be cleared immediately.</p>
+                                </div>
+                            </div>
+                            
+                            <!-- Disk Usage Section -->
+                            <div class="settings-group">
+                                <div id="disk-usage-container" class="disk-usage-container">
+                                    <div class="disk-usage-loading">
+                                        <i class="fas fa-spinner fa-spin"></i>
+                                        <span>Loading disk usage...</span>
+                                    </div>
                                 </div>
                             </div>
                         </div>
@@ -981,16 +996,17 @@
                             </div>
                         </div>
                     </div>
-                    
-                    <div class="settings-footer">
-                        <div class="footer-note">
-                            <i class="fas fa-info-circle"></i>
-                            <span>Changes apply instantly. Server settings require <code>.env</code> edit and restart.</span>
-                        </div>
-                        <div class="footer-save-indicator" id="settings-save-indicator">
-                            <i class="fas fa-check-circle"></i>
-                            <span>Saved</span>
-                        </div>
+                </div>
+                
+                <!-- Unified Footer -->
+                <div class="settings-footer">
+                    <div class="footer-note">
+                        <i class="fas fa-info-circle"></i>
+                        <span>Changes apply instantly. Server settings require <code>.env</code> edit and restart.</span>
+                    </div>
+                    <div class="footer-save-indicator" id="settings-save-indicator">
+                        <i class="fas fa-check-circle"></i>
+                        <span>Saved</span>
                     </div>
                 </div>
             </div>

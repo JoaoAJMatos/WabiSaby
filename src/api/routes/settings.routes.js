@@ -1,6 +1,7 @@
 const express = require('express');
 const config = require('../../config');
 const { logger } = require('../../utils/logger.util');
+const { getDiskUsage } = require('../../utils/helpers.util');
 
 const router = express.Router();
 
@@ -276,6 +277,27 @@ router.post('/settings/reset', (req, res) => {
         res.status(500).json({
             success: false,
             error: 'Failed to reset settings'
+        });
+    }
+});
+
+/**
+ * GET /api/settings/disk-usage
+ * Get disk usage information for WabiSaby storage directories
+ */
+router.get('/settings/disk-usage', (req, res) => {
+    try {
+        const usage = getDiskUsage();
+        
+        res.json({
+            success: true,
+            usage
+        });
+    } catch (error) {
+        logger.error('Failed to get disk usage:', error);
+        res.status(500).json({
+            success: false,
+            error: 'Failed to get disk usage information'
         });
     }
 });

@@ -107,6 +107,11 @@ function closeSettingsModal() {
         if (typeof stopPendingConfirmationsPolling === 'function') {
             stopPendingConfirmationsPolling();
         }
+        
+        // Stop disk usage polling when modal closes
+        if (typeof stopDiskUsagePolling === 'function') {
+            stopDiskUsagePolling();
+        }
     }
 }
 

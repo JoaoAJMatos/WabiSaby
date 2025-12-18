@@ -402,7 +402,6 @@ class EffectsService extends EventEmitter {
         }
 
         const chain = filters.join(',');
-        logger.debug(`Built filter chain: ${chain}`);
         return chain;
     }
 

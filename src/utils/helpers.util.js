@@ -181,12 +181,138 @@ function getLocalIPv4() {
     });
 }
 
+/**
+ * Calculate the size of a file or directory recursively
+ * @param {string} filePath - Path to file or directory
+ * @returns {number} Size in bytes, or 0 if path doesn't exist or error occurs
+ */
+function calculateSize(filePath) {
+    try {
+        if (!fs.existsSync(filePath)) {
+            return 0;
+        }
+        
+        const stats = fs.statSync(filePath);
+        
+        if (stats.isFile()) {
+            return stats.size;
+        }
+        
+        if (stats.isDirectory()) {
+            let totalSize = 0;
+            try {
+                const entries = fs.readdirSync(filePath);
+                for (const entry of entries) {
+                    const entryPath = path.join(filePath, entry);
+                    totalSize += calculateSize(entryPath);
+                }
+            } catch (err) {
+                // Ignore permission errors or other issues
+                return 0;
+            }
+            return totalSize;
+        }
+        
+        return 0;
+    } catch (error) {
+        // Return 0 on any error (permission denied, etc.)
+        return 0;
+    }
+}
+
+/**
+ * Format bytes to human-readable format
+ * @param {number} bytes - Size in bytes
+ * @returns {string} Formatted string (e.g., "1.5 MB")
+ */
+function formatBytes(bytes) {
+    if (bytes === 0) return '0 B';
+    
+    const k = 1024;
+    const sizes = ['B', 'KB', 'MB', 'GB', 'TB'];
+    const i = Math.floor(Math.log(bytes) / Math.log(k));
+    
+    return `${parseFloat((bytes / Math.pow(k, i)).toFixed(2))} ${sizes[i]}`;
+}
+
+/**
+ * Get disk usage information for WabiSaby storage directories
+ * @returns {Object} Object containing disk usage for each storage component
+ */
+function getDiskUsage() {
+    const usage = {
+        database: {
+            path: config.paths.database,
+            size: 0,
+            formatted: '0 B'
+        },
+        temp: {
+            path: config.paths.temp,
+            size: 0,
+            formatted: '0 B'
+        },
+        media: {
+            path: config.paths.media,
+            size: 0,
+            formatted: '0 B'
+        },
+        thumbnails: {
+            path: config.paths.thumbnails,
+            size: 0,
+            formatted: '0 B'
+        },
+        data: {
+            path: config.paths.data,
+            size: 0,
+            formatted: '0 B'
+        },
+        auth: {
+            path: config.paths.auth,
+            size: 0,
+            formatted: '0 B'
+        },
+        total: {
+            path: config.paths.storage,
+            size: 0,
+            formatted: '0 B'
+        }
+    };
+    
+    // Calculate size for each component
+    usage.database.size = calculateSize(config.paths.database);
+    usage.database.formatted = formatBytes(usage.database.size);
+    
+    usage.temp.size = calculateSize(config.paths.temp);
+    usage.temp.formatted = formatBytes(usage.temp.size);
+    
+    usage.media.size = calculateSize(config.paths.media);
+    usage.media.formatted = formatBytes(usage.media.size);
+    
+    usage.thumbnails.size = calculateSize(config.paths.thumbnails);
+    usage.thumbnails.formatted = formatBytes(usage.thumbnails.size);
+    
+    usage.data.size = calculateSize(config.paths.data);
+    usage.data.formatted = formatBytes(usage.data.size);
+    
+    usage.auth.size = calculateSize(config.paths.auth);
+    usage.auth.formatted = formatBytes(usage.auth.size);
+    
+    // Calculate total (storage directory)
+    usage.total.size = calculateSize(config.paths.storage);
+    usage.total.formatted = formatBytes(usage.total.size);
+    
+    return usage;
+}
+
 module.exports = {
     delay,
     getRandomDelay,
     sendMessageWithMention,
     sendMessageWithLinkPreview,
     getThumbnailUrl,
-    getLocalIPv4
+    getLocalIPv4,
+    calculateSize,
+    formatBytes,
+    getDiskUsage
 };
 

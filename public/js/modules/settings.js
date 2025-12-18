@@ -4,6 +4,7 @@
  */
 
 let settingsSaveTimeout = null;
+let diskUsagePollInterval = null;
 
 async function loadSettings() {
     try {
@@ -168,6 +169,30 @@ window.switchSettingsPanel = function switchSettingsPanel(category) {
         panel.classList.toggle('active', panel.dataset.panel === category);
     });
     
+    // Update main header with panel info
+    const activePanel = document.querySelector(`.settings-panel[data-panel="${category}"]`);
+    if (activePanel) {
+        const panelHeader = activePanel.querySelector('.panel-header');
+        if (panelHeader) {
+            const panelIcon = panelHeader.querySelector('.panel-icon');
+            const panelTitle = panelHeader.querySelector('.panel-title');
+            
+            const headerIcon = document.getElementById('settings-main-header-icon');
+            const headerTitle = document.getElementById('settings-main-header-title');
+            
+            if (headerIcon && panelIcon) {
+                // Copy icon classes and content
+                headerIcon.className = panelIcon.className;
+                headerIcon.innerHTML = panelIcon.innerHTML;
+            }
+            
+            if (headerTitle && panelTitle) {
+                // Copy title content
+                headerTitle.innerHTML = panelTitle.innerHTML;
+            }
+        }
+    }
+    
     // Load groups when switching to groups panel
     if (category === 'groups') {
         if (typeof loadGroups === 'function') {
@@ -180,12 +205,210 @@ window.switchSettingsPanel = function switchSettingsPanel(category) {
         }
     }
     
+    // Start/stop disk usage polling when switching to/from system panel
+    if (category === 'system') {
+        startDiskUsagePolling();
+    } else {
+        stopDiskUsagePolling();
+    }
+    
     // Clear search when switching panels
     const searchInput = document.getElementById('settings-search');
     if (searchInput && searchInput.value) {
         searchInput.value = '';
         const clearBtn = document.getElementById('settings-search-clear');
         if (clearBtn) clearBtn.classList.add('hidden');
+    }
+}
+
+function startDiskUsagePolling() {
+    // Load immediately
+    loadDiskUsage();
+    
+    // Then poll every 5 seconds
+    if (diskUsagePollInterval) {
+        clearInterval(diskUsagePollInterval);
+    }
+    diskUsagePollInterval = setInterval(() => {
+        loadDiskUsage(true); // Pass true to indicate it's a refresh (preserve expanded state)
+    }, 5000);
+}
+
+function stopDiskUsagePolling() {
+    if (diskUsagePollInterval) {
+        clearInterval(diskUsagePollInterval);
+        diskUsagePollInterval = null;
+    }
+}
+
+// Make stopDiskUsagePolling globally accessible for modals.js
+window.stopDiskUsagePolling = stopDiskUsagePolling;
+
+async function loadDiskUsage(isRefresh = false) {
+    const container = document.getElementById('disk-usage-container');
+    if (!container) return;
+    
+    // Check if elements already exist (for refresh)
+    const existingSummaryValue = container.querySelector('.disk-usage-summary-value');
+    const existingDetails = container.querySelector('.disk-usage-details');
+    const wasExpanded = existingDetails && existingDetails.style.display !== 'none';
+    
+    // Only show loading state on first load, not on refresh
+    if (!isRefresh) {
+        container.innerHTML = `
+            <div class="disk-usage-loading">
+                <i class="fas fa-spinner fa-spin"></i>
+                <span>Loading disk usage...</span>
+            </div>
+        `;
+    }
+    
+    try {
+        const res = await fetch('/api/settings/disk-usage');
+        if (!res.ok) throw new Error('Failed to fetch disk usage');
+        
+        const data = await res.json();
+        if (!data.success) throw new Error(data.error || 'Failed to get disk usage');
+        
+        const { usage } = data;
+        
+        // If elements exist, just update values (refresh)
+        if (isRefresh && existingSummaryValue) {
+            // Update summary value
+            const summaryValue = container.querySelector('.disk-usage-summary-value');
+            if (summaryValue) {
+                summaryValue.textContent = usage.total.formatted;
+            }
+            
+            // Update detail values
+            const detailValues = container.querySelectorAll('.disk-usage-item .disk-usage-value');
+            if (detailValues.length >= 6) {
+                detailValues[0].textContent = usage.database.formatted;
+                detailValues[1].textContent = usage.temp.formatted;
+                detailValues[2].textContent = usage.media.formatted;
+                detailValues[3].textContent = usage.thumbnails.formatted;
+                detailValues[4].textContent = usage.data.formatted;
+                detailValues[5].textContent = usage.auth.formatted;
+            }
+            return; // Exit early, no need to rerender
+        }
+        
+        // Render full structure on first load
+        container.innerHTML = `
+            <div class="disk-usage-compact">
+                <div class="disk-usage-summary">
+                    <div class="disk-usage-summary-icon">
+                        <i class="fas fa-hdd"></i>
+                    </div>
+                    <div class="disk-usage-summary-info">
+                        <div class="disk-usage-summary-label">Total Storage</div>
+                        <div class="disk-usage-summary-value">${usage.total.formatted}</div>
+                    </div>
+                    <button class="disk-usage-expand-btn" id="disk-usage-expand-btn" title="Show details">
+                        <i class="fas fa-chevron-down"></i>
+                    </button>
+                </div>
+            </div>
+            <div class="disk-usage-details" id="disk-usage-details" style="display: ${wasExpanded ? 'block' : 'none'};">
+                <div class="disk-usage-grid">
+                    <div class="disk-usage-item">
+                        <div class="disk-usage-label">
+                            <i class="fas fa-database"></i>
+                            <span>Database</span>
+                        </div>
+                        <div class="disk-usage-value">${usage.database.formatted}</div>
+                    </div>
+                    <div class="disk-usage-item">
+                        <div class="disk-usage-label">
+                            <i class="fas fa-file-alt"></i>
+                            <span>Temp Files</span>
+                        </div>
+                        <div class="disk-usage-value">${usage.temp.formatted}</div>
+                    </div>
+                    <div class="disk-usage-item">
+                        <div class="disk-usage-label">
+                            <i class="fas fa-music"></i>
+                            <span>Media</span>
+                        </div>
+                        <div class="disk-usage-value">${usage.media.formatted}</div>
+                    </div>
+                    <div class="disk-usage-item">
+                        <div class="disk-usage-label">
+                            <i class="fas fa-image"></i>
+                            <span>Thumbnails</span>
+                        </div>
+                        <div class="disk-usage-value">${usage.thumbnails.formatted}</div>
+                    </div>
+                    <div class="disk-usage-item">
+                        <div class="disk-usage-label">
+                            <i class="fas fa-folder"></i>
+                            <span>Data Files</span>
+                        </div>
+                        <div class="disk-usage-value">${usage.data.formatted}</div>
+                    </div>
+                    <div class="disk-usage-item">
+                        <div class="disk-usage-label">
+                            <i class="fas fa-key"></i>
+                            <span>Auth</span>
+                        </div>
+                        <div class="disk-usage-value">${usage.auth.formatted}</div>
+                    </div>
+                </div>
+            </div>
+        `;
+        
+        // Add expand/collapse functionality
+        const expandBtn = document.getElementById('disk-usage-expand-btn');
+        const detailsEl = document.getElementById('disk-usage-details');
+        const summary = container.querySelector('.disk-usage-summary');
+        
+        if (expandBtn && detailsEl && summary) {
+            // Function to toggle expand/collapse
+            const toggleDetails = () => {
+                const isExpanded = detailsEl.style.display !== 'none';
+                detailsEl.style.display = isExpanded ? 'none' : 'block';
+                expandBtn.querySelector('i').classList.toggle('fa-chevron-down', !isExpanded);
+                expandBtn.querySelector('i').classList.toggle('fa-chevron-up', isExpanded);
+                expandBtn.title = isExpanded ? 'Show details' : 'Hide details';
+                // Toggle expanded class based on new state (after toggle)
+                container.classList.toggle('expanded', !isExpanded);
+            };
+            
+            // Update icon and container class based on current state
+            if (wasExpanded) {
+                expandBtn.querySelector('i').classList.remove('fa-chevron-down');
+                expandBtn.querySelector('i').classList.add('fa-chevron-up');
+                expandBtn.title = 'Hide details';
+                container.classList.add('expanded');
+            } else {
+                container.classList.remove('expanded');
+            }
+            
+            // Make entire summary clickable
+            summary.addEventListener('click', (e) => {
+                // Don't trigger if clicking directly on the button (let button handle it)
+                if (e.target.closest('.disk-usage-expand-btn')) {
+                    return;
+                }
+                toggleDetails();
+            });
+            
+            // Button click handler (stop propagation to avoid double-trigger)
+            expandBtn.addEventListener('click', (e) => {
+                e.stopPropagation();
+                toggleDetails();
+            });
+        }
+    } catch (err) {
+        console.error('Failed to load disk usage:', err);
+        if (!isRefresh) {
+            container.innerHTML = `
+                <div class="disk-usage-error">
+                    <i class="fas fa-exclamation-triangle"></i>
+                    <span>Failed to load disk usage information</span>
+                </div>
+            `;
+        }
     }
 }
 
@@ -252,8 +475,9 @@ function performSettingsSearch(query) {
     });
     
     // Update UI
+    const countText = `${matches.length} setting${matches.length !== 1 ? 's' : ''} found`;
     if (countEl) {
-        countEl.textContent = `${matches.length} setting${matches.length !== 1 ? 's' : ''} found`;
+        countEl.textContent = countText;
     }
     
     if (matches.length > 0) {
@@ -270,10 +494,16 @@ function performSettingsSearch(query) {
     }
     
     // Switch to search results panel
-    document.querySelectorAll('.settings-nav-item').forEach(item => item.classList.remove('active'));
-    document.querySelectorAll('.settings-panel').forEach(panel => {
-        panel.classList.toggle('active', panel.dataset.panel === 'search-results');
-    });
+    switchSettingsPanel('search-results');
+    
+    // Update header count after panel switch
+    const headerTitle = document.getElementById('settings-main-header-title');
+    if (headerTitle) {
+        const headerCountEl = headerTitle.querySelector('p');
+        if (headerCountEl) {
+            headerCountEl.textContent = countText;
+        }
+    }
 }
 
 function rebindSettingRowListeners(container) {
