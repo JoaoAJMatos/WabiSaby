@@ -101,11 +101,12 @@ class NotificationService {
      */
     formatUpcomingMessage(song, position = 1) {
         const songTitle = song.title || 'Your song';
+        const artistText = song.artist ? `\n👤 *${song.artist}*` : '';
         
         if (position === 1) {
-            return `Up next: ${songTitle}`;
+            return `⏭️ *Up Next*\n\n🎶 *${songTitle}*${artistText}`;
         } else {
-            return `Coming up (#${position}): ${songTitle}`;
+            return `📋 *Coming Up (#${position})*\n\n🎶 *${songTitle}*${artistText}`;
         }
     }
 

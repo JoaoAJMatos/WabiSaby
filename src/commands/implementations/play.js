@@ -24,7 +24,7 @@ async function playCommand(sock, msg, args, deps = defaultDeps) {
     const input = args.join(' ');
     
     if (!input) {
-        await sendMessageWithMention(sock, remoteJid, 'Usage: !play <url or search>', sender);
+        await sendMessageWithMention(sock, remoteJid, '🎵 *Usage*\n\n`!play <url or search>`\n\n✨ *Examples:*\n• `!play https://youtube.com/...`\n• `!play Artist - Song Name`\n• `!play song name`', sender);
         return;
     }
 
@@ -41,7 +41,7 @@ async function playCommand(sock, msg, args, deps = defaultDeps) {
             logger.info(`[Play] Spotify track: "${title}" by ${artist}`);
         } catch (error) {
             logger.error('Failed to get Spotify metadata:', error);
-            await sendMessageWithMention(sock, remoteJid, 'Failed to resolve Spotify link. Try YouTube or search.', sender);
+            await sendMessageWithMention(sock, remoteJid, '❌ *Spotify Link Error*\n\nCouldn\'t resolve this Spotify link.\n\n💡 *Try:*\n• YouTube URL\n• Search query (song name)', sender);
             return;
         }
     } else if (isYouTubeUrl(input)) {
@@ -73,7 +73,7 @@ async function playCommand(sock, msg, args, deps = defaultDeps) {
             logger.info(`[Play] Found track: ${title} by ${artist} at ${url} (match score: ${searchResult.matchScore})`);
         } catch (error) {
             logger.error('Search failed:', error);
-            await sendMessageWithMention(sock, remoteJid, `No results found for: ${input}`, sender);
+            await sendMessageWithMention(sock, remoteJid, `🔍 *No Results Found*\n\nCouldn't find any matches for:\n*"${input}"*\n\n💡 *Try:*\n• More specific search terms\n• Include artist name\n• Use a YouTube or Spotify URL`, sender);
             return;
         }
     }
@@ -89,9 +89,9 @@ async function playCommand(sock, msg, args, deps = defaultDeps) {
     });
     
     if (result === null) {
-        await sendMessageWithMention(sock, remoteJid, `Song already in queue: ${title}`, sender);
+        await sendMessageWithMention(sock, remoteJid, `⚠️ *Already in Queue*\n\n*"${title}"* is already queued.`, sender);
     } else {
-        await sendMessageWithMention(sock, remoteJid, `Added: ${title}`, sender);
+        await sendMessageWithMention(sock, remoteJid, `✅ *Added to Queue*\n\n🎶 *"${title}"*`, sender);
     }
 }
 

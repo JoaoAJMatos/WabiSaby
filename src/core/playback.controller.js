@@ -266,7 +266,8 @@ class PlaybackController extends EventEmitter {
                 // Send notification if connected
                 if (this.isConnected && item.remoteJid && item.remoteJid !== 'WEB_DASHBOARD') {
                     try {
-                        await sendMessageWithMention(this.whatsappSocket, item.remoteJid, `▶️ ${title}`, item.sender);
+                        const artistText = item.artist ? `\n👤 *${item.artist}*` : '';
+                        await sendMessageWithMention(this.whatsappSocket, item.remoteJid, `▶️ *Now Playing*\n\n🎶 *${title}*${artistText}`, item.sender);
                     } catch (e) {
                         logger.warn('Failed to send playing notification:', e.message);
                     }
@@ -287,7 +288,7 @@ class PlaybackController extends EventEmitter {
                 logger.error('File not found or download failed');
                 if (this.isConnected && item.remoteJid && item.remoteJid !== 'WEB_DASHBOARD') {
                     try {
-                        await sendMessageWithMention(this.whatsappSocket, item.remoteJid, 'Failed to play song.', item.sender);
+                        await sendMessageWithMention(this.whatsappSocket, item.remoteJid, '❌ *Playback Failed*\n\nCouldn\'t play this song.\n\n💡 The file may be corrupted or unavailable.', item.sender);
                     } catch (e) { }
                 }
                 // Mark as failed
@@ -300,7 +301,7 @@ class PlaybackController extends EventEmitter {
             
             if (this.isConnected && item.remoteJid && item.remoteJid !== 'WEB_DASHBOARD') {
                 try {
-                    await sendMessageWithMention(this.whatsappSocket, item.remoteJid, `Error: ${error.message}`, item.sender);
+                    await sendMessageWithMention(this.whatsappSocket, item.remoteJid, `❌ *Error*\n\n*${error.message}*\n\n💡 Please try again or use a different song.`, item.sender);
                 } catch (e) { }
             }
             

@@ -15,7 +15,8 @@ async function notificationsCommand(sock, msg, args, deps = defaultDeps) {
     
     if (!action) {
         const status = notificationService.isEnabled ? 'enabled' : 'disabled';
-        await sendMessageWithMention(sock, remoteJid, `Notifications: ${status}`, sender);
+        const statusEmoji = notificationService.isEnabled ? '✅' : '❌';
+        await sendMessageWithMention(sock, remoteJid, `🔔 *Notifications*\n\n${statusEmoji} Currently *${status}*\n\n💡 Use \`!notifications on\` or \`!notifications off\` to change`, sender);
         return;
     }
     
@@ -23,22 +24,22 @@ async function notificationsCommand(sock, msg, args, deps = defaultDeps) {
         case 'on':
         case 'enable':
             notificationService.setEnabled(true);
-            await sendMessageWithMention(sock, remoteJid, 'Notifications enabled', sender);
+            await sendMessageWithMention(sock, remoteJid, '✅ *Notifications Enabled*\n\nYou\'ll be notified when your songs are coming up!', sender);
             break;
             
         case 'off':
         case 'disable':
             notificationService.setEnabled(false);
-            await sendMessageWithMention(sock, remoteJid, 'Notifications disabled', sender);
+            await sendMessageWithMention(sock, remoteJid, '❌ *Notifications Disabled*\n\nYou won\'t receive upcoming song notifications.', sender);
             break;
             
         case 'clear':
             notificationService.clearHistory();
-            await sendMessageWithMention(sock, remoteJid, 'Notification history cleared', sender);
+            await sendMessageWithMention(sock, remoteJid, '🗑️ *History Cleared*\n\nNotification history has been reset.', sender);
             break;
             
         default:
-            await sendMessageWithMention(sock, remoteJid, 'Usage: !notifications [on|off|clear]', sender);
+            await sendMessageWithMention(sock, remoteJid, '🔔 *Usage*\n\n`!notifications [on|off|clear]`\n\n✨ *Options:*\n• `on` - Enable notifications\n• `off` - Disable notifications\n• `clear` - Clear notification history', sender);
     }
 }
 

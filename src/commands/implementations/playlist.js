@@ -24,18 +24,18 @@ async function playlistCommand(sock, msg, args, deps = defaultDeps) {
     
     // Check if user is VIP
     if (!checkPriority(sender)) {
-        await sendMessageWithMention(sock, remoteJid, 'Only VIP users can add playlists.', sender);
+        await sendMessageWithMention(sock, remoteJid, '🔒 *VIP Only*\n\nThis feature is exclusive to VIP users.\n\n✨ Contact an admin to get VIP access!', sender);
         return;
     }
     
     if (!url) {
-        await sendMessageWithMention(sock, remoteJid, 'Usage: !playlist <url>', sender);
+        await sendMessageWithMention(sock, remoteJid, '🎵 *Usage*\n\n`!playlist <url>`\n\n✨ *Supported:*\n• Spotify playlist links\n• YouTube playlist links', sender);
         return;
     }
     
     // Verify it's a playlist URL
     if (!isPlaylistUrl(url)) {
-        await sendMessageWithMention(sock, remoteJid, 'Invalid playlist URL. Use Spotify or YouTube playlist links.', sender);
+        await sendMessageWithMention(sock, remoteJid, '❌ *Invalid Playlist URL*\n\nPlease provide a valid:\n• Spotify playlist link\n• YouTube playlist link', sender);
         return;
     }
     
@@ -44,7 +44,7 @@ async function playlistCommand(sock, msg, args, deps = defaultDeps) {
         const tracks = await getPlaylistTracks(url);
         
         if (!tracks || tracks.length === 0) {
-            await sendMessageWithMention(sock, remoteJid, 'No tracks found in playlist.', sender);
+            await sendMessageWithMention(sock, remoteJid, '🔍 *Empty Playlist*\n\nNo tracks found in this playlist.\n\n💡 Make sure the playlist is public and contains songs.', sender);
             return;
         }
         
@@ -104,19 +104,19 @@ async function playlistCommand(sock, msg, args, deps = defaultDeps) {
         }
         
         // Build final response message
-        let responseText = `Added ${successCount} tracks`;
+        let responseText = `✅ *Playlist Added*\n\n🎵 *${successCount}* track${successCount !== 1 ? 's' : ''} added to queue`;
         if (duplicateCount > 0) {
-            responseText += ` (${duplicateCount} duplicate${duplicateCount > 1 ? 's' : ''} skipped)`;
+            responseText += `\n⚠️ *${duplicateCount}* duplicate${duplicateCount > 1 ? 's' : ''} skipped`;
         }
         if (failCount > 0) {
-            responseText += ` (${failCount} failed)`;
+            responseText += `\n❌ *${failCount}* failed`;
         }
         
         await sendMessageWithMention(sock, remoteJid, responseText, sender);
         
     } catch (error) {
         logger.error('Playlist command failed:', error);
-        await sendMessageWithMention(sock, remoteJid, `Failed to process playlist: ${error.message}`, sender);
+        await sendMessageWithMention(sock, remoteJid, `❌ *Playlist Error*\n\nFailed to process playlist:\n*${error.message}*\n\n💡 Make sure the playlist is public and accessible.`, sender);
     }
 }
 

@@ -12,16 +12,35 @@ async function helpCommand(sock, msg, args, deps = defaultDeps) {
     const remoteJid = msg.key.remoteJid;
     const sender = msg.key.participant || msg.key.remoteJid;
     
-    const helpText = `*Commands*\n` +
-        `!play <url or search>\n` +
-        `!skip\n` +
-        `!queue\n` +
-        `!remove <number>\n` +
-        `!np\n` +
-        `!notifications [on|off|clear]\n` +
-        `!playlist <url> (VIP only)\n` +
-        `!ping - Add this group to monitoring\n` +
-        `!help`;
+    const helpText = `🎵 *WabiSaby Music Bot*\n\n` +
+        `*Available Commands:*\n\n` +
+        `🎶 *Play Music*\n` +
+        `\`!play <url or search>\`\n` +
+        `Add a song to the queue\n\n` +
+        `⏭️ *Skip*\n` +
+        `\`!skip\`\n` +
+        `Skip the current song\n\n` +
+        `📋 *Queue*\n` +
+        `\`!queue\`\n` +
+        `View the current queue\n\n` +
+        `🗑️ *Remove*\n` +
+        `\`!remove <number>\`\n` +
+        `Remove a song from queue\n\n` +
+        `▶️ *Now Playing*\n` +
+        `\`!np\`\n` +
+        `Show current song\n\n` +
+        `🔔 *Notifications*\n` +
+        `\`!notifications [on|off|clear]\`\n` +
+        `Manage song notifications\n\n` +
+        `🎵 *Playlist* (VIP only)\n` +
+        `\`!playlist <url>\`\n` +
+        `Add entire playlist to queue\n\n` +
+        `📡 *Ping*\n` +
+        `\`!ping\`\n` +
+        `Add this group to monitoring\n\n` +
+        `❓ *Help*\n` +
+        `\`!help\`\n` +
+        `Show this message`;
     
     await sendMessageWithMention(sock, remoteJid, helpText, sender);
 }

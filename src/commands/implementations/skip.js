@@ -14,7 +14,7 @@ async function skipCommand(sock, msg, args, deps = defaultDeps) {
     const currentSong = playbackController.getCurrent();
     
     if (!currentSong) {
-        await sendMessageWithMention(sock, remoteJid, 'Nothing is playing.', sender);
+        await sendMessageWithMention(sock, remoteJid, '⏸️ *Nothing Playing*\n\nNo song is currently playing.', sender);
         return;
     }
     
@@ -26,9 +26,10 @@ async function skipCommand(sock, msg, args, deps = defaultDeps) {
     
     if (isVip || isRequester) {
         playbackController.skip();
-        await sendMessageWithMention(sock, remoteJid, 'Skipped', sender);
+        const currentTitle = currentSong.title || 'Current song';
+        await sendMessageWithMention(sock, remoteJid, `⏭️ *Skipped*\n\n*"${currentTitle}"* has been skipped.`, sender);
     } else {
-        await sendMessageWithMention(sock, remoteJid, 'You can only skip your own songs. VIPs can skip any song.', sender);
+        await sendMessageWithMention(sock, remoteJid, '🔒 *Permission Denied*\n\nYou can only skip your own songs.\n\n✨ VIPs can skip any song.', sender);
     }
 }
 

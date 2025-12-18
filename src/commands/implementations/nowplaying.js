@@ -15,9 +15,10 @@ async function nowPlayingCommand(sock, msg, args, deps = defaultDeps) {
     
     if (np) {
         const npTitle = np.title || np.content;
-        await sendMessageWithMention(sock, remoteJid, `▶️ ${npTitle}`, sender);
+        const npArtist = np.artist ? `\n👤 *${np.artist}*` : '';
+        await sendMessageWithMention(sock, remoteJid, `▶️ *Now Playing*\n\n🎶 *${npTitle}*${npArtist}`, sender);
     } else {
-        await sendMessageWithMention(sock, remoteJid, 'Nothing playing.', sender);
+        await sendMessageWithMention(sock, remoteJid, '⏸️ *Nothing Playing*\n\nNo song is currently playing.', sender);
     }
 }
 

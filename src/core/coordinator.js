@@ -65,7 +65,7 @@ class SystemCoordinator {
             const isVip = checkPriority(sender);
             
             if (!isVip) {
-                await sendMessageWithMention(socket, remoteJid, 'Only VIP users can send audio files directly.', sender);
+                await sendMessageWithMention(socket, remoteJid, '🔒 *VIP Only*\n\nOnly VIP users can send audio files directly.\n\n✨ Contact an admin to get VIP access!', sender);
                 return;
             }
             
@@ -88,12 +88,12 @@ class SystemCoordinator {
                     sender: sender
                 });
                 
-                await sendMessageWithMention(socket, remoteJid, `Added audio file: ${displayName}`, sender);
+                await sendMessageWithMention(socket, remoteJid, `✅ *Audio File Added*\n\n🎵 *"${displayName}"*\n\nAdded to queue with VIP priority!`, sender);
                 logger.info(`Successfully added audio file to queue: ${displayName}`);
             } catch (error) {
                 logger.error('Error processing VIP audio file:', error);
                 const errorMessage = error.message || 'Failed to process audio file';
-                await sendMessageWithMention(socket, remoteJid, `Error: ${errorMessage}`, sender);
+                await sendMessageWithMention(socket, remoteJid, `❌ *Processing Error*\n\n*${errorMessage}*\n\n💡 Make sure the file is a valid audio format.`, sender);
             }
         });
         
