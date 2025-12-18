@@ -1970,75 +1970,105 @@ input:focus {
 }
 
 .queue-item {
-    background: linear-gradient(135deg, rgba(255, 255, 255, 0.03) 0%, rgba(255, 255, 255, 0.01) 100%);
-    backdrop-filter: blur(8px);
-    -webkit-backdrop-filter: blur(8px);
-    padding: 10px 12px;
+    background: linear-gradient(135deg, rgba(255, 255, 255, 0.04) 0%, rgba(255, 255, 255, 0.015) 100%);
+    backdrop-filter: blur(12px);
+    -webkit-backdrop-filter: blur(12px);
+    padding: 12px 16px;
     display: flex;
     align-items: center;
-    gap: 10px;
-    border-radius: 10px;
-    transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
-    border: 1px solid rgba(255, 255, 255, 0.04);
+    gap: 12px;
+    border-radius: 12px;
+    transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+    border: 1px solid rgba(255, 255, 255, 0.06);
     cursor: grab;
     position: relative;
     overflow: hidden;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
 }
 
 .queue-item::before {
     content: '';
     position: absolute;
     inset: 0;
-    background: linear-gradient(135deg, rgba(255, 255, 255, 0.02) 0%, transparent 60%);
+    background: linear-gradient(135deg, rgba(255, 255, 255, 0.03) 0%, transparent 60%);
     pointer-events: none;
     opacity: 0;
-    transition: opacity 0.2s ease;
+    transition: opacity 0.3s ease;
+}
+
+.queue-item::after {
+    content: '';
+    position: absolute;
+    left: 0;
+    top: 0;
+    bottom: 0;
+    width: 3px;
+    background: linear-gradient(180deg, var(--primary) 0%, transparent 100%);
+    opacity: 0;
+    transition: opacity 0.3s ease;
 }
 
 .queue-item:hover {
-    background: linear-gradient(135deg, rgba(255, 255, 255, 0.05) 0%, rgba(255, 255, 255, 0.02) 100%);
-    border-color: rgba(255, 255, 255, 0.08);
-    transform: translateX(2px);
+    background: linear-gradient(135deg, rgba(255, 255, 255, 0.08) 0%, rgba(255, 255, 255, 0.04) 100%);
+    border-color: rgba(255, 255, 255, 0.12);
+    transform: translateX(4px);
+    box-shadow: 0 4px 16px rgba(0, 0, 0, 0.15);
 }
 
 .queue-item:hover::before {
     opacity: 1;
 }
 
+.queue-item:hover::after {
+    opacity: 1;
+}
+
 .queue-item.dragging {
-    opacity: 0.4;
+    opacity: 0.5;
     cursor: grabbing;
-    transform: scale(0.98);
+    transform: scale(0.97) rotate(1deg);
+    box-shadow: 0 8px 24px rgba(0, 0, 0, 0.2);
+    z-index: 1000;
 }
 
 .queue-item.drag-over {
-    border-color: rgba(52, 211, 153, 0.4);
+    border-color: rgba(52, 211, 153, 0.5);
     border-style: dashed;
-    background: linear-gradient(135deg, rgba(52, 211, 153, 0.08) 0%, rgba(52, 211, 153, 0.02) 100%);
-    transform: scale(1.005);
+    background: linear-gradient(135deg, rgba(52, 211, 153, 0.12) 0%, rgba(52, 211, 153, 0.04) 100%);
+    transform: scale(1.01);
+    box-shadow: 0 0 0 2px rgba(52, 211, 153, 0.2);
 }
 
-/* Drag Handle - Minimal */
+/* Drag Handle - Enhanced */
 .drag-handle {
     display: flex;
     align-items: center;
     justify-content: center;
     color: var(--text-muted);
-    font-size: 0.7rem;
-    width: 16px;
+    font-size: 0.75rem;
+    width: 20px;
     flex-shrink: 0;
     cursor: grab;
-    transition: all 0.2s ease;
-    opacity: 0;
+    transition: all 0.3s ease;
+    opacity: 0.3;
+    padding: 4px;
+    border-radius: 4px;
 }
 
 .queue-item:hover .drag-handle {
-    opacity: 0.5;
+    opacity: 0.7;
+    color: var(--text-secondary);
 }
 
 .drag-handle:hover {
     opacity: 1 !important;
-    color: var(--text-secondary);
+    color: var(--primary);
+    background: rgba(52, 211, 153, 0.1);
+    transform: scale(1.1);
+}
+
+.drag-handle:active {
+    cursor: grabbing;
 }
 
 /* Song Details Container */
@@ -2050,16 +2080,29 @@ input:focus {
     min-width: 0;
 }
 
-/* Thumbnail - Compact */
+/* Thumbnail - Enhanced */
 .queue-thumbnail {
-    width: 38px;
-    height: 38px;
+    width: 48px;
+    height: 48px;
     flex-shrink: 0;
     overflow: hidden;
-    border-radius: 6px;
-    background: rgba(0, 0, 0, 0.25);
-    border: 1px solid rgba(255, 255, 255, 0.04);
+    border-radius: 8px;
+    background: linear-gradient(135deg, rgba(0, 0, 0, 0.3) 0%, rgba(0, 0, 0, 0.2) 100%);
+    border: 1px solid rgba(255, 255, 255, 0.08);
     position: relative;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.2);
+    transition: all 0.3s ease;
+}
+
+.queue-thumbnail::after {
+    content: '';
+    position: absolute;
+    inset: 0;
+    border-radius: inherit;
+    background: linear-gradient(135deg, rgba(255, 255, 255, 0.1) 0%, transparent 100%);
+    opacity: 0;
+    transition: opacity 0.3s ease;
+    pointer-events: none;
 }
 
 .queue-thumbnail img {
@@ -2067,130 +2110,191 @@ input:focus {
     height: 100%;
     object-fit: cover;
     display: block;
-    transition: transform 0.3s ease;
+    transition: transform 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.queue-item:hover .queue-thumbnail {
+    border-color: rgba(255, 255, 255, 0.15);
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
+    transform: scale(1.02);
 }
 
 .queue-item:hover .queue-thumbnail img {
-    transform: scale(1.05);
+    transform: scale(1.08);
 }
 
-/* Song Info - Compact Layout */
+.queue-item:hover .queue-thumbnail::after {
+    opacity: 1;
+}
+
+/* Song Info - Enhanced Layout */
 .song-info {
     display: flex;
     flex-direction: column;
-    gap: 2px;
+    gap: 4px;
     flex: 1;
     min-width: 0;
+    padding-right: 8px;
 }
 
-/* Title - Clean Typography */
+/* Title - Enhanced Typography */
 .song-title {
     font-family: var(--font-main);
-    font-size: 0.82rem;
-    font-weight: 500;
+    font-size: 0.9rem;
+    font-weight: 600;
     color: var(--text-main);
     display: flex;
     align-items: center;
-    gap: 6px;
+    gap: 8px;
     white-space: nowrap;
     overflow: hidden;
     text-overflow: ellipsis;
-    letter-spacing: -0.01em;
-    line-height: 1.3;
+    letter-spacing: -0.02em;
+    line-height: 1.4;
+    transition: color 0.2s ease;
 }
 
-/* Queue Number - Subtle */
-.song-title .queue-number,
-.song-title span[style*="color: var(--secondary)"] {
-    font-size: 0.65rem !important;
-    font-weight: 600 !important;
-    color: var(--text-muted) !important;
-    opacity: 0.6 !important;
-    font-family: var(--font-mono) !important;
-    margin-right: 4px !important;
-    min-width: 18px;
+.queue-item:hover .song-title {
+    color: var(--text-primary);
 }
 
-/* Artist Name - Inline Subtitle */
+/* Queue Position - Standalone Badge */
+.queue-position {
+    font-size: 0.75rem;
+    font-weight: 700;
+    color: var(--primary);
+    font-family: var(--font-mono);
+    min-width: 32px;
+    height: 32px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background: rgba(52, 211, 153, 0.12);
+    border: 1px solid rgba(52, 211, 153, 0.2);
+    border-radius: 8px;
+    transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+    flex-shrink: 0;
+    margin-left: auto;
+    margin-right: 8px;
+    box-shadow: 0 2px 6px rgba(52, 211, 153, 0.1);
+}
+
+.queue-item:hover .queue-position {
+    background: rgba(52, 211, 153, 0.18);
+    border-color: rgba(52, 211, 153, 0.3);
+    transform: scale(1.08);
+    box-shadow: 0 4px 12px rgba(52, 211, 153, 0.2);
+}
+
+/* Artist Name - Enhanced Subtitle */
 .song-artist {
-    font-size: 0.7rem !important;
-    color: var(--text-muted) !important;
-    opacity: 0.7;
+    font-size: 0.75rem !important;
+    color: var(--text-secondary) !important;
+    opacity: 0.85;
     margin-left: 0 !important;
     margin-bottom: 0 !important;
     white-space: nowrap;
     overflow: hidden;
     text-overflow: ellipsis;
+    font-weight: 400;
+    transition: opacity 0.2s ease;
 }
 
-/* Requester - Ultra Compact */
+.queue-item:hover .song-artist {
+    opacity: 1;
+}
+
+/* Requester - Enhanced */
 .song-requester {
-    font-size: 0.62rem;
+    font-size: 0.65rem;
     color: var(--text-muted);
-    opacity: 0.5;
+    opacity: 0.7;
     display: flex;
     align-items: center;
-    gap: 4px;
+    gap: 5px;
     text-transform: uppercase;
-    letter-spacing: 0.04em;
-    font-weight: 500;
+    letter-spacing: 0.05em;
+    font-weight: 600;
+    margin-top: 2px;
+    transition: all 0.2s ease;
+}
+
+.queue-item:hover .song-requester {
+    opacity: 0.9;
+    color: var(--text-secondary);
 }
 
 .song-requester i {
-    font-size: 0.55rem;
-    opacity: 0.6;
+    font-size: 0.6rem;
+    opacity: 0.7;
+    transition: all 0.2s ease;
+}
+
+.queue-item:hover .song-requester i {
+    opacity: 1;
+    color: var(--primary);
 }
 
 /* ========================================
-   Download Status - Inline Compact
+   Download Status - Enhanced
    ======================================== */
 .download-status {
     display: flex;
     align-items: center;
-    gap: 8px;
-    padding: 4px 8px;
-    background: rgba(52, 211, 153, 0.06);
-    border-radius: 6px;
+    gap: 10px;
+    padding: 6px 10px;
+    background: linear-gradient(135deg, rgba(52, 211, 153, 0.1) 0%, rgba(52, 211, 153, 0.05) 100%);
+    border-radius: 8px;
     margin-left: auto;
     flex-shrink: 0;
-    max-width: 140px;
+    max-width: 160px;
+    border: 1px solid rgba(52, 211, 153, 0.15);
+    transition: all 0.3s ease;
+}
+
+.queue-item:hover .download-status {
+    background: linear-gradient(135deg, rgba(52, 211, 153, 0.15) 0%, rgba(52, 211, 153, 0.08) 100%);
+    border-color: rgba(52, 211, 153, 0.25);
+    transform: scale(1.02);
 }
 
 .status-text {
-    font-size: 0.55rem;
+    font-size: 0.6rem;
     color: var(--primary);
     font-family: var(--font-mono);
-    font-weight: 600;
+    font-weight: 700;
     text-transform: uppercase;
-    letter-spacing: 0.03em;
+    letter-spacing: 0.04em;
     white-space: nowrap;
-    opacity: 0.9;
+    opacity: 1;
     min-width: 0;
 }
 
 .progress-bar-small {
     flex: 1;
-    height: 3px;
-    min-width: 40px;
-    background: rgba(0, 0, 0, 0.3);
-    border-radius: 2px;
+    height: 4px;
+    min-width: 50px;
+    background: rgba(0, 0, 0, 0.4);
+    border-radius: 3px;
     position: relative;
     overflow: hidden;
+    box-shadow: inset 0 1px 2px rgba(0, 0, 0, 0.2);
 }
 
 .progress-fill {
     height: 100%;
     background: linear-gradient(90deg, var(--primary) 0%, #6ee7b7 100%);
-    transition: width 0.3s cubic-bezier(0.4, 0, 0.2, 1);
-    border-radius: 2px;
+    transition: width 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+    border-radius: 3px;
     position: relative;
+    box-shadow: 0 0 8px rgba(52, 211, 153, 0.4);
 }
 
 .progress-fill::after {
     content: '';
     position: absolute;
     inset: 0;
-    background: linear-gradient(90deg, transparent 0%, rgba(255, 255, 255, 0.3) 50%, transparent 100%);
+    background: linear-gradient(90deg, transparent 0%, rgba(255, 255, 255, 0.4) 50%, transparent 100%);
     animation: shimmer 1.5s infinite;
 }
 
@@ -2205,110 +2309,168 @@ input:focus {
 }
 
 .progress-percent {
-    font-size: 0.6rem;
+    font-size: 0.65rem;
     color: var(--primary);
     font-family: var(--font-mono);
-    font-weight: 600;
-    min-width: 24px;
+    font-weight: 700;
+    min-width: 28px;
     text-align: right;
-    opacity: 0.9;
+    opacity: 1;
 }
 
 /* ========================================
-   Status Badges - Minimal Inline Pills
+   Status Badges - Enhanced Pills
    ======================================== */
 .status-badge-small {
     display: inline-flex;
     align-items: center;
-    gap: 4px;
-    padding: 3px 8px;
-    font-size: 0.55rem;
+    gap: 5px;
+    padding: 5px 10px;
+    font-size: 0.6rem;
     font-family: var(--font-mono);
     text-transform: uppercase;
-    letter-spacing: 0.03em;
-    border-radius: 4px;
-    font-weight: 600;
+    letter-spacing: 0.04em;
+    border-radius: 6px;
+    font-weight: 700;
     margin-left: auto;
     flex-shrink: 0;
     margin-top: 0;
-    transition: all 0.2s ease;
+    transition: all 0.3s ease;
+    border: 1px solid transparent;
+}
+
+.queue-item:hover .status-badge-small {
+    transform: scale(1.05);
 }
 
 .status-badge-small i {
-    font-size: 0.5rem;
+    font-size: 0.55rem;
 }
 
-/* Ready State - Subtle Success */
+/* Ready State - Enhanced Success */
 .status-badge-small.ready {
     color: var(--success);
-    background: rgba(34, 197, 94, 0.1);
+    background: linear-gradient(135deg, rgba(34, 197, 94, 0.15) 0%, rgba(34, 197, 94, 0.08) 100%);
+    border-color: rgba(34, 197, 94, 0.2);
+    box-shadow: 0 0 8px rgba(34, 197, 94, 0.1);
 }
 
 .status-badge-small.ready i {
-    font-size: 0.5rem;
+    font-size: 0.55rem;
 }
 
-/* Queued State - Ghost Style */
+.queue-item:hover .status-badge-small.ready {
+    background: linear-gradient(135deg, rgba(34, 197, 94, 0.2) 0%, rgba(34, 197, 94, 0.12) 100%);
+    box-shadow: 0 0 12px rgba(34, 197, 94, 0.2);
+}
+
+/* Queued State - Enhanced Ghost Style */
 .status-badge-small.queued {
     color: var(--text-muted);
-    background: rgba(255, 255, 255, 0.04);
-    opacity: 0.6;
+    background: rgba(255, 255, 255, 0.06);
+    border-color: rgba(255, 255, 255, 0.08);
+    opacity: 0.7;
 }
 
 .status-badge-small.queued i {
-    font-size: 0.35rem;
+    font-size: 0.4rem;
 }
 
-/* Error State - Subtle Warning */
+.queue-item:hover .status-badge-small.queued {
+    opacity: 1;
+    background: rgba(255, 255, 255, 0.1);
+    border-color: rgba(255, 255, 255, 0.12);
+}
+
+/* Error State - Enhanced Warning */
 .status-badge-small.error {
     color: var(--error);
-    background: rgba(239, 68, 68, 0.1);
+    background: linear-gradient(135deg, rgba(239, 68, 68, 0.15) 0%, rgba(239, 68, 68, 0.08) 100%);
+    border-color: rgba(239, 68, 68, 0.2);
+    box-shadow: 0 0 8px rgba(239, 68, 68, 0.1);
 }
 
 .status-badge-small.error i {
-    font-size: 0.5rem;
+    font-size: 0.55rem;
+}
+
+.queue-item:hover .status-badge-small.error {
+    background: linear-gradient(135deg, rgba(239, 68, 68, 0.2) 0%, rgba(239, 68, 68, 0.12) 100%);
+    box-shadow: 0 0 12px rgba(239, 68, 68, 0.2);
 }
 
 /* ========================================
-   Queue Remove Button - Compact Icon
+   Queue Remove Button - Enhanced
    ======================================== */
 .queue-remove-btn {
-    width: 26px;
-    height: 26px;
-    border-radius: 6px;
-    border: none;
+    width: 32px;
+    height: 32px;
+    border-radius: 8px;
+    border: 1px solid transparent;
     background: transparent;
     color: var(--text-muted);
     cursor: pointer;
     display: flex;
     align-items: center;
     justify-content: center;
-    transition: all 0.2s ease;
-    opacity: 0;
+    transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+    opacity: 0.4;
     flex-shrink: 0;
     margin-left: 4px;
+    position: relative;
 }
 
 .queue-item:hover .queue-remove-btn {
-    opacity: 0.5;
+    opacity: 0.7;
 }
 
 .queue-remove-btn:hover {
     opacity: 1 !important;
-    background: rgba(239, 68, 68, 0.15);
+    background: linear-gradient(135deg, rgba(239, 68, 68, 0.2) 0%, rgba(239, 68, 68, 0.1) 100%);
+    border-color: rgba(239, 68, 68, 0.3);
     color: var(--error);
+    transform: scale(1.1) rotate(90deg);
+    box-shadow: 0 2px 8px rgba(239, 68, 68, 0.3);
+}
+
+.queue-remove-btn:active {
+    transform: scale(0.95) rotate(90deg);
 }
 
 .queue-remove-btn i {
-    font-size: 0.65rem;
+    font-size: 0.7rem;
+    transition: transform 0.2s ease;
 }
 
-/* Priority Icon */
+.queue-remove-btn:hover i {
+    transform: scale(1.1);
+}
+
+/* Priority Icon - Enhanced */
 .queue-priority-icon {
     color: var(--warning);
-    font-size: 0.6rem !important;
-    margin-left: 6px;
-    opacity: 0.9;
+    font-size: 0.7rem !important;
+    margin-left: 8px;
+    opacity: 1;
+    filter: drop-shadow(0 0 4px rgba(251, 191, 36, 0.4));
+    transition: all 0.3s ease;
+    animation: priority-pulse 2s ease-in-out infinite;
+}
+
+@keyframes priority-pulse {
+    0%, 100% {
+        opacity: 1;
+        transform: scale(1);
+    }
+    50% {
+        opacity: 0.8;
+        transform: scale(1.1);
+    }
+}
+
+.queue-item:hover .queue-priority-icon {
+    filter: drop-shadow(0 0 8px rgba(251, 191, 36, 0.6));
+    transform: scale(1.15);
 }
 
 /* Empty Queue State */

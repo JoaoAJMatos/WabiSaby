@@ -438,7 +438,6 @@ function updateQueueUI(data) {
                 ${item.thumbnailUrl ? `<div class="queue-thumbnail"><img src="${item.thumbnailUrl}" alt=""></div>` : ''}
                 <div class="song-info">
                     <span class="song-title">
-                        <span class="queue-number">${index + 1}</span>
                         ${title}
                         ${item.isPriority ? '<i class="fas fa-crown queue-priority-icon"></i>' : ''}
                     </span>
@@ -448,6 +447,7 @@ function updateQueueUI(data) {
                         ${requester}
                     </span>
                 </div>
+                <div class="queue-position">${index + 1}</div>
                 ${statusHTML}
                 <button onclick="removeSong(${index})" class="queue-remove-btn" title="Remove from queue">
                     <i class="fas fa-times"></i>
