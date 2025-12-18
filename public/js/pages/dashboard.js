@@ -62,12 +62,30 @@ broadcast.addEventListener('message', (event) => {
 // Note: startAudioPlayback, ensureAudioPlaying, unlockAudio, and all audio-related
 //       event listeners are defined in audio.js
 
+// Auth status tracking
+let authStatusReceived = false;
+
 async function fetchData() {
     try {
         const response = await fetch('/api/status');
         const data = await response.json();
         
-        updateAuthUI(data.auth);
+        // Check auth status first - redirect if not connected
+        if (data.auth && !data.auth.isConnected) {
+            // Not authenticated - redirect to auth page
+            window.location.href = '/pages/auth.html';
+            return;
+        }
+        
+        // Update auth UI (status badge only)
+        if (data.auth) {
+            updateAuthUI(data.auth);
+        }
+        
+        // Mark auth status as received
+        authStatusReceived = true;
+        
+        // Update other UI components
         updateQueueUI(data.queue);
         updateStatsUI(data.stats);
     } catch (error) {
@@ -593,6 +611,150 @@ function updateStatsUI(stats) {
     updateProgressBarAndStats();
 }
 
+// Logout function - disconnects from WhatsApp, clears auth data, and redirects
+function logout() {
+    // Show confirmation modal before logging out
+    showConfirmationModal({
+        title: 'Logout',
+        message: 'Are you sure you want to logout? This will disconnect from WhatsApp, remove all authentication data, and redirect you to the login page.',
+        icon: 'fa-sign-out-alt',
+        onConfirm: async () => {
+            try {
+                // Call backend to disconnect WhatsApp and remove auth data
+                const response = await fetch('/api/auth/logout', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    }
+                });
+
+                const data = await response.json();
+
+                if (!response.ok || !data.success) {
+                    throw new Error(data.message || data.error || 'Logout failed');
+                }
+
+                // Clear localStorage (device fingerprint)
+                localStorage.removeItem('wabisaby_device_fingerprint');
+                
+                // Clear sessionStorage (VIP unlock state)
+                sessionStorage.removeItem('vip_area_unlocked');
+                
+                // Clear any other potential auth-related storage
+                // Clear all localStorage items that start with 'wabisaby_'
+                const keysToRemove = [];
+                for (let i = 0; i < localStorage.length; i++) {
+                    const key = localStorage.key(i);
+                    if (key && key.startsWith('wabisaby_')) {
+                        keysToRemove.push(key);
+                    }
+                }
+                keysToRemove.forEach(key => localStorage.removeItem(key));
+                
+                // Clear all sessionStorage items that start with 'wabisaby_' or 'vip_'
+                const sessionKeysToRemove = [];
+                for (let i = 0; i < sessionStorage.length; i++) {
+                    const key = sessionStorage.key(i);
+                    if (key && (key.startsWith('wabisaby_') || key.startsWith('vip_'))) {
+                        sessionKeysToRemove.push(key);
+                    }
+                }
+                sessionKeysToRemove.forEach(key => sessionStorage.removeItem(key));
+                
+                // Redirect to index.html (which will handle routing based on auth state)
+                window.location.href = '/index.html';
+            } catch (error) {
+                console.error('Error during logout:', error);
+                // Show error but still try to clear local data and redirect
+                alert(`Logout error: ${error.message}. Clearing local data and redirecting...`);
+                
+                // Clear local storage anyway
+                localStorage.removeItem('wabisaby_device_fingerprint');
+                sessionStorage.removeItem('vip_area_unlocked');
+                
+                const keysToRemove = [];
+                for (let i = 0; i < localStorage.length; i++) {
+                    const key = localStorage.key(i);
+                    if (key && key.startsWith('wabisaby_')) {
+                        keysToRemove.push(key);
+                    }
+                }
+                keysToRemove.forEach(key => localStorage.removeItem(key));
+                
+                const sessionKeysToRemove = [];
+                for (let i = 0; i < sessionStorage.length; i++) {
+                    const key = sessionStorage.key(i);
+                    if (key && (key.startsWith('wabisaby_') || key.startsWith('vip_'))) {
+                        sessionKeysToRemove.push(key);
+                    }
+                }
+                sessionKeysToRemove.forEach(key => sessionStorage.removeItem(key));
+                
+                // Redirect to index.html
+                window.location.href = '/index.html';
+            }
+        }
+    });
+}
+
+// Burger Menu Toggle Functionality
+let burgerMenuOpen = false;
+
+function initBurgerMenu() {
+    const burgerBtn = document.getElementById('burger-menu-btn');
+    const burgerWrapper = document.querySelector('.burger-menu-wrapper');
+    
+    if (!burgerBtn || !burgerWrapper) return;
+    
+    function toggleMenu() {
+        burgerMenuOpen = !burgerMenuOpen;
+        burgerWrapper.classList.toggle('menu-open', burgerMenuOpen);
+        burgerBtn.setAttribute('aria-expanded', burgerMenuOpen.toString());
+    }
+    
+    function closeMenu() {
+        if (burgerMenuOpen) {
+            burgerMenuOpen = false;
+            burgerWrapper.classList.remove('menu-open');
+            burgerBtn.setAttribute('aria-expanded', 'false');
+        }
+    }
+    
+    // Click handler for burger button
+    burgerBtn.addEventListener('click', (e) => {
+        e.stopPropagation();
+        toggleMenu();
+    });
+    
+    // Click outside to close
+    document.addEventListener('click', (e) => {
+        if (burgerMenuOpen && !burgerWrapper.contains(e.target)) {
+            closeMenu();
+        }
+    });
+    
+    // Keyboard support
+    burgerBtn.addEventListener('keydown', (e) => {
+        if (e.key === 'Enter' || e.key === ' ') {
+            e.preventDefault();
+            toggleMenu();
+        } else if (e.key === 'Escape' && burgerMenuOpen) {
+            e.preventDefault();
+            closeMenu();
+            burgerBtn.focus();
+        }
+    });
+    
+    // Close menu when clicking on menu items (optional - keeps menu open for multiple actions)
+    // Uncomment if you want menu to close on item click:
+    // const menuItems = burgerWrapper.querySelectorAll('.burger-menu-item');
+    // menuItems.forEach(item => {
+    //     item.addEventListener('click', () => {
+    //         setTimeout(closeMenu, 100); // Small delay for visual feedback
+    //     });
+    // });
+}
+
 // Initialize settings on load
 loadSettings();
 loadEffects();
@@ -600,6 +762,9 @@ initSettingsListeners();
 initEffectsListeners();
 initAddTrackModalListeners();
 initConfirmationModalListeners();
+
+// Initialize burger menu
+initBurgerMenu();
 
 // Listeners
 document.getElementById('add-song-form').addEventListener('submit', addSong);
@@ -610,6 +775,8 @@ document.getElementById('fullscreen-btn').addEventListener('click', openFullscre
 document.getElementById('new-session-btn').addEventListener('click', startNewSession);
 document.getElementById('prefetch-btn').addEventListener('click', prefetchAll);
 document.getElementById('stats-collapse-btn').addEventListener('click', toggleStatsCollapse);
+document.getElementById('logout-btn').addEventListener('click', logout);
+document.getElementById('settings-logout-btn').addEventListener('click', logout);
 
 // Setup seek functionality (will be called after DOM is ready)
 setupSeekFunctionality();
@@ -623,5 +790,6 @@ setInterval(fetchData, 2000);
 // Update progress bar and stats every second for smoother updates
 setInterval(updateProgressBarAndStats, 1000);
 
-// Initial fetch
+// Initial fetch (will hide loading screen on success)
 fetchData();
+

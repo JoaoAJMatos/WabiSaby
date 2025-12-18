@@ -15,19 +15,29 @@
 </head>
 <body>
     <div class="bg-overlay"></div>
-    <div class="container">
+    <div class="container" id="main-container">
         <header class="glass-navbar">
             <div class="logo-container">
                 <i class="fas fa-leaf fa-2x pulse-icon"></i>
                 <h1>Wabi<span class="highlight">Saby</span></h1>
             </div>
             <div class="navbar-actions">
-                <a href="/pages/logs.html" class="navbar-icon-btn" title="System Logs" id="logs-btn" target="_blank">
-                    <i class="fas fa-terminal"></i>
-                </a>
-                <button id="settings-btn" class="navbar-icon-btn" title="Settings">
-                    <i class="fas fa-cog"></i>
-                </button>
+                <div class="burger-menu-wrapper">
+                    <button class="burger-menu-btn navbar-icon-btn" title="Menu" id="burger-menu-btn" aria-label="Toggle menu" aria-expanded="false">
+                        <span class="burger-line burger-line-top"></span>
+                        <span class="burger-line burger-line-middle"></span>
+                        <span class="burger-line burger-line-bottom"></span>
+                    </button>
+                    <button id="settings-btn" class="navbar-icon-btn burger-menu-item" title="Settings">
+                        <i class="fas fa-cog"></i>
+                    </button>
+                    <a href="/pages/logs.html" class="navbar-icon-btn burger-menu-item" title="System Logs" id="logs-btn" target="_blank">
+                        <i class="fas fa-terminal"></i>
+                    </a>
+                    <button id="logout-btn" class="navbar-icon-btn burger-menu-item" title="Logout">
+                        <i class="fas fa-sign-out-alt"></i>
+                    </button>
+                </div>
                 <div class="status-badge online" id="connection-status">
                     <span class="dot"></span> LIVE
                 </div>
@@ -35,64 +45,6 @@
         </header>
 
         <main class="dashboard-grid">
-            <!-- Login / QR Section (Hidden by default) -->
-            <section id="auth-section" class="card full-width hidden">
-                <div class="card-header">
-                    <i class="fas fa-lock"></i>
-                    <h2>SYSTEM AUTHENTICATION</h2>
-                </div>
-                <div class="auth-content auth-content-horizontal">
-                    <!-- Left Column: QR Code -->
-                    <div class="auth-qr-column">
-                        <div class="auth-qr-wrapper">
-                            <div id="qr-container">
-                                <div class="qr-placeholder">
-                                    <i class="fas fa-circle-notch fa-spin"></i>
-                                    <span>Waiting for QR...</span>
-                                </div>
-                            </div>
-                        </div>
-                    </div>
-                    
-                    <!-- Vertical Separator -->
-                    <div class="auth-separator"></div>
-                    
-                    <!-- Right Column: Instructions -->
-                    <div class="auth-instructions-column">
-                        <div class="auth-header-text">
-                            <h3>Connect WhatsApp</h3>
-                            <p>Scan the QR code with your phone to link your WhatsApp account</p>
-                        </div>
-                        
-                        <div class="auth-instructions">
-                            <ol class="auth-steps">
-                                <li>
-                                    <div class="auth-step-number">1</div>
-                                    <div class="auth-step-content">
-                                        <strong>Open WhatsApp</strong>
-                                        <span>Go to Settings → Linked Devices on your phone</span>
-                                    </div>
-                                </li>
-                                <li>
-                                    <div class="auth-step-number">2</div>
-                                    <div class="auth-step-content">
-                                        <strong>Scan QR Code</strong>
-                                        <span>Tap "Link a Device" and scan the code shown here</span>
-                                    </div>
-                                </li>
-                                <li>
-                                    <div class="auth-step-number">3</div>
-                                    <div class="auth-step-content">
-                                        <strong>You're Connected!</strong>
-                                        <span>Start adding music to the queue</span>
-                                    </div>
-                                </li>
-                            </ol>
-                        </div>
-                    </div>
-                </div>
-            </section>
-
             <section id="now-playing" class="card full-width now-playing-card">
                 <!-- Visualizer Background -->
                 <div class="np-visualizer-bg">
@@ -528,6 +480,28 @@
             </section>
 
         </main>
+
+        <footer class="main-footer">
+            <div class="footer-content">
+                <div class="footer-brand">
+                    <i class="fas fa-leaf"></i>
+                    <span>Wabi<span class="highlight">Saby</span></span>
+                </div>
+                <div class="footer-info">
+                    <span class="footer-version">v1.0.0</span>
+                    <span class="footer-separator">•</span>
+                    <a href="https://github.com/JoaoAJMatos" target="_blank" rel="noopener noreferrer" class="footer-copyright" title="Copyright JoaoAJMatos">
+                        <span class="footer-author">JoaoAJMatos</span>
+                        <span class="footer-year">2024</span>
+                    </a>
+                    <span class="footer-separator">•</span>
+                    <a href="https://github.com/JoaoAJMatos/WabiSaby" target="_blank" rel="noopener noreferrer" class="footer-github-link" title="View on GitHub">
+                        <i class="fab fa-github"></i>
+                        <span>GitHub</span>
+                    </a>
+                </div>
+            </div>
+        </footer>
 
         <!-- Settings Modal - Redesigned -->
         <div id="settings-modal" class="modal-overlay settings-modal-overlay">
@@ -973,6 +947,18 @@
                                     <div class="setting-control">
                                         <button id="new-session-btn" class="cyber-btn danger small" style="width: auto;">
                                             <i class="fas fa-redo"></i> Start New Session
+                                        </button>
+                                    </div>
+                                </div>
+                                
+                                <div class="setting-row" data-searchable="logout sign out clear auth authentication">
+                                    <div class="setting-info">
+                                        <label>Logout</label>
+                                        <p class="setting-description">Sign out and clear all local authentication data</p>
+                                    </div>
+                                    <div class="setting-control">
+                                        <button id="settings-logout-btn" class="cyber-btn danger small" style="width: auto;">
+                                            <i class="fas fa-sign-out-alt"></i> Logout
                                         </button>
                                     </div>
                                 </div>

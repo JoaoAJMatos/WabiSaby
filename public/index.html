@@ -3,13 +3,131 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <meta http-equiv="refresh" content="0; url=/pages/dashboard.html">
-    <title>WabiSaby - Redirecting...</title>
-    <script>
-        window.location.href = '/pages/dashboard.html';
-    </script>
+    <title>WabiSaby</title>
+    <link rel="icon" type="image/svg+xml" href="assets/favicon.svg">
+    <link rel="alternate icon" href="assets/favicon.ico">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="styles/style.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
 </head>
 <body>
-    <p>Redirecting to <a href="/pages/dashboard.html">dashboard</a>...</p>
+    <!-- Fullscreen Loading Overlay -->
+    <div id="loading-overlay" class="loading-overlay">
+        <div class="loading-content">
+            <div class="loading-logo">
+                <i class="fas fa-leaf fa-3x pulse-icon"></i>
+            </div>
+            <h1 class="loading-title">Wabi<span class="highlight">Saby</span></h1>
+            <div class="loading-spinner">
+                <div class="spinner-ring"></div>
+                <div class="spinner-ring"></div>
+                <div class="spinner-ring"></div>
+            </div>
+            <p class="loading-message" id="loading-message">Checking authentication...</p>
+        </div>
+    </div>
+
+    <script>
+        // Minimum loading screen display time (in milliseconds) - ensures users see the nice animation
+        const MIN_LOADING_TIME = 5000; // 5 seconds - longer to show the beautiful animation
+        const pageLoadStartTime = Date.now();
+        
+        const loadingMessageEl = document.getElementById('loading-message');
+        
+        // Function to update loading message with smooth transition
+        function updateLoadingMessage(text) {
+            if (!loadingMessageEl) return;
+            
+            loadingMessageEl.classList.add('updating');
+            setTimeout(() => {
+                loadingMessageEl.textContent = text;
+                loadingMessageEl.classList.remove('updating');
+            }, 150);
+        }
+        
+        // Function to redirect with minimum delay
+        function redirectWithDelay(url, finalMessage) {
+            const elapsedTime = Date.now() - pageLoadStartTime;
+            const remainingTime = Math.max(0, MIN_LOADING_TIME - elapsedTime);
+            
+            // Show final message before redirect
+            if (finalMessage && loadingMessageEl) {
+                setTimeout(() => {
+                    updateLoadingMessage(finalMessage);
+                }, Math.max(0, remainingTime - 500));
+            }
+            
+            setTimeout(() => {
+                window.location.replace(url);
+            }, remainingTime);
+        }
+        
+        // Check authentication status and redirect only when we have definitive status
+        // Stay on loading screen if auth status is unknown
+        (async function() {
+            // Initial message
+            updateLoadingMessage('Initializing WabiSaby...');
+            
+            // Wait a bit before checking status to ensure smooth animation
+            await new Promise(resolve => setTimeout(resolve, 600));
+            
+            try {
+                // Show that we're connecting to server
+                updateLoadingMessage('Connecting to WabiSaby server...');
+                
+                const response = await fetch('/api/status');
+                
+                // Show that we're checking authentication
+                updateLoadingMessage('Checking WhatsApp connection status...');
+                
+                const data = await response.json();
+                
+                // Only redirect if we have a definitive boolean value for isConnected
+                if (data.auth && typeof data.auth.isConnected === 'boolean') {
+                    if (data.auth.isConnected === true) {
+                        // Authenticated - show success message and redirect
+                        updateLoadingMessage('WhatsApp connected!');
+                        await new Promise(resolve => setTimeout(resolve, 800));
+                        redirectWithDelay('/pages/dashboard.html', 'Welcome back!');
+                    } else {
+                        // Not authenticated - check if QR code is available
+                        if (data.auth.qr) {
+                            updateLoadingMessage('QR code received from WhatsApp...');
+                        } else {
+                            updateLoadingMessage('Connecting to WhatsApp servers...');
+                        }
+                        await new Promise(resolve => setTimeout(resolve, 800));
+                        redirectWithDelay('/pages/auth.html', 'Ready to connect...');
+                    }
+                } else {
+                    // Auth status is unknown - stay on loading screen and retry
+                    updateLoadingMessage('Initializing WhatsApp connection...');
+                    
+                    // Retry after a delay (ensure minimum loading time)
+                    const elapsedTime = Date.now() - pageLoadStartTime;
+                    const delay = Math.max(2000, MIN_LOADING_TIME - elapsedTime);
+                    
+                    setTimeout(() => {
+                        window.location.reload();
+                    }, delay);
+                }
+            } catch (error) {
+                console.error('Error checking auth status:', error);
+                // On error, stay on loading and retry
+                updateLoadingMessage('Error connecting to server. Retrying...');
+                
+                // Ensure minimum loading time before retry
+                const elapsedTime = Date.now() - pageLoadStartTime;
+                const delay = Math.max(2000, MIN_LOADING_TIME - elapsedTime);
+                
+                setTimeout(() => {
+                    window.location.reload();
+                }, delay);
+            }
+        })();
+    </script>
 </body>
 </html>

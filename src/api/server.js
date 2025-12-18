@@ -13,6 +13,7 @@ const { router: logsRouter } = require('./routes/logs.routes');
 const { router: effectsRouter } = require('./routes/effects.routes');
 const { router: groupsRouter, setWhatsAppSocket: setGroupsSocket } = require('./routes/groups.routes');
 const { router: mobileRouter } = require('./routes/mobile.routes');
+const { router: authRouter } = require('./routes/auth.routes');
 const { updateVipName, setWhatsAppSocket: setPriorityServiceSocket } = require('../services/priority.service');
 
 const app = express();
@@ -36,6 +37,7 @@ app.use('/api', logsRouter);
 app.use('/api', effectsRouter);
 app.use('/api', groupsRouter);
 app.use('/api', mobileRouter);
+app.use('/api', authRouter);
 
 // Serve mobile VIP page
 app.get('/mobile/vip', (req, res) => {

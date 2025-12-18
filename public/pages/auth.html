@@ -1,0 +1,144 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>WabiSaby - Authentication</title>
+    <link rel="icon" type="image/svg+xml" href="../assets/favicon.svg">
+    <link rel="alternate icon" href="../assets/favicon.ico">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="../styles/style.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+</head>
+<body>
+    <!-- Fullscreen Loading Overlay -->
+    <div id="loading-overlay" class="loading-overlay">
+        <div class="loading-content">
+            <div class="loading-logo">
+                <i class="fas fa-leaf fa-3x pulse-icon"></i>
+            </div>
+            <h1 class="loading-title">Wabi<span class="highlight">Saby</span></h1>
+            <div class="loading-spinner">
+                <div class="spinner-ring"></div>
+                <div class="spinner-ring"></div>
+                <div class="spinner-ring"></div>
+            </div>
+            <p class="loading-message" id="loading-message">Checking authentication...</p>
+        </div>
+    </div>
+
+    <div class="bg-overlay"></div>
+    <div class="container" id="main-container" style="display: none;">
+        <header class="glass-navbar">
+            <div class="logo-container">
+                <i class="fas fa-leaf fa-2x pulse-icon"></i>
+                <h1>Wabi<span class="highlight">Saby</span></h1>
+            </div>
+            <div class="navbar-actions">
+                <div class="status-badge offline" id="connection-status">
+                    <span class="dot"></span> SYSTEM OFFLINE
+                </div>
+            </div>
+        </header>
+
+        <main class="dashboard-grid">
+            <!-- Authentication Section -->
+            <section id="auth-section" class="card full-width">
+                <div class="card-header">
+                    <i class="fas fa-lock"></i>
+                    <h2>SYSTEM AUTHENTICATION</h2>
+                </div>
+                <div class="auth-content auth-content-horizontal">
+                    <!-- Left Column: QR Code -->
+                    <div class="auth-qr-column">
+                        <div class="auth-qr-wrapper">
+                            <div id="qr-container">
+                                <div class="qr-placeholder">
+                                    <i class="fas fa-circle-notch fa-spin"></i>
+                                    <span>Waiting for QR...</span>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <!-- Vertical Separator -->
+                    <div class="auth-separator"></div>
+                    
+                    <!-- Right Column: Instructions -->
+                    <div class="auth-instructions-column">
+                        <div class="auth-header-text">
+                            <h3>Connect WhatsApp</h3>
+                            <p>Scan the QR code with your phone to link your WhatsApp account</p>
+                        </div>
+                        
+                        <div class="auth-instructions">
+                            <ol class="auth-steps">
+                                <li>
+                                    <div class="auth-step-number">1</div>
+                                    <div class="auth-step-content">
+                                        <strong>Open WhatsApp</strong>
+                                        <span>Go to Settings → Linked Devices on your phone</span>
+                                    </div>
+                                </li>
+                                <li>
+                                    <div class="auth-step-number">2</div>
+                                    <div class="auth-step-content">
+                                        <strong>Scan QR Code</strong>
+                                        <span>Tap "Link a Device" and scan the code shown here</span>
+                                    </div>
+                                </li>
+                                <li>
+                                    <div class="auth-step-number">3</div>
+                                    <div class="auth-step-content">
+                                        <strong>You're Connected!</strong>
+                                        <span>Start adding music to the queue</span>
+                                    </div>
+                                </li>
+                            </ol>
+                        </div>
+                    </div>
+                </div>
+            </section>
+        </main>
+
+        <footer class="main-footer">
+            <div class="footer-content">
+                <div class="footer-brand">
+                    <i class="fas fa-leaf"></i>
+                    <span>Wabi<span class="highlight">Saby</span></span>
+                </div>
+                <div class="footer-info">
+                    <span class="footer-version">v1.0.0</span>
+                    <span class="footer-separator">•</span>
+                    <a href="https://github.com/JoaoAJMatos" target="_blank" rel="noopener noreferrer" class="footer-copyright" title="Copyright JoaoAJMatos">
+                        <span class="footer-author">JoaoAJMatos</span>
+                        <span class="footer-year">2026</span>
+                    </a>
+                    <span class="footer-separator">•</span>
+                    <a href="https://github.com/JoaoAJMatos/WabiSaby" target="_blank" rel="noopener noreferrer" class="footer-github-link" title="View on GitHub">
+                        <i class="fab fa-github"></i>
+                        <span>GitHub</span>
+                    </a>
+                </div>
+            </div>
+        </footer>
+    </div>
+
+    <script src="https://cdn.rawgit.com/davidshimjs/qrcodejs/gh-pages/qrcode.min.js"></script>
+    
+    <!-- Core Modules (no dependencies) -->
+    <script src="../js/core/config.js"></script>
+    <script src="../js/core/utils.js"></script>
+    
+    <!-- Core Modules (with dependencies) -->
+    <script src="../js/core/broadcast.js"></script>
+    <script src="../js/core/api.js"></script>
+    
+    <!-- Auth Page Logic -->
+    <script src="../js/pages/auth.js"></script>
+</body>
+</html>
+
