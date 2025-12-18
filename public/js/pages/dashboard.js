@@ -616,7 +616,7 @@ function logout() {
     // Show confirmation modal before logging out
     showConfirmationModal({
         title: 'Logout',
-        message: 'Are you sure you want to logout? This will disconnect from WhatsApp, remove all authentication data, and redirect you to the login page.',
+        message: 'Are you sure you want to logout? This will disconnect from WhatsApp and clear all authentication data.',
         icon: 'fa-sign-out-alt',
         onConfirm: async () => {
             try {
@@ -776,7 +776,6 @@ document.getElementById('new-session-btn').addEventListener('click', startNewSes
 document.getElementById('prefetch-btn').addEventListener('click', prefetchAll);
 document.getElementById('stats-collapse-btn').addEventListener('click', toggleStatsCollapse);
 document.getElementById('logout-btn').addEventListener('click', logout);
-document.getElementById('settings-logout-btn').addEventListener('click', logout);
 
 // Setup seek functionality (will be called after DOM is ready)
 setupSeekFunctionality();

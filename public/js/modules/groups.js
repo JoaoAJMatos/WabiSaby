@@ -3,6 +3,34 @@
  * Handles groups loading, add/remove, and pending confirmations
  */
 
+// Polling interval for pending confirmations
+let pendingConfirmationsPollInterval = null;
+const PENDING_CONFIRMATIONS_POLL_INTERVAL = 3000; // Poll every 3 seconds
+
+function startPendingConfirmationsPolling() {
+    // Clear any existing interval
+    stopPendingConfirmationsPolling();
+    
+    // Start polling for pending confirmations
+    pendingConfirmationsPollInterval = setInterval(() => {
+        // Only poll if groups panel is visible
+        const groupsPanel = document.querySelector('.settings-panel[data-panel="groups"]');
+        if (groupsPanel && groupsPanel.classList.contains('active')) {
+            loadPendingConfirmations();
+        } else {
+            // Panel is not visible, stop polling
+            stopPendingConfirmationsPolling();
+        }
+    }, PENDING_CONFIRMATIONS_POLL_INTERVAL);
+}
+
+function stopPendingConfirmationsPolling() {
+    if (pendingConfirmationsPollInterval) {
+        clearInterval(pendingConfirmationsPollInterval);
+        pendingConfirmationsPollInterval = null;
+    }
+}
+
 async function loadGroups() {
     const container = document.getElementById('groups-list');
     const countEl = document.getElementById('groups-count');
@@ -48,6 +76,12 @@ async function loadGroups() {
     
     // Also load pending confirmations
     await loadPendingConfirmations();
+    
+    // Start polling for new pending confirmations when groups panel is visible
+    const groupsPanel = document.querySelector('.settings-panel[data-panel="groups"]');
+    if (groupsPanel && groupsPanel.classList.contains('active')) {
+        startPendingConfirmationsPolling();
+    }
 }
 
 async function loadPendingConfirmations() {
@@ -287,4 +321,5 @@ async function rejectGroup(groupId) {
 // Make functions globally available
 window.confirmGroup = confirmGroup;
 window.rejectGroup = rejectGroup;
+window.stopPendingConfirmationsPolling = stopPendingConfirmationsPolling;
 

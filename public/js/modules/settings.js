@@ -172,6 +172,11 @@ function switchSettingsPanel(category) {
         if (typeof loadGroups === 'function') {
             loadGroups();
         }
+    } else {
+        // Stop polling when switching away from groups panel
+        if (typeof stopPendingConfirmationsPolling === 'function') {
+            stopPendingConfirmationsPolling();
+        }
     }
     
     // Clear search when switching panels

@@ -95,6 +95,11 @@ function closeSettingsModal() {
     if (modal) {
         modal.classList.remove('active');
         document.body.style.overflow = ''; // Restore scroll
+        
+        // Stop polling for pending confirmations when modal closes
+        if (typeof stopPendingConfirmationsPolling === 'function') {
+            stopPendingConfirmationsPolling();
+        }
     }
 }
 
