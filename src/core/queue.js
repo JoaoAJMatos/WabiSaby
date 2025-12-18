@@ -9,31 +9,75 @@ class QueueManager extends EventEmitter {
         super();
         this.queue = [];
         this.queueItemIds = new Map(); // Map position -> queue_item_id for database updates
-        this.loadQueue();
+        this._queueLoaded = false;
+        // Don't load queue in constructor - wait until database is initialized
+        // Queue will be loaded lazily on first access or explicitly via loadQueue()
     }
 
     loadQueue() {
+        if (this._queueLoaded) {
+            return; // Already loaded
+        }
+        
         try {
             // Load queue items from database
             const dbItems = dbService.getQueueItems();
-            this.queue = dbItems.map(item => ({
-                id: item.id,
-                content: item.content,
-                title: item.title,
-                artist: item.artist,
-                channel: item.channel,
-                requester: item.requester_name,
-                sender: item.sender_id || item.requester_whatsapp_id,
-                remoteJid: item.group_id,
-                isPriority: item.is_priority === 1,
-                downloadStatus: item.download_status,
-                downloadProgress: item.download_progress,
-                downloading: item.download_status === 'downloading',
-                thumbnail: item.thumbnail_path,
-                thumbnailUrl: item.thumbnail_url,
-                prefetched: item.prefetched === 1,
-                duration: item.duration
-            }));
+            const fs = require('fs');
+            const path = require('path');
+            
+            this.queue = dbItems.map(item => {
+                const content = item.content;
+                const sourceUrl = item.source_url;
+                
+                // Determine type: if content is a file path, check if it exists
+                // If it doesn't exist but we have a source_url, mark for re-download
+                let type = 'file';
+                let needsRedownload = false;
+                
+                if (content) {
+                    // Check if content looks like a file path (contains path separators or is in temp dir)
+                    const isFilePath = content.includes(path.sep) || content.startsWith('/');
+                    
+                    if (isFilePath) {
+                        // Check if file exists
+                        if (!fs.existsSync(content)) {
+                            // File doesn't exist - if we have source_url, mark for re-download
+                            if (sourceUrl) {
+                                type = 'url';
+                                needsRedownload = true;
+                                logger.warn(`Queue item "${item.title}" has missing file, will re-download from source URL`);
+                            } else {
+                                logger.warn(`Queue item "${item.title}" has missing file and no source URL available`);
+                            }
+                        }
+                    } else if (content.startsWith('http://') || content.startsWith('https://')) {
+                        // Content is a URL
+                        type = 'url';
+                    }
+                }
+                
+                return {
+                    id: item.id,
+                    songId: item.song_id, // Store song_id for updating song record
+                    content: needsRedownload ? sourceUrl : content,
+                    sourceUrl: sourceUrl,
+                    type: type,
+                    title: item.title,
+                    artist: item.artist,
+                    channel: item.channel,
+                    requester: item.requester_name,
+                    sender: item.sender_id || item.requester_whatsapp_id,
+                    remoteJid: item.group_id,
+                    isPriority: item.is_priority === 1,
+                    downloadStatus: needsRedownload ? 'pending' : item.download_status,
+                    downloadProgress: needsRedownload ? 0 : item.download_progress,
+                    downloading: needsRedownload ? false : (item.download_status === 'downloading'),
+                    thumbnail: item.thumbnail_path,
+                    thumbnailUrl: item.thumbnail_url,
+                    prefetched: needsRedownload ? false : (item.prefetched === 1),
+                    duration: item.duration
+                };
+            });
             
             // Store mapping of position to queue item ID
             this.queueItemIds.clear();
@@ -42,7 +86,14 @@ class QueueManager extends EventEmitter {
                     this.queueItemIds.set(index, item.id);
                 }
             });
+            
+            this._queueLoaded = true;
         } catch (e) {
+            // If database isn't ready yet, that's okay - will retry later
+            if (e.message && e.message.includes('not initialized')) {
+                // Database not ready yet, queue will be loaded later
+                return;
+            }
             console.error('Failed to load queue:', e);
         }
     }
@@ -93,6 +144,12 @@ class QueueManager extends EventEmitter {
             }
         }
 
+        // Determine source URL: if content is a URL, use it as source_url
+        // Otherwise, if song has sourceUrl property, use that
+        const sourceUrl = (song.content && (song.content.startsWith('http://') || song.content.startsWith('https://'))) 
+            ? song.content 
+            : (song.sourceUrl || null);
+        
         // Add to database
         const queueItemId = dbService.addQueueItem({
             content: song.content,
@@ -102,6 +159,7 @@ class QueueManager extends EventEmitter {
             duration: song.duration || null,
             thumbnail_path: song.thumbnail || null,
             thumbnail_url: song.thumbnailUrl || null,
+            source_url: sourceUrl,
             requester: song.requester || song.sender || 'Unknown',
             sender_id: song.sender || song.remoteJid || null,
             group_id: song.remoteJid || null,
@@ -189,6 +247,10 @@ class QueueManager extends EventEmitter {
     }
 
     getQueue() {
+        // Lazy load queue if not loaded yet
+        if (!this._queueLoaded) {
+            this.loadQueue();
+        }
         return this.queue;
     }
 

@@ -206,6 +206,15 @@ class EffectsService extends EventEmitter {
                     delay: { enabled: true, delay: 50, feedback: 0.2 },
                     preset: '8d'
                 }
+            },
+            custom: {
+                name: 'Custom',
+                icon: 'fa-sliders-h',
+                description: 'Customized effects',
+                settings: {
+                    ...this.getDefaultEffects(),
+                    preset: 'custom'
+                }
             }
         };
     }
@@ -220,7 +229,8 @@ class EffectsService extends EventEmitter {
             this.effects = this.mergeWithDefaults(loaded);
             
             // Validate preset exists, reset to default if invalid
-            if (this.effects.preset && !this.presets[this.effects.preset]) {
+            // Allow 'custom' as a special preset state (set when effects are manually tweaked)
+            if (this.effects.preset && this.effects.preset !== 'custom' && !this.presets[this.effects.preset]) {
                 logger.warn(`Invalid preset "${this.effects.preset}" found in database, resetting to default`);
                 this.effects.preset = 'normal';
                 this.effects = this.mergeWithDefaults(this.effects);

@@ -215,14 +215,15 @@ class PlaybackController extends EventEmitter {
             let filePath;
             let title = 'Audio';
             
-            // Prefetch ALL songs in background
-            this.prefetchNext(0).catch(err => logger.error('Prefetch error', err));
+            // Prefetch next songs in background (respects configured prefetchCount)
+            this.prefetchNext().catch(err => logger.error('Prefetch error', err));
             
             if (item.type === 'url') {
                 item.downloadStatus = 'preparing';
                 item.downloadProgress = 0;
                 queueManager.saveQueue(true);
                 
+                const originalUrl = item.content; // Store original URL before download
                 const result = await downloadTrack(item.content, (progress) => {
                     item.downloadProgress = progress.percent || 0;
                     item.downloadStatus = progress.status || 'downloading';
@@ -240,8 +241,23 @@ class PlaybackController extends EventEmitter {
                     }
                 }
                 
+                // Update song record in database: set content to file path and preserve original URL as source_url
+                const dbService = require('../database/db.service');
+                if (item.songId) {
+                    // Update the song record directly by ID
+                    dbService.updateSong(item.songId, {
+                        content: filePath, // Update content to file path
+                        source_url: originalUrl, // Preserve original URL
+                        title: result.title,
+                        artist: result.artist,
+                        thumbnail_path: result.thumbnailPath,
+                        thumbnail_url: result.thumbnailPath ? getThumbnailUrl(result.thumbnailPath) : null
+                    });
+                }
+                
                 item.type = 'file';
                 item.content = filePath;
+                item.sourceUrl = originalUrl; // Keep in memory for reference
                 item.thumbnail = result.thumbnailPath;
                 item.downloadStatus = 'ready';
                 item.downloadProgress = 100;

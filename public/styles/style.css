@@ -6654,6 +6654,91 @@ input:focus {
     border-bottom: 1px solid rgba(255, 255, 255, 0.04);
 }
 
+/* Quick Adjustments Row */
+.effects-quick-adjustments-row {
+    padding: 12px 24px;
+    border-bottom: 1px solid rgba(255, 255, 255, 0.04);
+    background: rgba(255, 255, 255, 0.01);
+    display: none;
+}
+
+.effects-card.expanded .effects-quick-adjustments-row {
+    display: block;
+}
+
+.effects-advanced-mode ~ .effects-quick-adjustments-row,
+.effects-card.expanded .effects-advanced-mode ~ .effects-quick-adjustments-row {
+    display: none;
+}
+
+.effects-simple-content {
+    padding: 20px;
+    text-align: center;
+}
+
+.effects-simple-hint {
+    color: var(--text-muted);
+    font-size: 0.9rem;
+    margin: 0;
+    line-height: 1.6;
+}
+
+.effects-quick-adjustments {
+    display: flex;
+    gap: 8px;
+    flex-wrap: wrap;
+    justify-content: center;
+}
+
+.quick-adjust-btn {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    padding: 8px 12px;
+    background: rgba(168, 85, 247, 0.08);
+    border: 1px solid rgba(168, 85, 247, 0.2);
+    border-radius: 20px;
+    color: var(--text);
+    font-size: 0.8rem;
+    font-weight: 500;
+    cursor: pointer;
+    transition: all 0.2s ease;
+    user-select: none;
+}
+
+.quick-adjust-btn:hover {
+    background: rgba(168, 85, 247, 0.15);
+    border-color: rgba(168, 85, 247, 0.3);
+    transform: translateY(-1px);
+    box-shadow: 0 2px 8px rgba(168, 85, 247, 0.2);
+}
+
+.quick-adjust-btn:active {
+    transform: translateY(0);
+    box-shadow: 0 1px 4px rgba(168, 85, 247, 0.2);
+}
+
+.quick-adjust-btn i {
+    font-size: 0.75rem;
+    color: #a855f7;
+}
+
+.quick-adjust-btn span {
+    white-space: nowrap;
+}
+
+.quick-adjust-btn.feedback {
+    animation: quick-feedback 0.2s ease;
+    background: rgba(168, 85, 247, 0.25);
+    border-color: rgba(168, 85, 247, 0.4);
+}
+
+@keyframes quick-feedback {
+    0% { transform: scale(1); }
+    50% { transform: scale(1.05); }
+    100% { transform: scale(1); }
+}
+
 /* Expanded Content */
 .effects-expanded-content {
     max-height: 0;
@@ -6692,14 +6777,31 @@ input:focus {
     display: flex;
     flex-direction: column;
     gap: 16px;
+    align-items: stretch;
+}
+
+/* Make last section in each column grow to fill remaining space */
+.effects-column > .effects-section.compact:last-child {
+    flex: 1;
 }
 
 /* Compact Sections */
 .effects-section.compact {
     background: rgba(255, 255, 255, 0.02);
     border: 1px solid rgba(255, 255, 255, 0.04);
-    border-radius: 12px;
-    padding: 16px;
+    border-radius: 14px;
+    padding: 18px;
+    padding-bottom: 14px;
+    transition: all 0.3s ease;
+    position: relative;
+    display: flex;
+    flex-direction: column;
+}
+
+.effects-section.compact:hover {
+    background: rgba(255, 255, 255, 0.03);
+    border-color: rgba(255, 255, 255, 0.06);
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.05);
 }
 
 /* Effects Sections */
@@ -6714,11 +6816,13 @@ input:focus {
 .effects-section-header {
     display: flex;
     align-items: center;
-    gap: 10px;
-    margin-bottom: 16px;
+    gap: 12px;
+    margin-bottom: 18px;
     font-size: 0.9rem;
     font-weight: 600;
     color: var(--text);
+    padding-bottom: 12px;
+    border-bottom: 1px solid rgba(255, 255, 255, 0.05);
 }
 
 .effects-section.compact .effects-section-header {
@@ -6731,68 +6835,261 @@ input:focus {
     font-size: 0.85rem;
 }
 
+/* EQ Container */
+.effects-eq-container {
+    position: relative;
+    padding: 16px 0;
+}
+
+/* Visual EQ Graphical */
+.eq-graphical {
+    position: relative;
+    width: 100%;
+    height: 140px;
+    background: rgba(255, 255, 255, 0.02);
+    border-radius: 8px;
+    border: 1px solid rgba(255, 255, 255, 0.05);
+    margin-bottom: 8px;
+}
+
+.eq-graphical {
+    position: relative;
+}
+
+.eq-header-controls {
+    position: absolute;
+    top: 8px;
+    right: 8px;
+    z-index: 10;
+    display: flex;
+    gap: 4px;
+}
+
+.eq-toggle-btn {
+    background: rgba(0, 0, 0, 0.4);
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    border-radius: 4px;
+    color: var(--text-muted);
+    width: 28px;
+    height: 28px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+    transition: all 0.2s ease;
+    font-size: 0.75rem;
+}
+
+.eq-toggle-btn:hover {
+    background: rgba(0, 0, 0, 0.6);
+    border-color: rgba(255, 255, 255, 0.2);
+    color: var(--text);
+}
+
+.eq-toggle-btn.active {
+    background: rgba(59, 130, 246, 0.2);
+    border-color: rgba(59, 130, 246, 0.4);
+    color: #60a5fa;
+}
+
+.eq-spectrum-layer {
+    transition: opacity 0.3s ease;
+}
+
+.eq-curve-svg {
+    width: 100%;
+    height: 120px;
+    cursor: crosshair;
+}
+
+.eq-control-point {
+    cursor: grab;
+    transition: all 0.2s ease;
+}
+
+.eq-control-point:hover {
+    r: 8;
+    fill: #c084fc;
+}
+
+.eq-control-point:active,
+.eq-control-point.dragging {
+    cursor: grabbing;
+    r: 8;
+    fill: #c084fc;
+    filter: drop-shadow(0 2px 4px rgba(168, 85, 247, 0.3));
+}
+
+.eq-frequency-labels {
+    position: absolute;
+    bottom: -20px;
+    left: 0;
+    right: 0;
+    display: flex;
+    justify-content: space-between;
+    padding: 0 8px;
+}
+
+.eq-frequency-labels span {
+    font-size: 0.65rem;
+    color: var(--text-muted);
+    font-family: 'JetBrains Mono', monospace;
+}
+
+.eq-db-labels {
+    position: absolute;
+    top: 8px;
+    left: -25px;
+    height: 104px;
+    display: flex;
+    flex-direction: column;
+    justify-content: space-between;
+}
+
+.eq-db-labels span {
+    font-size: 0.65rem;
+    color: var(--text-muted);
+    font-family: 'JetBrains Mono', monospace;
+}
+
+.eq-tooltip {
+    position: absolute;
+    background: rgba(0, 0, 0, 0.9);
+    color: white;
+    padding: 4px 8px;
+    border-radius: 4px;
+    font-size: 0.7rem;
+    font-family: 'JetBrains Mono', monospace;
+    pointer-events: none;
+    z-index: 1000;
+    opacity: 0;
+    transition: opacity 0.2s ease;
+}
+
+.eq-tooltip.visible {
+    opacity: 1;
+}
+
+/* Fallback EQ sliders */
+.eq-fallback {
+    display: flex;
+    flex-direction: column;
+    gap: 14px;
+    padding: 8px 0;
+}
+
 /* Horizontal EQ Layout */
 .effects-eq-horizontal {
     display: flex;
     flex-direction: column;
-    gap: 10px;
+    gap: 14px;
+    padding: 8px 0;
 }
 
 .eq-band-h {
     display: flex;
     align-items: center;
-    gap: 12px;
+    gap: 14px;
+    padding: 8px 0;
+    position: relative;
+}
+
+.eq-band-h::after {
+    content: '';
+    position: absolute;
+    bottom: 0;
+    left: 0;
+    right: 0;
+    height: 1px;
+    background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.05), transparent);
+}
+
+.eq-band-h:last-child::after {
+    display: none;
 }
 
 .eq-band-h label {
-    min-width: 50px;
+    min-width: 55px;
     font-size: 0.8rem;
-    color: var(--text-muted);
+    color: var(--text);
+    font-weight: 600;
+    letter-spacing: 0.02em;
 }
 
 .eq-slider-h {
     flex: 1;
-    height: 4px;
+    height: 6px;
     -webkit-appearance: none;
     appearance: none;
-    background: rgba(255, 255, 255, 0.1);
-    border-radius: 2px;
+    background: rgba(255, 255, 255, 0.08);
+    border-radius: 3px;
     cursor: pointer;
+    transition: all 0.2s ease;
+    position: relative;
+}
+
+.eq-slider-h:hover {
+    background: rgba(255, 255, 255, 0.12);
 }
 
 .eq-slider-h::-webkit-slider-thumb {
     -webkit-appearance: none;
-    width: 14px;
-    height: 14px;
+    width: 16px;
+    height: 16px;
     background: linear-gradient(135deg, #a855f7, #8b5cf6);
     border-radius: 50%;
     cursor: pointer;
-    box-shadow: 0 2px 6px rgba(168, 85, 247, 0.3);
+    box-shadow: 0 2px 8px rgba(168, 85, 247, 0.4);
+    transition: all 0.2s ease;
+    border: 2px solid rgba(255, 255, 255, 0.1);
+}
+
+.eq-slider-h::-webkit-slider-thumb:hover {
+    transform: scale(1.15);
+    box-shadow: 0 3px 12px rgba(168, 85, 247, 0.6);
 }
 
 .eq-slider-h::-moz-range-thumb {
-    width: 14px;
-    height: 14px;
+    width: 16px;
+    height: 16px;
     background: linear-gradient(135deg, #a855f7, #8b5cf6);
     border-radius: 50%;
     cursor: pointer;
-    border: none;
+    border: 2px solid rgba(255, 255, 255, 0.1);
+    box-shadow: 0 2px 8px rgba(168, 85, 247, 0.4);
+    transition: all 0.2s ease;
+}
+
+.eq-slider-h::-moz-range-thumb:hover {
+    transform: scale(1.15);
+    box-shadow: 0 3px 12px rgba(168, 85, 247, 0.6);
 }
 
 .eq-value-h {
-    min-width: 30px;
+    min-width: 40px;
     text-align: right;
-    font-size: 0.75rem;
-    font-weight: 500;
-    color: var(--text-muted);
+    font-size: 0.8rem;
+    font-weight: 600;
+    color: #a855f7;
     font-family: 'JetBrains Mono', monospace;
+    background: rgba(168, 85, 247, 0.1);
+    padding: 4px 8px;
+    border-radius: 6px;
+    transition: all 0.2s ease;
+}
+
+.eq-value-h:hover {
+    background: rgba(168, 85, 247, 0.15);
 }
 
 /* Effect Toggle Cards Grid */
 .effects-toggles-grid {
     display: grid;
     grid-template-columns: 1fr 1fr;
-    gap: 10px;
+    gap: 12px;
+    flex: 1;
+    align-content: start;
+    min-height: 0;
 }
 
 @media (max-width: 600px) {
@@ -6804,80 +7101,267 @@ input:focus {
 .effect-toggle-card {
     background: rgba(255, 255, 255, 0.02);
     border: 1px solid rgba(255, 255, 255, 0.04);
-    border-radius: 10px;
+    border-radius: 12px;
     padding: 12px;
-    transition: all 0.2s ease;
+    transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+    position: relative;
+    overflow: hidden;
+}
+
+.effect-toggle-card::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    height: 2px;
+    background: linear-gradient(90deg, transparent, #a855f7, transparent);
+    opacity: 0;
+    transition: opacity 0.3s ease;
 }
 
 .effect-toggle-card:hover {
-    background: rgba(255, 255, 255, 0.03);
+    background: rgba(255, 255, 255, 0.04);
+    border-color: rgba(168, 85, 247, 0.15);
+    transform: translateY(-1px);
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+}
+
+.effect-toggle-card:has(input[type="checkbox"]:checked) {
+    background: rgba(168, 85, 247, 0.08);
+    border-color: rgba(168, 85, 247, 0.3);
+    box-shadow: 0 0 20px rgba(168, 85, 247, 0.15);
+}
+
+.effect-toggle-card:has(input[type="checkbox"]:checked)::before {
+    opacity: 1;
 }
 
 .effect-toggle-header {
     display: flex;
     align-items: center;
-    gap: 8px;
-    margin-bottom: 8px;
+    gap: 10px;
+    margin-bottom: 10px;
+    padding-bottom: 8px;
+    border-bottom: 1px solid rgba(255, 255, 255, 0.05);
 }
 
 .effect-toggle-header i {
     color: #a855f7;
-    font-size: 0.8rem;
-    width: 16px;
+    font-size: 0.9rem;
+    width: 18px;
+    transition: all 0.3s ease;
+}
+
+.effect-toggle-card:has(input[type="checkbox"]:checked) .effect-toggle-header i {
+    color: #c084fc;
+    transform: scale(1.1);
 }
 
 .effect-toggle-header span {
     flex: 1;
-    font-size: 0.8rem;
-    font-weight: 500;
+    font-size: 0.85rem;
+    font-weight: 600;
     color: var(--text);
+    letter-spacing: 0.02em;
+}
+
+.effect-header-controls {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+}
+
+.effect-advanced-btn {
+    background: none;
+    border: none;
+    color: var(--text-muted);
+    font-size: 0.7rem;
+    cursor: pointer;
+    padding: 4px;
+    border-radius: 4px;
+    transition: all 0.2s ease;
+}
+
+.effect-advanced-btn:hover {
+    background: rgba(255, 255, 255, 0.1);
+    color: var(--text);
+}
+
+.effect-advanced-btn.active {
+    color: #a855f7;
+    background: rgba(168, 85, 247, 0.1);
 }
 
 .effect-toggle-controls {
     display: flex;
-    gap: 8px;
-    transition: opacity 0.2s ease;
+    flex-direction: column;
+    gap: 10px;
+    transition: opacity 0.3s ease, transform 0.3s ease;
+    padding-top: 2px;
+}
+
+.effect-intensity-control {
+    padding-bottom: 6px;
+    border-bottom: 1px solid rgba(255, 255, 255, 0.05);
+}
+
+.effect-intensity-control input[type="range"] {
+    width: 100%;
+    height: 5px;
+    -webkit-appearance: none;
+    -moz-appearance: none;
+    appearance: none;
+    background: rgba(255, 255, 255, 0.08);
+    border-radius: 3px;
+    cursor: pointer;
+    transition: all 0.2s ease;
+}
+
+.effect-intensity-control input[type="range"]::-webkit-slider-thumb {
+    -webkit-appearance: none;
+    width: 14px;
+    height: 14px;
+    background: rgba(255, 255, 255, 0.9);
+    border-radius: 50%;
+    cursor: pointer;
+    box-shadow: 0 2px 6px rgba(0, 0, 0, 0.3);
+    transition: all 0.2s ease;
+    border: 1px solid rgba(255, 255, 255, 0.2);
+}
+
+.effect-intensity-control input[type="range"]::-webkit-slider-thumb:hover {
+    transform: scale(1.2);
+    background: rgba(255, 255, 255, 1);
+    box-shadow: 0 3px 10px rgba(0, 0, 0, 0.4);
+}
+
+.effect-intensity-control input[type="range"]::-moz-range-thumb {
+    width: 14px;
+    height: 14px;
+    background: rgba(255, 255, 255, 0.9);
+    border-radius: 50%;
+    cursor: pointer;
+    border: 1px solid rgba(255, 255, 255, 0.2);
+    box-shadow: 0 2px 6px rgba(0, 0, 0, 0.3);
+    transition: all 0.2s ease;
+}
+
+.effect-intensity-control input[type="range"]::-moz-range-thumb:hover {
+    transform: scale(1.2);
+    background: rgba(255, 255, 255, 1);
+    box-shadow: 0 3px 10px rgba(0, 0, 0, 0.4);
+}
+
+.effect-advanced-controls {
+    padding-top: 8px;
+    display: flex;
+    gap: 12px;
+}
+
+.effect-toggle-card:has(input[type="checkbox"]:checked) .effect-toggle-controls {
+    opacity: 1;
 }
 
 .mini-control {
     flex: 1;
     display: flex;
     flex-direction: column;
-    gap: 4px;
+    gap: 8px;
 }
 
-.mini-control span {
-    font-size: 0.65rem;
+.mini-control-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 2px;
+}
+
+.mini-control-header > span:first-child {
+    font-size: 0.7rem;
     color: var(--text-muted);
     text-transform: uppercase;
     letter-spacing: 0.05em;
+    font-weight: 500;
+}
+
+.mini-value {
+    font-size: 0.75rem;
+    font-weight: 600;
+    color: #a855f7;
+    font-family: 'JetBrains Mono', monospace;
+    background: rgba(168, 85, 247, 0.1);
+    padding: 2px 6px;
+    border-radius: 4px;
+    min-width: 40px;
+    text-align: right;
+    transition: all 0.2s ease;
+}
+
+.effect-toggle-card:has(input[type="checkbox"]:checked) .mini-value {
+    background: rgba(168, 85, 247, 0.2);
+    color: #c084fc;
 }
 
 .mini-control input[type="range"] {
     width: 100%;
-    height: 3px;
+    height: 5px;
     -webkit-appearance: none;
-    background: rgba(255, 255, 255, 0.1);
-    border-radius: 2px;
+    -moz-appearance: none;
+    appearance: none;
+    background: rgba(255, 255, 255, 0.08);
+    border-radius: 3px;
     cursor: pointer;
+    transition: all 0.2s ease;
+    position: relative;
+}
+
+.mini-control input[type="range"]:hover {
+    background: rgba(255, 255, 255, 0.12);
+}
+
+.effect-toggle-card:has(input[type="checkbox"]:checked) .mini-control input[type="range"] {
+    background: rgba(255, 255, 255, 0.12);
 }
 
 .mini-control input[type="range"]::-webkit-slider-thumb {
     -webkit-appearance: none;
-    width: 10px;
-    height: 10px;
-    background: #a855f7;
+    width: 14px;
+    height: 14px;
+    background: rgba(255, 255, 255, 0.9);
     border-radius: 50%;
     cursor: pointer;
+    box-shadow: 0 2px 6px rgba(0, 0, 0, 0.3);
+    transition: all 0.2s ease;
+    border: 1px solid rgba(255, 255, 255, 0.2);
+}
+
+.mini-control input[type="range"]::-webkit-slider-thumb:hover {
+    transform: scale(1.2);
+    background: rgba(255, 255, 255, 1);
+    box-shadow: 0 3px 10px rgba(0, 0, 0, 0.4);
+}
+
+.effect-toggle-card:has(input[type="checkbox"]:checked) .mini-control input[type="range"]::-webkit-slider-thumb {
+    background: rgba(255, 255, 255, 0.95);
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.35);
 }
 
 .mini-control input[type="range"]::-moz-range-thumb {
-    width: 10px;
-    height: 10px;
-    background: #a855f7;
+    width: 14px;
+    height: 14px;
+    background: rgba(255, 255, 255, 0.9);
     border-radius: 50%;
     cursor: pointer;
-    border: none;
+    border: 1px solid rgba(255, 255, 255, 0.2);
+    box-shadow: 0 2px 6px rgba(0, 0, 0, 0.3);
+    transition: all 0.2s ease;
+}
+
+.mini-control input[type="range"]::-moz-range-thumb:hover {
+    transform: scale(1.2);
+    background: rgba(255, 255, 255, 1);
+    box-shadow: 0 3px 10px rgba(0, 0, 0, 0.4);
 }
 
 /* Effects Card Footer */
@@ -6951,7 +7435,7 @@ input:focus {
 .effect-slider-row {
     display: flex;
     align-items: center;
-    gap: 12px;
+    gap: 14px;
 }
 
 .effect-slider-row label {
@@ -6971,6 +7455,7 @@ input:focus {
     flex: 1;
     height: 6px;
     -webkit-appearance: none;
+    -moz-appearance: none;
     appearance: none;
     background: rgba(255, 255, 255, 0.1);
     border-radius: 3px;

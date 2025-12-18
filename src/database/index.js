@@ -8,9 +8,9 @@ let db = null;
 
 /**
  * Initialize database connection and create tables
- * @returns {Database} Database instance
+ * @returns {Promise<Database>} Database instance
  */
-function initializeDatabase() {
+async function initializeDatabase() {
     if (db) {
         return db;
     }
@@ -28,11 +28,10 @@ function initializeDatabase() {
     
     try {
         const { runMigrations } = require('./migrator');
-        runMigrations(db).catch(err => {
-            logger.error('Failed to run migrations:', err);
-        });
+        await runMigrations(db);
     } catch (error) {
-        logger.error('Error setting up migrations:', error);
+        logger.error('Error running migrations:', error);
+        throw error;
     }
 
     logger.info(`Database initialized at: ${dbPath}`);
@@ -43,10 +42,11 @@ function initializeDatabase() {
 /**
  * Get database instance (initialize if needed)
  * @returns {Database} Database instance
+ * @throws {Error} If database is not initialized (call initializeDatabase first)
  */
 function getDatabase() {
     if (!db) {
-        return initializeDatabase();
+        throw new Error('Database not initialized. Call initializeDatabase() first.');
     }
     return db;
 }

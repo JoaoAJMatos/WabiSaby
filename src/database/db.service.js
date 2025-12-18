@@ -28,7 +28,7 @@ function getOrCreateSong(songData) {
     
     if (song) {
         // Update song if new data provided
-        if (songData.title || songData.artist || songData.channel || songData.duration || songData.thumbnail_path || songData.thumbnail_url) {
+        if (songData.title || songData.artist || songData.channel || songData.duration || songData.thumbnail_path || songData.thumbnail_url || songData.source_url) {
             db.prepare(`
                 UPDATE songs 
                 SET title = COALESCE(?, title),
@@ -36,7 +36,8 @@ function getOrCreateSong(songData) {
                     channel = COALESCE(?, channel),
                     duration = COALESCE(?, duration),
                     thumbnail_path = COALESCE(?, thumbnail_path),
-                    thumbnail_url = COALESCE(?, thumbnail_url)
+                    thumbnail_url = COALESCE(?, thumbnail_url),
+                    source_url = COALESCE(?, source_url)
                 WHERE id = ?
             `).run(
                 songData.title || null,
@@ -45,6 +46,7 @@ function getOrCreateSong(songData) {
                 songData.duration || null,
                 songData.thumbnail_path || null,
                 songData.thumbnail_url || null,
+                songData.source_url || null,
                 song.id
             );
         }
@@ -53,8 +55,8 @@ function getOrCreateSong(songData) {
     
     // Create new song
     const result = db.prepare(`
-        INSERT INTO songs (content, title, artist, channel, duration, thumbnail_path, thumbnail_url)
-        VALUES (?, ?, ?, ?, ?, ?, ?)
+        INSERT INTO songs (content, title, artist, channel, duration, thumbnail_path, thumbnail_url, source_url)
+        VALUES (?, ?, ?, ?, ?, ?, ?, ?)
     `).run(
         songData.content,
         songData.title || 'Unknown',
@@ -62,7 +64,8 @@ function getOrCreateSong(songData) {
         songData.channel || null,
         songData.duration || null,
         songData.thumbnail_path || null,
-        songData.thumbnail_url || null
+        songData.thumbnail_url || null,
+        songData.source_url || null
     );
     
     return result.lastInsertRowid;
@@ -76,6 +79,57 @@ function getOrCreateSong(songData) {
 function getSong(songId) {
     const db = getDatabase();
     return db.prepare('SELECT * FROM songs WHERE id = ?').get(songId);
+}
+
+/**
+ * Update song by ID
+ * @param {number} songId - Song ID
+ * @param {Object} updates - Fields to update
+ */
+function updateSong(songId, updates) {
+    const db = getDatabase();
+    const fields = [];
+    const values = [];
+    
+    if (updates.content !== undefined) {
+        fields.push('content = ?');
+        values.push(updates.content);
+    }
+    if (updates.title !== undefined) {
+        fields.push('title = ?');
+        values.push(updates.title);
+    }
+    if (updates.artist !== undefined) {
+        fields.push('artist = ?');
+        values.push(updates.artist);
+    }
+    if (updates.channel !== undefined) {
+        fields.push('channel = ?');
+        values.push(updates.channel);
+    }
+    if (updates.duration !== undefined) {
+        fields.push('duration = ?');
+        values.push(updates.duration);
+    }
+    if (updates.thumbnail_path !== undefined) {
+        fields.push('thumbnail_path = ?');
+        values.push(updates.thumbnail_path);
+    }
+    if (updates.thumbnail_url !== undefined) {
+        fields.push('thumbnail_url = ?');
+        values.push(updates.thumbnail_url);
+    }
+    if (updates.source_url !== undefined) {
+        fields.push('source_url = ?');
+        values.push(updates.source_url);
+    }
+    
+    if (fields.length === 0) {
+        return; // Nothing to update
+    }
+    
+    values.push(songId);
+    db.prepare(`UPDATE songs SET ${fields.join(', ')} WHERE id = ?`).run(...values);
 }
 
 // ============================================
@@ -143,7 +197,7 @@ function getQueueItems() {
     return db.prepare(`
         SELECT 
             qi.*,
-            s.content, s.title, s.artist, s.channel, s.duration, s.thumbnail_path, s.thumbnail_url,
+            s.content, s.title, s.artist, s.channel, s.duration, s.thumbnail_path, s.thumbnail_url, s.source_url,
             r.name as requester_name, r.whatsapp_id as requester_whatsapp_id
         FROM queue_items qi
         JOIN songs s ON qi.song_id = s.id
@@ -174,7 +228,8 @@ function addQueueItem(itemData) {
             channel: itemData.channel,
             duration: itemData.duration,
             thumbnail_path: itemData.thumbnail_path,
-            thumbnail_url: itemData.thumbnail_url
+            thumbnail_url: itemData.thumbnail_url,
+            source_url: itemData.source_url
         });
     }
     
@@ -1054,6 +1109,7 @@ module.exports = {
     // Songs
     getOrCreateSong,
     getSong,
+    updateSong,
     
     // Requesters
     getOrCreateRequester,

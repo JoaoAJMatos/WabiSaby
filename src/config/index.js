@@ -296,11 +296,41 @@ class Config {
                 // PlaybackController might not be initialized yet, that's okay
             }
             
+            // Get queue file paths to exclude from deletion
+            const queueFilePaths = new Set();
+            try {
+                // Ensure queue is loaded by requiring the queue manager
+                const queueManager = require('../core/queue');
+                // Force load if not already loaded
+                if (queueManager.getQueue().length === 0) {
+                    queueManager.loadQueue();
+                }
+                const queue = queueManager.getQueue();
+                queue.forEach(item => {
+                    if (item.content && (item.content.includes(path.sep) || item.content.startsWith('/'))) {
+                        // It's a file path - normalize it for comparison
+                        const normalizedPath = path.resolve(item.content);
+                        queueFilePaths.add(normalizedPath);
+                        // Also add the original path in case paths differ
+                        queueFilePaths.add(item.content);
+                    }
+                });
+            } catch (e) {
+                // QueueManager might not be initialized yet, that's okay
+                console.warn('Could not load queue for cleanup check:', e.message);
+            }
+            
             for (const file of files) {
                 const filePath = path.join(tempDir, file);
+                const normalizedFilePath = path.resolve(filePath);
                 
                 // Skip if this is the current song file
-                if (currentSongPath && filePath === currentSongPath) {
+                if (currentSongPath && (filePath === currentSongPath || normalizedFilePath === path.resolve(currentSongPath))) {
+                    continue;
+                }
+                
+                // Skip if this file is referenced in the queue
+                if (queueFilePaths.has(filePath) || queueFilePaths.has(normalizedFilePath)) {
                     continue;
                 }
                 
