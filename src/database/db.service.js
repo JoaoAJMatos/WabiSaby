@@ -893,6 +893,40 @@ function getAllSettings() {
 }
 
 // ============================================
+// User Notification Preferences Operations
+// ============================================
+
+/**
+ * Get user notification preference
+ * @param {string} whatsappId - WhatsApp user ID
+ * @returns {boolean} True if notifications enabled for user (defaults to true if not set)
+ */
+function getUserNotificationPreference(whatsappId) {
+    if (!whatsappId) return true; // Default to enabled
+    const db = getDatabase();
+    const result = db.prepare('SELECT notifications_enabled FROM user_notification_preferences WHERE whatsapp_id = ?').get(whatsappId);
+    if (!result) return true; // Default to enabled if no preference set
+    return result.notifications_enabled === 1;
+}
+
+/**
+ * Set user notification preference
+ * @param {string} whatsappId - WhatsApp user ID
+ * @param {boolean} enabled - Whether notifications are enabled
+ */
+function setUserNotificationPreference(whatsappId, enabled) {
+    if (!whatsappId) return;
+    const db = getDatabase();
+    db.prepare(`
+        INSERT INTO user_notification_preferences (whatsapp_id, notifications_enabled, updated_at)
+        VALUES (?, ?, strftime('%s', 'now'))
+        ON CONFLICT(whatsapp_id) DO UPDATE SET
+            notifications_enabled = ?,
+            updated_at = strftime('%s', 'now')
+    `).run(whatsappId, enabled ? 1 : 0, enabled ? 1 : 0);
+}
+
+// ============================================
 // Effects Operations
 // ============================================
 
@@ -1077,6 +1111,10 @@ module.exports = {
     getSetting,
     setSetting,
     getAllSettings,
+    
+    // User Notification Preferences
+    getUserNotificationPreference,
+    setUserNotificationPreference,
     
     // Effects
     getEffects,

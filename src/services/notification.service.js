@@ -4,6 +4,7 @@ const playbackController = require('../core/playback.controller');
 const config = require('../config');
 const helpersUtil = require('../utils/helpers.util');
 const { PLAYBACK_STARTED, QUEUE_UPDATED } = require('../core/events');
+const dbService = require('../database/db.service');
 
 /**
  * Notification Service
@@ -44,6 +45,22 @@ class NotificationService {
     }
 
     /**
+     * Check if notifications are enabled for a specific user
+     * Checks both global setting and user-level preference
+     * @param {string} whatsappId - User's WhatsApp ID
+     * @returns {boolean} True if notifications should be sent to this user
+     */
+    isUserNotificationEnabled(whatsappId) {
+        // First check global setting - if disabled, no notifications for anyone
+        if (!this.isEnabled) {
+            return false;
+        }
+        
+        // Then check user-level preference
+        return dbService.getUserNotificationPreference(whatsappId);
+    }
+
+    /**
      * Check the queue and notify users whose songs are coming up
      */
     async checkAndNotifyUpcomingSongs() {
@@ -71,11 +88,17 @@ class NotificationService {
             
             // Only notify if we haven't already notified about this song and it's not from the web dashboard
             if (!this.notifiedSongs.has(notificationId) && songToNotify.remoteJid !== 'WEB_DASHBOARD') {
+                // Check if notifications are enabled for this specific user
+                const userWhatsappId = songToNotify.sender;
+                if (!this.isUserNotificationEnabled(userWhatsappId)) {
+                    return; // User has disabled notifications, skip
+                }
+                
                 try {
                     const positionInQueue = notifyIndex + 1;
                     const message = this.formatUpcomingMessage(songToNotify, positionInQueue);
                     const userJid = songToNotify.sender;
-                    await helpersUtil.sendMessageWithMention(this.sock, songToNotify.remoteJid, message, userJid);
+                    await helpersUtil.sendMessageWithMention(this.sock, userJid, message);
                     
                     // Mark this song as notified
                     this.notifiedSongs.add(notificationId);
