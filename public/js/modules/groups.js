@@ -55,17 +55,52 @@ async function loadGroups() {
             container.innerHTML = '<div class="groups-empty"><span>No groups added yet</span></div>';
         } else {
             container.innerHTML = groups.map(group => {
-                const addedDate = group.addedAt ? new Date(group.addedAt).toLocaleDateString() : 'Unknown';
+                const addedDate = group.addedAt ? new Date(group.addedAt).toLocaleDateString('en-US', { 
+                    month: 'short', 
+                    day: 'numeric', 
+                    year: 'numeric' 
+                }) : 'Unknown';
                 return `
-                    <div class="groups-item" data-group-id="${group.id}">
-                        <div class="groups-item-info">
-                            <div class="groups-item-name">${escapeHtml(group.name)}</div>
-                            <div class="groups-item-id">${escapeHtml(group.id)}</div>
-                            <div class="groups-item-date">Added: ${addedDate}</div>
+                    <div class="groups-card" data-group-id="${group.id}">
+                        <div class="groups-card-header">
+                            <div class="groups-card-icon">
+                                <i class="fas fa-users"></i>
+                            </div>
+                            <div class="groups-card-content">
+                                <div class="groups-card-name-display">${escapeHtml(group.name)}</div>
+                                <div class="groups-card-name-edit" style="display: none;">
+                                    <input type="text" class="groups-card-input" value="${escapeHtml(group.name)}" data-group-id="${group.id}" maxlength="100" placeholder="Group name">
+                                </div>
+                                <div class="groups-card-meta">
+                                    <span class="groups-card-id">
+                                        <i class="fas fa-hashtag"></i>
+                                        <span>${escapeHtml(group.id)}</span>
+                                    </span>
+                                    <span class="groups-card-date">
+                                        <i class="fas fa-calendar-plus"></i>
+                                        <span>${addedDate}</span>
+                                    </span>
+                                </div>
+                            </div>
                         </div>
-                        <button type="button" class="groups-remove-btn" onclick="removeGroup('${group.id}')" title="Remove group">
-                            <i class="fas fa-trash"></i>
-                        </button>
+                        <div class="groups-card-actions">
+                            <button type="button" class="groups-action-btn groups-action-edit" onclick="editGroup('${group.id}')" title="Edit name">
+                                <i class="fas fa-pencil-alt"></i>
+                                <span>Edit</span>
+                            </button>
+                            <button type="button" class="groups-action-btn groups-action-save" onclick="saveGroupName('${group.id}')" style="display: none;" title="Save changes">
+                                <i class="fas fa-check"></i>
+                                <span>Save</span>
+                            </button>
+                            <button type="button" class="groups-action-btn groups-action-cancel" onclick="cancelEditGroup('${group.id}')" style="display: none;" title="Cancel">
+                                <i class="fas fa-times"></i>
+                                <span>Cancel</span>
+                            </button>
+                            <button type="button" class="groups-action-btn groups-action-remove" onclick="removeGroup('${group.id}')" title="Remove group">
+                                <i class="fas fa-trash-alt"></i>
+                                <span>Remove</span>
+                            </button>
+                        </div>
                     </div>
                 `;
             }).join('');
@@ -330,6 +365,188 @@ async function rejectGroup(groupId) {
         showNotification('Failed to reject group', 'error');
     }
 }
+
+window.editGroup = function(groupId) {
+    const card = document.querySelector(`.groups-card[data-group-id="${groupId}"]`);
+    if (!card) return;
+    
+    const nameDisplay = card.querySelector('.groups-card-name-display');
+    const nameEdit = card.querySelector('.groups-card-name-edit');
+    const editBtn = card.querySelector('.groups-action-edit');
+    const saveBtn = card.querySelector('.groups-action-save');
+    const cancelBtn = card.querySelector('.groups-action-cancel');
+    const removeBtn = card.querySelector('.groups-action-remove');
+    const editInput = card.querySelector('.groups-card-input');
+    
+    if (nameDisplay && nameEdit && editBtn && saveBtn && cancelBtn && editInput) {
+        // Add editing class for visual feedback
+        card.classList.add('groups-card-editing');
+        
+        // Smooth transition
+        nameDisplay.style.opacity = '0';
+        setTimeout(() => {
+            nameDisplay.style.display = 'none';
+            nameEdit.style.display = 'block';
+            nameEdit.style.opacity = '0';
+            setTimeout(() => {
+                nameEdit.style.opacity = '1';
+            }, 10);
+        }, 150);
+        
+        editBtn.style.display = 'none';
+        saveBtn.style.display = 'flex';
+        cancelBtn.style.display = 'flex';
+        removeBtn.style.display = 'none';
+        
+        // Focus and select after a brief delay to ensure display transition completes
+        setTimeout(() => {
+            editInput.focus();
+            editInput.select();
+        }, 200);
+        
+        // Add Enter key handler
+        const handleKeyPress = (e) => {
+            if (e.key === 'Enter') {
+                e.preventDefault();
+                saveGroupName(groupId);
+                editInput.removeEventListener('keydown', handleKeyPress);
+            } else if (e.key === 'Escape') {
+                e.preventDefault();
+                cancelEditGroup(groupId);
+                editInput.removeEventListener('keydown', handleKeyPress);
+            }
+        };
+        
+        editInput.addEventListener('keydown', handleKeyPress);
+    }
+};
+
+window.saveGroupName = async function(groupId) {
+    const card = document.querySelector(`.groups-card[data-group-id="${groupId}"]`);
+    if (!card) return;
+    
+    const editInput = card.querySelector('.groups-card-input');
+    const saveBtn = card.querySelector('.groups-action-save');
+    const cancelBtn = card.querySelector('.groups-action-cancel');
+    
+    if (!editInput || !saveBtn || !cancelBtn) return;
+    
+    const newName = editInput.value.trim();
+    
+    if (!newName) {
+        showNotification('Group name cannot be empty', 'error');
+        editInput.focus();
+        return;
+    }
+    
+    // Show loading state
+    const originalSaveContent = saveBtn.innerHTML;
+    saveBtn.innerHTML = '<i class="fas fa-circle-notch fa-spin"></i><span>Saving...</span>';
+    saveBtn.disabled = true;
+    cancelBtn.disabled = true;
+    editInput.disabled = true;
+    card.classList.add('groups-card-saving');
+    
+    try {
+        const res = await fetch(`/api/groups/${encodeURIComponent(groupId)}`, {
+            method: 'PUT',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ name: newName })
+        });
+        
+        const data = await res.json();
+        
+        if (data.success) {
+            // Show success state briefly before reloading
+            card.classList.remove('groups-card-saving');
+            card.classList.add('groups-card-saved');
+            
+            setTimeout(async () => {
+                await loadGroups();
+                // Trigger status update to refresh hints immediately
+                if (typeof fetchData === 'function') {
+                    fetchData();
+                }
+                if (typeof showSaveIndicator === 'function') {
+                    showSaveIndicator();
+                }
+                showNotification('Group name updated successfully', 'success');
+            }, 300);
+        } else {
+            // Restore button state
+            saveBtn.innerHTML = originalSaveContent;
+            saveBtn.disabled = false;
+            cancelBtn.disabled = false;
+            editInput.disabled = false;
+            card.classList.remove('groups-card-saving');
+            
+            showNotification(data.error || 'Failed to update group name', 'error');
+            // Restore original name on error
+            cancelEditGroup(groupId);
+        }
+    } catch (error) {
+        console.error('Error updating group name:', error);
+        
+        // Restore button state
+        saveBtn.innerHTML = originalSaveContent;
+        saveBtn.disabled = false;
+        cancelBtn.disabled = false;
+        editInput.disabled = false;
+        card.classList.remove('groups-card-saving');
+        
+        showNotification('Failed to update group name. Please try again.', 'error');
+        // Restore original name on error
+        cancelEditGroup(groupId);
+    }
+};
+
+window.cancelEditGroup = function(groupId) {
+    const card = document.querySelector(`.groups-card[data-group-id="${groupId}"]`);
+    if (!card) return;
+    
+    const nameDisplay = card.querySelector('.groups-card-name-display');
+    const nameEdit = card.querySelector('.groups-card-name-edit');
+    const editBtn = card.querySelector('.groups-action-edit');
+    const saveBtn = card.querySelector('.groups-action-save');
+    const cancelBtn = card.querySelector('.groups-action-cancel');
+    const removeBtn = card.querySelector('.groups-action-remove');
+    const editInput = card.querySelector('.groups-card-input');
+    
+    if (nameDisplay && nameEdit && editBtn && saveBtn && cancelBtn && removeBtn && editInput) {
+        // Remove editing class
+        card.classList.remove('groups-card-editing', 'groups-card-saving', 'groups-card-saved');
+        
+        // Restore original name from display
+        const originalName = nameDisplay.textContent.trim();
+        editInput.value = originalName;
+        
+        // Re-enable inputs if they were disabled
+        editInput.disabled = false;
+        saveBtn.disabled = false;
+        cancelBtn.disabled = false;
+        
+        // Restore save button content if it was in loading state
+        if (saveBtn.querySelector('.fa-spin')) {
+            saveBtn.innerHTML = '<i class="fas fa-check"></i><span>Save</span>';
+        }
+        
+        // Smooth transition
+        nameEdit.style.opacity = '0';
+        setTimeout(() => {
+            nameEdit.style.display = 'none';
+            nameDisplay.style.display = 'block';
+            nameDisplay.style.opacity = '0';
+            setTimeout(() => {
+                nameDisplay.style.opacity = '1';
+            }, 10);
+        }, 150);
+        
+        editBtn.style.display = 'flex';
+        saveBtn.style.display = 'none';
+        cancelBtn.style.display = 'none';
+        removeBtn.style.display = 'flex';
+    }
+};
 
 // Make functions globally available
 window.confirmGroup = confirmGroup;

@@ -171,30 +171,48 @@ test('removeGroup should return false when group does not exist', () => {
     expect(result).toBe(false);
 });
 
-test('updateGroupName should do nothing for null/undefined name or id', () => {
+test('updateGroupName should return false for null/undefined name or id', () => {
     dbService.addGroup('group1@whatsapp', 'Old Name');
     
-    groupsService.updateGroupName('group1@whatsapp', null);
-    groupsService.updateGroupName('group1@whatsapp', undefined);
-    groupsService.updateGroupName('group1@whatsapp', '');
-    groupsService.updateGroupName(null, 'New Name');
-    groupsService.updateGroupName(undefined, 'New Name');
+    expect(groupsService.updateGroupName('group1@whatsapp', null)).toBe(false);
+    expect(groupsService.updateGroupName('group1@whatsapp', undefined)).toBe(false);
+    expect(groupsService.updateGroupName('group1@whatsapp', '')).toBe(false);
+    expect(groupsService.updateGroupName(null, 'New Name')).toBe(false);
+    expect(groupsService.updateGroupName(undefined, 'New Name')).toBe(false);
     
-    // Should not throw
+    // Should not throw and should not update
     const groups = groupsService.getGroups();
     const group = groups.find(g => g.id === 'group1@whatsapp');
     expect(group).toBeDefined();
+    expect(group.name).toBe('Old Name');
 });
 
-test('updateGroupName should update group name successfully', () => {
+test('updateGroupName should return true and update group name successfully', () => {
     dbService.addGroup('group1@whatsapp', 'Old Name');
     
-    groupsService.updateGroupName('group1@whatsapp', 'New Name');
+    const result = groupsService.updateGroupName('group1@whatsapp', 'New Name');
+    expect(result).toBe(true);
     
     const groups = groupsService.getGroups();
     const group = groups.find(g => g.id === 'group1@whatsapp');
     expect(group).toBeDefined();
     expect(group.name).toBe('New Name');
+});
+
+test('updateGroupName should return false when group does not exist', () => {
+    const result = groupsService.updateGroupName('nonexistent@whatsapp', 'New Name');
+    expect(result).toBe(false);
+    
+    const groups = groupsService.getGroups();
+    const group = groups.find(g => g.id === 'nonexistent@whatsapp');
+    expect(group).toBeUndefined();
+});
+
+test('updateGroupName should return false for invalid inputs', () => {
+    expect(groupsService.updateGroupName('', 'Valid Name')).toBe(false);
+    expect(groupsService.updateGroupName('valid@whatsapp', null)).toBe(false);
+    expect(groupsService.updateGroupName('valid@whatsapp', undefined)).toBe(false);
+    expect(groupsService.updateGroupName('valid@whatsapp', '')).toBe(false);
 });
 
 test('migrateFromTargetGroupId should return false when groups already exist', () => {

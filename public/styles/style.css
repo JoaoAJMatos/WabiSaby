@@ -7307,6 +7307,273 @@ input:focus {
     }
 }
 
+/* ========================================
+   Groups Cards - Modern Redesign
+   ======================================== */
+
+.groups-card {
+    background: var(--bg-card);
+    border: 1px solid var(--glass-border);
+    border-radius: var(--card-radius-sm);
+    padding: 20px;
+    transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+    position: relative;
+    overflow: hidden;
+    backdrop-filter: blur(10px);
+    -webkit-backdrop-filter: blur(10px);
+}
+
+.groups-card::before {
+    content: '';
+    position: absolute;
+    inset: 0;
+    background: linear-gradient(135deg, var(--glass-highlight) 0%, transparent 50%);
+    opacity: 0;
+    transition: opacity 0.3s ease;
+    pointer-events: none;
+}
+
+.groups-card:hover {
+    background: var(--bg-elevated);
+    border-color: var(--glass-border-hover);
+    transform: translateY(-2px);
+    box-shadow: var(--shadow-card);
+}
+
+.groups-card:hover::before {
+    opacity: 1;
+}
+
+.groups-card-editing {
+    border-color: var(--primary);
+    background: var(--bg-elevated);
+    box-shadow: 0 0 0 1px rgba(52, 211, 153, 0.2), var(--shadow-card);
+}
+
+.groups-card-saving {
+    opacity: 0.7;
+    pointer-events: none;
+}
+
+.groups-card-saved {
+    border-color: var(--success);
+    animation: groupsCardSaved 0.6s ease;
+}
+
+@keyframes groupsCardSaved {
+    0% {
+        box-shadow: 0 0 0 0 rgba(34, 197, 94, 0.4);
+    }
+    50% {
+        box-shadow: 0 0 0 8px rgba(34, 197, 94, 0.15);
+    }
+    100% {
+        box-shadow: 0 0 0 0 rgba(34, 197, 94, 0);
+    }
+}
+
+.groups-card-pending {
+    border-left: 4px solid var(--warning);
+    background: linear-gradient(90deg, rgba(245, 158, 11, 0.08) 0%, var(--bg-card) 15%);
+}
+
+.groups-card-header {
+    display: flex;
+    gap: 16px;
+    margin-bottom: 16px;
+}
+
+.groups-card-icon {
+    width: 48px;
+    height: 48px;
+    border-radius: var(--card-radius-xs);
+    background: linear-gradient(135deg, var(--primary-dim) 0%, rgba(52, 211, 153, 0.08) 100%);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: var(--primary);
+    font-size: 1.2rem;
+    flex-shrink: 0;
+    border: 1px solid rgba(52, 211, 153, 0.2);
+    transition: all 0.3s ease;
+}
+
+.groups-card:hover .groups-card-icon {
+    background: linear-gradient(135deg, var(--primary-dim) 0%, rgba(52, 211, 153, 0.15) 100%);
+    transform: scale(1.05);
+    box-shadow: 0 4px 12px rgba(52, 211, 153, 0.2);
+}
+
+.groups-card-content {
+    flex: 1;
+    min-width: 0;
+}
+
+.groups-card-name-display {
+    font-size: 1.1rem;
+    font-weight: 600;
+    color: var(--text-main);
+    margin-bottom: 8px;
+    line-height: 1.4;
+    transition: opacity 0.2s ease;
+    letter-spacing: -0.01em;
+}
+
+.groups-card-name-edit {
+    margin-bottom: 8px;
+    transition: opacity 0.2s ease;
+}
+
+.groups-card-input {
+    width: 100%;
+    font-size: 1.1rem;
+    font-weight: 600;
+    color: var(--text-main);
+    background: transparent;
+    border: none;
+    border-bottom: 2px solid var(--primary);
+    border-radius: 0;
+    padding: 4px 0;
+    transition: all 0.2s ease;
+    font-family: inherit;
+    line-height: 1.4;
+    letter-spacing: -0.01em;
+}
+
+.groups-card-input:focus {
+    outline: none;
+    border-bottom-color: var(--primary);
+    border-bottom-width: 2px;
+}
+
+.groups-card-input:disabled {
+    opacity: 0.6;
+    cursor: not-allowed;
+}
+
+.groups-card-input::placeholder {
+    color: var(--text-muted);
+    opacity: 0.5;
+}
+
+.groups-card-meta {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 16px;
+    font-size: 0.85rem;
+    color: var(--text-secondary);
+}
+
+.groups-card-id,
+.groups-card-date {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+}
+
+.groups-card-id i,
+.groups-card-date i {
+    font-size: 0.75rem;
+    opacity: 0.7;
+}
+
+.groups-card-id span {
+    font-family: var(--font-mono);
+    font-size: 0.8rem;
+    word-break: break-all;
+}
+
+.groups-card-actions {
+    display: flex;
+    gap: 8px;
+    flex-wrap: wrap;
+    padding-top: 16px;
+    border-top: 1px solid var(--glass-border);
+    margin-top: 16px;
+}
+
+.groups-action-btn {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    padding: 8px 16px;
+    border: 1px solid var(--glass-border);
+    border-radius: var(--card-radius-xs);
+    background: var(--bg-elevated);
+    color: var(--text-main);
+    font-size: 0.875rem;
+    font-weight: 500;
+    cursor: pointer;
+    transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+    font-family: inherit;
+    white-space: nowrap;
+}
+
+.groups-action-btn i {
+    font-size: 0.875rem;
+}
+
+.groups-action-btn:hover:not(:disabled) {
+    transform: translateY(-1px);
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+}
+
+.groups-action-btn:active:not(:disabled) {
+    transform: translateY(0);
+}
+
+.groups-action-btn:disabled {
+    opacity: 0.5;
+    cursor: not-allowed;
+    transform: none;
+}
+
+.groups-action-edit {
+    background: linear-gradient(135deg, rgba(59, 130, 246, 0.1) 0%, rgba(59, 130, 246, 0.05) 100%);
+    border-color: rgba(59, 130, 246, 0.3);
+    color: #60a5fa;
+}
+
+.groups-action-edit:hover:not(:disabled) {
+    background: linear-gradient(135deg, rgba(59, 130, 246, 0.2) 0%, rgba(59, 130, 246, 0.1) 100%);
+    border-color: rgba(59, 130, 246, 0.5);
+}
+
+.groups-action-save {
+    background: linear-gradient(135deg, rgba(34, 197, 94, 0.15) 0%, rgba(34, 197, 94, 0.08) 100%);
+    border-color: rgba(34, 197, 94, 0.3);
+    color: var(--success);
+}
+
+.groups-action-save:hover:not(:disabled) {
+    background: linear-gradient(135deg, rgba(34, 197, 94, 0.25) 0%, rgba(34, 197, 94, 0.15) 100%);
+    border-color: rgba(34, 197, 94, 0.5);
+}
+
+.groups-action-cancel {
+    background: var(--bg-elevated);
+    border-color: var(--glass-border);
+    color: var(--text-secondary);
+}
+
+.groups-action-cancel:hover:not(:disabled) {
+    background: var(--bg-card);
+    border-color: var(--glass-border-hover);
+    color: var(--text-main);
+}
+
+.groups-action-remove {
+    background: linear-gradient(135deg, rgba(239, 68, 68, 0.1) 0%, rgba(239, 68, 68, 0.05) 100%);
+    border-color: rgba(239, 68, 68, 0.3);
+    color: var(--error);
+}
+
+.groups-action-remove:hover:not(:disabled) {
+    background: linear-gradient(135deg, rgba(239, 68, 68, 0.2) 0%, rgba(239, 68, 68, 0.1) 100%);
+    border-color: rgba(239, 68, 68, 0.5);
+}
+
+/* Legacy support for pending groups */
 .groups-item {
     display: flex;
     align-items: center;
@@ -7315,7 +7582,8 @@ input:focus {
     background: var(--bg-card);
     border: 1px solid var(--glass-border);
     border-radius: var(--card-radius-xs);
-    transition: all 0.2s ease;
+    transition: all 0.3s ease;
+    position: relative;
 }
 
 .groups-item:hover {
@@ -7363,7 +7631,6 @@ input:focus {
     gap: 4px;
 }
 
-.groups-remove-btn,
 .groups-confirm-btn,
 .groups-reject-btn {
     display: flex;
@@ -7376,16 +7643,6 @@ input:focus {
     cursor: pointer;
     transition: all 0.2s ease;
     margin-left: 8px;
-}
-
-.groups-remove-btn {
-    background: rgba(239, 68, 68, 0.15);
-    color: var(--error);
-}
-
-.groups-remove-btn:hover {
-    background: rgba(239, 68, 68, 0.25);
-    transform: scale(1.05);
 }
 
 .groups-confirm-btn {

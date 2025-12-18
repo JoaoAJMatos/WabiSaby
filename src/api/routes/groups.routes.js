@@ -148,6 +148,63 @@ router.delete('/groups/:groupId', (req, res) => {
 });
 
 /**
+ * Update a group name
+ * PUT /api/groups/:groupId
+ */
+router.put('/groups/:groupId', (req, res) => {
+    const { groupId } = req.params;
+    const { name } = req.body;
+    
+    if (!groupId) {
+        return res.status(400).json({
+            success: false,
+            error: 'Group ID required'
+        });
+    }
+    
+    if (!name || name.trim() === '') {
+        return res.status(400).json({
+            success: false,
+            error: 'Name required'
+        });
+    }
+    
+    // Check if group exists
+    if (!groupsService.isGroupMonitored(groupId)) {
+        return res.status(404).json({
+            success: false,
+            error: 'Group not found'
+        });
+    }
+    
+    try {
+        const updated = groupsService.updateGroupName(groupId, name.trim());
+        
+        if (updated) {
+            res.json({
+                success: true,
+                message: 'Group name updated successfully',
+                group: {
+                    id: groupId,
+                    name: name.trim()
+                }
+            });
+        } else {
+            res.status(500).json({
+                success: false,
+                error: 'Failed to update group'
+            });
+        }
+    } catch (error) {
+        logger.error('Error updating group name:', error);
+        res.status(500).json({
+            success: false,
+            error: 'Failed to update group'
+        });
+    }
+});
+
+/**
  * Get pending group confirmations
  * GET /api/groups/pending
  */

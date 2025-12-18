@@ -77,6 +77,7 @@
 |----------|--------|-------------|
 | `/api/groups` | GET | Get monitored groups |
 | `/api/groups` | POST | Add group to monitoring |
+| `/api/groups/:groupId` | PUT | Update group name |
 | `/api/groups/:groupId` | DELETE | Remove group |
 | `/api/groups/pending` | GET | Get pending confirmations |
 | `/api/groups/pending/:groupId/confirm` | POST | Confirm group addition |

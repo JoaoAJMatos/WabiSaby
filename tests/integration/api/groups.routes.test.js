@@ -15,6 +15,7 @@ let getGroupsStub;
 let isGroupMonitoredStub;
 let addGroupStub;
 let removeGroupStub;
+let updateGroupNameStub;
 
 beforeEach(() => {
     mockWhatsAppSocket = {
@@ -25,6 +26,7 @@ beforeEach(() => {
     isGroupMonitoredStub = sinon.stub(groupsService, 'isGroupMonitored');
     addGroupStub = sinon.stub(groupsService, 'addGroup');
     removeGroupStub = sinon.stub(groupsService, 'removeGroup');
+    updateGroupNameStub = sinon.stub(groupsService, 'updateGroupName');
     
     setWhatsAppSocket(mockWhatsAppSocket);
 });
@@ -171,6 +173,120 @@ test('DELETE /api/groups/:groupId should return 404 when group not found', async
     const data = await parseJsonResponse(response);
     expect(data.success).toBe(false);
     expect(data.error).toContain('Group not found');
+});
+
+test('PUT /api/groups/:groupId should update group name successfully', async () => {
+    testServer = await startTestServer(createTestApp(router));
+    
+    isGroupMonitoredStub.returns(true);
+    updateGroupNameStub.returns(true);
+    
+    const response = await makeRequest(testServer.url, 'PUT', '/api/groups/group1@g.us', {
+        body: {
+            name: 'Updated Group Name'
+        }
+    });
+    expect(response.status).toBe(200);
+    
+    const data = await parseJsonResponse(response);
+    expect(data.success).toBe(true);
+    expect(data.message).toContain('updated successfully');
+    expect(updateGroupNameStub.calledOnce).toBe(true);
+    expect(updateGroupNameStub.firstCall.args[0]).toBe('group1@g.us');
+    expect(updateGroupNameStub.firstCall.args[1]).toBe('Updated Group Name');
+});
+
+test('PUT /api/groups/:groupId should return 400 when groupId is missing', async () => {
+    testServer = await startTestServer(createTestApp(router));
+    
+    const response = await makeRequest(testServer.url, 'PUT', '/api/groups/', {
+        body: {
+            name: 'Updated Group Name'
+        }
+    });
+    expect(response.status).toBe(404); // Express returns 404 for missing route param
+});
+
+test('PUT /api/groups/:groupId should return 400 when name is missing', async () => {
+    testServer = await startTestServer(createTestApp(router));
+    
+    const response = await makeRequest(testServer.url, 'PUT', '/api/groups/group1@g.us', {
+        body: {}
+    });
+    expect(response.status).toBe(400);
+    
+    const data = await parseJsonResponse(response);
+    expect(data.success).toBe(false);
+    expect(data.error).toContain('Name required');
+});
+
+test('PUT /api/groups/:groupId should return 400 when name is empty', async () => {
+    testServer = await startTestServer(createTestApp(router));
+    
+    const response = await makeRequest(testServer.url, 'PUT', '/api/groups/group1@g.us', {
+        body: {
+            name: ''
+        }
+    });
+    expect(response.status).toBe(400);
+    
+    const data = await parseJsonResponse(response);
+    expect(data.success).toBe(false);
+    expect(data.error).toContain('Name required');
+});
+
+test('PUT /api/groups/:groupId should return 404 when group does not exist', async () => {
+    testServer = await startTestServer(createTestApp(router));
+    
+    isGroupMonitoredStub.returns(false);
+    
+    const response = await makeRequest(testServer.url, 'PUT', '/api/groups/group1@g.us', {
+        body: {
+            name: 'Updated Group Name'
+        }
+    });
+    expect(response.status).toBe(404);
+    
+    const data = await parseJsonResponse(response);
+    expect(data.success).toBe(false);
+    expect(data.error).toContain('Group not found');
+    expect(updateGroupNameStub.called).toBe(false);
+});
+
+test('PUT /api/groups/:groupId should return 500 on service errors', async () => {
+    testServer = await startTestServer(createTestApp(router));
+    
+    isGroupMonitoredStub.returns(true);
+    updateGroupNameStub.returns(false);
+    
+    const response = await makeRequest(testServer.url, 'PUT', '/api/groups/group1@g.us', {
+        body: {
+            name: 'Updated Group Name'
+        }
+    });
+    expect(response.status).toBe(500);
+    
+    const data = await parseJsonResponse(response);
+    expect(data.success).toBe(false);
+    expect(data.error).toContain('Failed to update group');
+});
+
+test('PUT /api/groups/:groupId should validate group exists before updating', async () => {
+    testServer = await startTestServer(createTestApp(router));
+    
+    isGroupMonitoredStub.returns(true);
+    updateGroupNameStub.returns(true);
+    
+    const response = await makeRequest(testServer.url, 'PUT', '/api/groups/group1@g.us', {
+        body: {
+            name: 'Updated Group Name'
+        }
+    });
+    expect(response.status).toBe(200);
+    
+    expect(isGroupMonitoredStub.calledOnce).toBe(true);
+    expect(isGroupMonitoredStub.firstCall.args[0]).toBe('group1@g.us');
+    expect(updateGroupNameStub.calledOnce).toBe(true);
 });
 
 test('GET /api/groups/pending should return pending confirmations', async () => {

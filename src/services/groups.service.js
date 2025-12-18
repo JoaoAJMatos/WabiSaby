@@ -108,15 +108,23 @@ function removeGroup(id) {
  * Update group name
  * @param {string} id - Group ID
  * @param {string} name - New group name
+ * @returns {boolean} - True if updated successfully, false otherwise
  */
 function updateGroupName(id, name) {
-    if (!name || !id) return;
+    if (!name || !id) return false;
+    
+    // Check if group exists
+    if (!isGroupMonitored(id)) {
+        return false;
+    }
     
     try {
         dbService.updateGroupName(id, name);
         logger.info(`Updated group name: ${id} -> ${name}`);
+        return true;
     } catch (e) {
         logger.error('Error updating group name:', e);
+        return false;
     }
 }
 
