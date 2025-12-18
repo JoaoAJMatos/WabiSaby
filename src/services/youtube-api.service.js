@@ -124,7 +124,7 @@ async function searchYouTubeAPI(query, options = {}) {
         
         const videoDetailsResponse = await axios.get('https://www.googleapis.com/youtube/v3/videos', {
             params: {
-                part: 'snippet,contentDetails',
+                part: 'snippet,contentDetails,statistics',
                 id: videoIds,
                 key: config.youtube.apiKey
             }
@@ -145,6 +145,9 @@ async function searchYouTubeAPI(query, options = {}) {
                 if (!videoDetails) return null;
                 
                 const duration = parseDuration(videoDetails.contentDetails?.duration);
+                const viewCount = videoDetails.statistics?.viewCount 
+                    ? parseInt(videoDetails.statistics.viewCount, 10) 
+                    : null;
                 
                 return {
                     url: `https://www.youtube.com/watch?v=${item.id.videoId}`,
@@ -155,6 +158,7 @@ async function searchYouTubeAPI(query, options = {}) {
                     },
                     durationInSec: duration,
                     type: 'video',
+                    viewCount: viewCount,
                     // Additional metadata from API
                     publishedAt: item.snippet.publishedAt,
                     description: item.snippet.description,

@@ -26,6 +26,67 @@ function setValidationCache(cache) {
 }
 
 /**
+ * Check if a result has high similarity (90%+) for both title and artist
+ * @param {Object} result - YouTube search result
+ * @param {string} expectedTitle - Expected song title
+ * @param {string} expectedArtist - Expected artist name
+ * @returns {boolean} - True if both title and artist have 90%+ similarity
+ */
+function hasHighSimilarity(result, expectedTitle, expectedArtist) {
+    const videoTitle = normalizeString(result.title || '');
+    const channelName = normalizeString(result.channel?.name || '');
+    const normalizedExpectedTitle = normalizeString(expectedTitle);
+    const normalizedExpectedArtist = normalizeString(expectedArtist);
+    
+    let titleSimilarity = 0;
+    let artistSimilarity = 0;
+    
+    // Check title similarity
+    if (normalizedExpectedTitle) {
+        if (videoTitle === normalizedExpectedTitle) {
+            titleSimilarity = 1.0;
+        } else if (videoTitle.includes(normalizedExpectedTitle)) {
+            titleSimilarity = 1.0;
+        } else {
+            const titleWords = normalizedExpectedTitle.split(' ').filter(w => w.length > 2);
+            const matchingWords = titleWords.filter(word => videoTitle.includes(word));
+            if (titleWords.length > 0) {
+                titleSimilarity = matchingWords.length / titleWords.length;
+            }
+        }
+    } else {
+        // No expected title - consider it neutral (don't block tiebreaker)
+        titleSimilarity = 1.0;
+    }
+    
+    // Check artist similarity
+    if (normalizedExpectedArtist) {
+        const primaryArtist = normalizedExpectedArtist.split(',').map(a => a.trim())[0];
+        const normalizedPrimaryArtist = normalizeString(primaryArtist);
+        
+        if (videoTitle.includes(normalizedPrimaryArtist)) {
+            artistSimilarity = 1.0;
+        } else if (channelName.includes(normalizedPrimaryArtist)) {
+            artistSimilarity = 1.0;
+        } else {
+            const artistWords = normalizedPrimaryArtist.split(' ').filter(w => w.length > 2);
+            const matchingInTitle = artistWords.filter(word => videoTitle.includes(word));
+            const matchingInChannel = artistWords.filter(word => channelName.includes(word));
+            
+            const titleMatchRatio = artistWords.length > 0 ? matchingInTitle.length / artistWords.length : 0;
+            const channelMatchRatio = artistWords.length > 0 ? matchingInChannel.length / artistWords.length : 0;
+            artistSimilarity = Math.max(titleMatchRatio, channelMatchRatio);
+        }
+    } else {
+        // No expected artist - consider it neutral (don't block tiebreaker)
+        artistSimilarity = 1.0;
+    }
+    
+    // Both title and artist must have 90%+ similarity
+    return titleSimilarity >= 0.9 && artistSimilarity >= 0.9;
+}
+
+/**
  * Calculate how well a YouTube result matches expected title and artist
  * Stricter requirements: 70% word match minimum, word order matters, exact match bonus
  * @param {Object} result - YouTube search result
@@ -483,9 +544,35 @@ async function searchYouTube(query, options = {}) {
         }
     }
     
-    // Sort by score
+    // Sort by score, then by view count as tiebreaker for high-similarity matches
     const sortedResults = Array.from(uniqueResults.values())
-        .sort((a, b) => b.score - a.score);
+        .sort((a, b) => {
+            // Primary sort: by score (descending)
+            const scoreDiff = b.score - a.score;
+            
+            // If scores are very similar (within ±5 points) and both have high similarity
+            // use view count as tiebreaker
+            if (Math.abs(scoreDiff) <= 5 && (expectedTitle || expectedArtist)) {
+                const aHasHighSimilarity = hasHighSimilarity(a.result, expectedTitle, expectedArtist);
+                const bHasHighSimilarity = hasHighSimilarity(b.result, expectedTitle, expectedArtist);
+                
+                // Only use view count tiebreaker if both have high similarity
+                if (aHasHighSimilarity && bHasHighSimilarity) {
+                    const aViewCount = a.result.viewCount || 0;
+                    const bViewCount = b.result.viewCount || 0;
+                    const viewCountDiff = bViewCount - aViewCount;
+                    
+                    // If view counts differ, use that; otherwise fall back to score
+                    if (viewCountDiff !== 0) {
+                        logger.debug(`[YouTube Search] Using view count tiebreaker: "${a.result.title}" (${aViewCount}) vs "${b.result.title}" (${bViewCount})`);
+                        return viewCountDiff;
+                    }
+                }
+            }
+            
+            // Default: sort by score
+            return scoreDiff;
+        });
     
     // Apply duration filtering if we have expected duration (tighter tolerance: 10s)
     let finalResults = sortedResults;
@@ -531,7 +618,10 @@ async function searchYouTube(query, options = {}) {
         const matchScore = (expectedTitle || expectedArtist) 
             ? calculateMatchScore(item.result, expectedTitle, expectedArtist) 
             : 'N/A';
-        logger.info(`  ${i + 1}. [Score: ${item.score}] [Match: ${matchScore}] [${duration}] ${item.result.title}`);
+        const viewCount = item.result.viewCount 
+            ? item.result.viewCount.toLocaleString() 
+            : 'N/A';
+        logger.info(`  ${i + 1}. [Score: ${item.score}] [Match: ${matchScore}] [Views: ${viewCount}] [${duration}] ${item.result.title}`);
     });
     
     // ===== RESULT VERIFICATION =====
