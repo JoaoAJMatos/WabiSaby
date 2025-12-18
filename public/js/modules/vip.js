@@ -384,12 +384,33 @@ function displayMembers(members) {
         const displayName = member.name || 'Unknown User';
         const escapedName = displayName.replace(/'/g, "\\'");
         
+        // Generate group badge HTML
+        let groupBadgeHtml = '';
+        if (member.groups && member.groups.length > 0) {
+            let badgeText = '';
+            if (member.groups.length === 1) {
+                badgeText = member.groups[0];
+            } else {
+                // Show count or list (truncate if too long)
+                const groupsList = member.groups.join(', ');
+                if (groupsList.length > 30) {
+                    badgeText = `${member.groups.length} groups`;
+                } else {
+                    badgeText = groupsList;
+                }
+            }
+            // Escape HTML to prevent XSS
+            const escapedBadgeText = badgeText.replace(/</g, '&lt;').replace(/>/g, '&gt;');
+            groupBadgeHtml = `<div class="vip-member-group-badge">${escapedBadgeText}</div>`;
+        }
+        
         memberCard.innerHTML = `
             <div class="vip-member-avatar">
                 ${avatarHtml}
             </div>
             <div class="vip-member-info">
                 <div class="vip-member-name">${displayName}</div>
+                ${groupBadgeHtml}
             </div>
             <button class="vip-member-add-btn ${isVip ? 'added' : ''}" 
                     onclick="addVipFromMember('${member.id}', '${escapedName}')"
@@ -443,4 +464,5 @@ window.showManualInput = showManualInput;
 window.addVipFromMember = addVipFromMember;
 window.unlockVipArea = unlockVipArea;
 window.toggleVipPasswordVisibility = toggleVipPasswordVisibility;
+window.fetchGroupMembers = fetchGroupMembers;
 

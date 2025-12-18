@@ -470,6 +470,10 @@ window.saveGroupName = async function(groupId) {
                 if (typeof showSaveIndicator === 'function') {
                     showSaveIndicator();
                 }
+                // Refresh VIP member list if it's loaded (to update group badges)
+                if (typeof fetchGroupMembers === 'function') {
+                    fetchGroupMembers();
+                }
                 showNotification('Group name updated successfully', 'success');
             }, 300);
         } else {

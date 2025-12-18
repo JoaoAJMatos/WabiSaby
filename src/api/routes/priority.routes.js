@@ -1,5 +1,6 @@
 const express = require('express');
 const priorityService = require('../../services/priority.service');
+const groupsService = require('../../services/groups.service');
 
 const router = express.Router();
 
@@ -109,60 +110,86 @@ router.get('/priority/group-members', async (req, res) => {
             return res.status(503).json({ error: 'WhatsApp not connected' });
         }
         
-        // Get the target group ID from config
-        const config = require('../../config');
-        const groupId = config.whatsapp.targetGroupId;
+        // Get configured groups from the groups service
+        const groups = groupsService.getGroups();
         
-        if (!groupId) {
+        if (!groups || groups.length === 0) {
             return res.status(400).json({ 
-                error: 'No target group configured',
-                message: 'Set TARGET_GROUP_ID in your .env file to use this feature'
+                error: 'No groups configured',
+                message: 'Add at least one group in the Groups section to use this feature'
             });
         }
         
-        // Fetch group metadata
-        const groupMetadata = await whatsappSocket.groupMetadata(groupId);
+        // Fetch participants from all configured groups and merge them
+        const allParticipantsMap = new Map(); // Use Map to deduplicate by user ID
+        const groupNames = [];
         
-        // Get all participants with their details
-        const participants = await Promise.all(
-            groupMetadata.participants.map(async (participant) => {
-                const userId = participant.id;
-                let profilePicUrl = null;
-                let name = null;
+        for (const group of groups) {
+            try {
+                const groupMetadata = await whatsappSocket.groupMetadata(group.id);
+                // Prioritize database name over WhatsApp metadata (allows custom names)
+                const groupName = group.name || groupMetadata.subject || 'Unknown Group';
+                groupNames.push(groupName);
                 
-                // Try to get profile picture
-                try {
-                    profilePicUrl = await whatsappSocket.profilePictureUrl(userId, 'image');
-                } catch (error) {
-                    // No profile picture available
-                }
-                
-                // Try to get name from group metadata or contact
-                try {
-                    // First check if we have the name in our VIP list
-                    const vipUsers = priorityService.getPriorityUsers();
-                    const vipUser = vipUsers.find(u => (typeof u === 'string' ? u : u.id) === userId);
-                    if (vipUser && typeof vipUser === 'object' && vipUser.name) {
-                        name = vipUser.name;
+                // Process participants from this group
+                for (const participant of groupMetadata.participants) {
+                    const userId = participant.id;
+                    
+                    // Check if we already have this user
+                    if (allParticipantsMap.has(userId)) {
+                        // User exists - add this group to their groups array
+                        const existingUser = allParticipantsMap.get(userId);
+                        if (!existingUser.groups.includes(groupName)) {
+                            existingUser.groups.push(groupName);
+                        }
+                        continue;
                     }
                     
-                    // If not in VIP list, try to get from WhatsApp
-                    if (!name) {
-                        // Check if there's a verifiedName or notify
-                        name = participant.notify || participant.verifiedName || null;
+                    // New user - initialize with empty groups array
+                    let profilePicUrl = null;
+                    let name = null;
+                    
+                    // Try to get profile picture
+                    try {
+                        profilePicUrl = await whatsappSocket.profilePictureUrl(userId, 'image');
+                    } catch (error) {
+                        // No profile picture available
                     }
-                } catch (error) {
-                    // Ignore
+                    
+                    // Try to get name from group metadata or contact
+                    try {
+                        // First check if we have the name in our VIP list
+                        const vipUsers = priorityService.getPriorityUsers();
+                        const vipUser = vipUsers.find(u => (typeof u === 'string' ? u : u.id) === userId);
+                        if (vipUser && typeof vipUser === 'object' && vipUser.name) {
+                            name = vipUser.name;
+                        }
+                        
+                        // If not in VIP list, try to get from WhatsApp
+                        if (!name) {
+                            // Check if there's a verifiedName or notify
+                            name = participant.notify || participant.verifiedName || null;
+                        }
+                    } catch (error) {
+                        // Ignore
+                    }
+                    
+                    allParticipantsMap.set(userId, {
+                        id: userId,
+                        name: name,
+                        profilePicUrl: profilePicUrl,
+                        isAdmin: participant.admin === 'admin' || participant.admin === 'superadmin',
+                        groups: [groupName] // Initialize with current group
+                    });
                 }
-                
-                return {
-                    id: userId,
-                    name: name,
-                    profilePicUrl: profilePicUrl,
-                    isAdmin: participant.admin === 'admin' || participant.admin === 'superadmin'
-                };
-            })
-        );
+            } catch (error) {
+                console.error(`Error fetching metadata for group ${group.id}:`, error);
+                // Continue with other groups even if one fails
+            }
+        }
+        
+        // Convert Map to array
+        const participants = Array.from(allParticipantsMap.values());
         
         // Sort by name (named users first, then by name alphabetically)
         participants.sort((a, b) => {
@@ -172,8 +199,13 @@ router.get('/priority/group-members', async (req, res) => {
             return a.id.localeCompare(b.id);
         });
         
+        // Create a combined group name if multiple groups
+        const groupName = groupNames.length === 1 
+            ? groupNames[0] 
+            : `${groupNames.length} Groups (${groupNames.join(', ')})`;
+        
         res.json({
-            groupName: groupMetadata.subject,
+            groupName: groupName,
             participants: participants
         });
     } catch (error) {

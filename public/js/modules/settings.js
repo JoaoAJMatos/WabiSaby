@@ -212,12 +212,14 @@ window.switchSettingsPanel = function switchSettingsPanel(category) {
         stopDiskUsagePolling();
     }
     
-    // Clear search when switching panels
-    const searchInput = document.getElementById('settings-search');
-    if (searchInput && searchInput.value) {
-        searchInput.value = '';
-        const clearBtn = document.getElementById('settings-search-clear');
-        if (clearBtn) clearBtn.classList.add('hidden');
+    // Clear search when switching panels (but not when switching to search-results)
+    if (category !== 'search-results') {
+        const searchInput = document.getElementById('settings-search');
+        if (searchInput && searchInput.value) {
+            searchInput.value = '';
+            const clearBtn = document.getElementById('settings-search-clear');
+            if (clearBtn) clearBtn.classList.add('hidden');
+        }
     }
 }
 

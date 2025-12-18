@@ -513,9 +513,6 @@
                             <i class="fas fa-sliders-h"></i>
                         </div>
                         <h2>Settings</h2>
-                        <button type="button" id="settings-reset-all" class="settings-reset-btn-icon" title="Reset All Settings">
-                            <i class="fas fa-undo"></i>
-                        </button>
                     </div>
                     
                     <div class="settings-search-wrapper">
@@ -1000,13 +997,21 @@
                 
                 <!-- Unified Footer -->
                 <div class="settings-footer">
-                    <div class="footer-note">
-                        <i class="fas fa-info-circle"></i>
-                        <span>Changes apply instantly. Server settings require <code>.env</code> edit and restart.</span>
+                    <div class="footer-left">
+                        <button type="button" id="settings-reset-all" class="settings-reset-link" title="Reset All Settings">
+                            <i class="fas fa-undo"></i>
+                            <span>Reset All</span>
+                        </button>
+                        <div class="footer-note">
+                            <i class="fas fa-info-circle"></i>
+                            <span>Changes apply instantly. Server settings require <code>.env</code> edit and restart.</span>
+                        </div>
                     </div>
-                    <div class="footer-save-indicator" id="settings-save-indicator">
-                        <i class="fas fa-check-circle"></i>
-                        <span>Saved</span>
+                    <div class="footer-right">
+                        <div class="footer-save-indicator" id="settings-save-indicator">
+                            <i class="fas fa-check-circle"></i>
+                            <span>Saved</span>
+                        </div>
                     </div>
                 </div>
             </div>
