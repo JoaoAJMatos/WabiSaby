@@ -164,6 +164,12 @@ function handleDrop(e) {
     if (draggedElement !== this) {
         const dropIndex = parseInt(this.dataset.index);
         
+        // Get song title from dragged element for notification
+        const songTitleElement = draggedElement.querySelector('.song-title');
+        const songTitle = songTitleElement ? songTitleElement.textContent.trim().replace(/\s+/g, ' ') : 'TRACK';
+        // Remove priority icon if present
+        const cleanTitle = songTitle.replace(/\s*👑\s*/g, '').trim() || 'TRACK';
+        
         // Reorder queue on backend
         fetch('/api/queue/reorder', {
             method: 'POST',
@@ -172,8 +178,14 @@ function handleDrop(e) {
                 fromIndex: draggedIndex, 
                 toIndex: dropIndex
             })
-        }).then(() => {
-            fetchData();
+        }).then(response => {
+            if (response.ok) {
+                const newPosition = dropIndex + 1; // Position is 1-based for display
+                showNotification(`MOVED TO POSITION ${newPosition}`, 'success');
+                fetchData();
+            } else {
+                showNotification('REORDER FAILED', 'error');
+            }
         }).catch(err => {
             console.error('Error reordering queue:', err);
             showNotification('REORDER FAILED', 'error');
