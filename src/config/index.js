@@ -282,12 +282,32 @@ class Config {
         try {
             const files = fs.readdirSync(tempDir);
             let cleanedCount = 0;
+            const deletedFiles = [];
+            
+            // Get current song file path to exclude it from deletion
+            let currentSongPath = null;
+            try {
+                const playbackController = require('../core/playback.controller');
+                const currentSong = playbackController.getCurrent();
+                if (currentSong && currentSong.content) {
+                    currentSongPath = currentSong.content;
+                }
+            } catch (e) {
+                // PlaybackController might not be initialized yet, that's okay
+            }
             
             for (const file of files) {
                 const filePath = path.join(tempDir, file);
+                
+                // Skip if this is the current song file
+                if (currentSongPath && filePath === currentSongPath) {
+                    continue;
+                }
+                
                 try {
                     fs.unlinkSync(filePath);
                     cleanedCount++;
+                    deletedFiles.push(filePath);
                 } catch (err) {
                     console.error(`Failed to delete temp file ${file}:`, err);
                 }

@@ -12,6 +12,10 @@ initializeDatabase();
 config.loadSettings();
 config.cleanupTempFiles();
 
+// Validate currentSong after cleanup (cleanup may have deleted the file)
+const playbackController = require('../core/playback.controller');
+playbackController.validateCurrentSong();
+
 initializeErrorHandlers();
 
 logger.info('Initializing WabiSaby...');

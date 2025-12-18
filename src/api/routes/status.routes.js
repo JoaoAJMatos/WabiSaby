@@ -44,26 +44,41 @@ router.get('/status', async (req, res) => {
     }
     
     // Extract filename for streaming if it's a file path
-    if (current && current.content && current.type === 'file') {
-        current.streamUrl = `/stream/${path.basename(current.content)}`;
+    // Check if content is a file path (not a URL) - either by type or by content pattern
+    const isFile = current && current.content && (
+        current.type === 'file' || 
+        (!current.content.startsWith('http://') && !current.content.startsWith('https://'))
+    );
+    
+    if (isFile) {
+        const fileExists = fs.existsSync(current.content);
         
-        // Get duration if not already cached
-        if (!current.duration && fs.existsSync(current.content)) {
-            current.duration = await metadataService.getAudioDuration(current.content);
-        }
-        
-        // Add thumbnail URL if available
-        if (current.thumbnail && fs.existsSync(current.thumbnail)) {
-            current.thumbnailUrl = helpersUtil.getThumbnailUrl(current.thumbnail);
-        }
-        
-        // Update stats with duration and thumbnail if we have them
-        const updates = {};
-        if (current.duration) updates.duration = current.duration;
-        if (current.thumbnailUrl) updates.thumbnailUrl = current.thumbnailUrl;
-        
-        if (Object.keys(updates).length > 0) {
-            statsService.updateLastSong(current.content, updates);
+        // Only generate streamUrl if file exists
+        if (fileExists) {
+            current.streamUrl = `/stream/${path.basename(current.content)}`;
+            // Ensure type is set
+            if (!current.type) {
+                current.type = 'file';
+            }
+            
+            // Get duration if not already cached
+            if (!current.duration) {
+                current.duration = await metadataService.getAudioDuration(current.content);
+            }
+            
+            // Add thumbnail URL if available
+            if (current.thumbnail && fs.existsSync(current.thumbnail)) {
+                current.thumbnailUrl = helpersUtil.getThumbnailUrl(current.thumbnail);
+            }
+            
+            // Update stats with duration and thumbnail if we have them
+            const updates = {};
+            if (current.duration) updates.duration = current.duration;
+            if (current.thumbnailUrl) updates.thumbnailUrl = current.thumbnailUrl;
+            
+            if (Object.keys(updates).length > 0) {
+                statsService.updateLastSong(current.content, updates);
+            }
         }
     }
 

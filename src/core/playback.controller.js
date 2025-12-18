@@ -75,18 +75,59 @@ class PlaybackController extends EventEmitter {
                 if (playbackState.current_song_id) {
                     const song = dbService.getSong(playbackState.current_song_id);
                     if (song) {
-                        this.currentSong = {
-                            content: song.content,
-                            title: song.title,
-                            artist: song.artist,
-                            channel: song.channel,
-                            duration: song.duration,
-                            thumbnail: song.thumbnail_path,
-                            thumbnailUrl: song.thumbnail_url,
-                            startTime: playbackState.start_time ? playbackState.start_time * 1000 : Date.now(),
-                            pausedAt: playbackState.paused_at ? playbackState.paused_at * 1000 : null,
-                            isPaused: this.isPaused
-                        };
+                        // Check if file exists - if not, don't restore currentSong
+                        const fileExists = song.content && fs.existsSync(song.content);
+                        
+                        // Only restore currentSong if file exists
+                        if (fileExists) {
+                            // Determine type: if content is a file path (not a URL), it's a file
+                            const isFile = song.content && !song.content.startsWith('http://') && !song.content.startsWith('https://');
+                            
+                            // Calculate the elapsed time when playback was stopped
+                            let elapsedTime = 0;
+                            if (playbackState.start_time) {
+                                if (playbackState.paused_at) {
+                                    // Was paused - use paused_at time
+                                    elapsedTime = playbackState.paused_at - playbackState.start_time;
+                                } else {
+                                    // Was playing - calculate from start_time to now (but we'll set it as paused)
+                                    elapsedTime = Math.floor(Date.now() / 1000) - playbackState.start_time;
+                                }
+                            }
+                            
+                            // Always restore in paused state (stopped) - user must click play to resume
+                            this.isPlaying = false;
+                            this.isPaused = true;
+                            
+                            this.currentSong = {
+                                content: song.content,
+                                title: song.title,
+                                artist: song.artist,
+                                channel: song.channel,
+                                duration: song.duration,
+                                thumbnail: song.thumbnail_path,
+                                thumbnailUrl: song.thumbnail_url,
+                                type: isFile ? 'file' : 'url',
+                                startTime: playbackState.start_time ? playbackState.start_time * 1000 : Date.now(),
+                                pausedAt: playbackState.paused_at ? playbackState.paused_at * 1000 : (elapsedTime > 0 ? Date.now() - (elapsedTime * 1000) : null),
+                                isPaused: true // Always start paused
+                            };
+                        } else {
+                            // File doesn't exist - clear currentSong and reset playback state
+                            this.currentSong = null;
+                            this.isPlaying = false;
+                            this.isPaused = false;
+                            // Clear playback state in database
+                            try {
+                                dbService.updatePlaybackState({
+                                    current_song_id: null,
+                                    is_playing: 0,
+                                    is_paused: 0
+                                });
+                            } catch (e) {
+                                logger.error('Failed to clear playback state:', e);
+                            }
+                        }
                     }
                 }
             }
@@ -319,17 +360,51 @@ class PlaybackController extends EventEmitter {
      * Resume playback
      */
     resume() {
-        if (this.isPlaying && this.isPaused && this.currentSong) {
+        if (!this.currentSong) {
+            return false;
+        }
+        
+        // If player is not running, start playback from the saved position
+        if (!this.isPlaying) {
+            const filePath = this.currentSong.content;
+            if (!filePath || !fs.existsSync(filePath)) {
+                return false;
+            }
+            
+            // Calculate start offset from paused position
+            let startOffset = 0;
+            if (this.currentSong.pausedAt && this.currentSong.startTime) {
+                startOffset = this.currentSong.pausedAt - this.currentSong.startTime;
+            } else if (this.currentSong.startTime) {
+                // Calculate elapsed time from startTime
+                startOffset = Date.now() - this.currentSong.startTime;
+            }
+            
+            // Start playback from the saved position
+            this.isPlaying = true;
+            this.isPaused = false;
+            this.currentSong.startTime = Date.now() - startOffset;
+            this.currentSong.pausedAt = null;
+            this.currentSong.isPaused = false;
+            this.emitStateChanged();
+            this.emit(PLAYBACK_REQUESTED, { filePath, startOffset });
+            return true;
+        }
+        
+        // Player is running, just resume
+        if (this.isPaused) {
             this.isPaused = false;
             if (this.currentSong.pausedAt && this.currentSong.startTime) {
                 const pauseDuration = Date.now() - this.currentSong.pausedAt;
                 this.currentSong.startTime += pauseDuration;
                 this.currentSong.pausedAt = null;
             }
+            this.currentSong.isPaused = false;
             this.emitStateChanged();
             this.emit(PLAYBACK_RESUME);
             return true;
         }
+        
         return false;
     }
     
@@ -412,6 +487,33 @@ class PlaybackController extends EventEmitter {
      */
     getCurrent() {
         return this.currentSong;
+    }
+    
+    /**
+     * Validate and clear currentSong if file no longer exists
+     * Called after cleanup operations to ensure consistency
+     */
+    validateCurrentSong() {
+        if (this.currentSong && this.currentSong.content) {
+            const fileExists = fs.existsSync(this.currentSong.content);
+            if (!fileExists) {
+                // File no longer exists - clear currentSong and reset playback state
+                this.currentSong = null;
+                this.isPlaying = false;
+                this.isPaused = false;
+                // Clear playback state in database
+                try {
+                    dbService.updatePlaybackState({
+                        current_song_id: null,
+                        is_playing: 0,
+                        is_paused: 0
+                    });
+                } catch (e) {
+                    logger.error('Failed to clear playback state after validation:', e);
+                }
+                this.emitStateChanged();
+            }
+        }
     }
     
     /**
