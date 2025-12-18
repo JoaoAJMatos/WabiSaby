@@ -65,6 +65,9 @@ broadcast.addEventListener('message', (event) => {
 // Auth status tracking
 let authStatusReceived = false;
 
+// Groups count tracking for onboarding hints
+let groupsCount = 0;
+
 async function fetchData() {
     try {
         const response = await fetch('/api/status');
@@ -80,6 +83,13 @@ async function fetchData() {
         // Update auth UI (status badge only)
         if (data.auth) {
             updateAuthUI(data.auth);
+            
+            // Track groups count for onboarding hints
+            if (typeof data.auth.groupsCount !== 'undefined') {
+                groupsCount = data.auth.groupsCount;
+                // Update onboarding hints based on groups count
+                updateGroupConfigurationHints(groupsCount, data.auth.isConnected);
+            }
         }
         
         // Mark auth status as received
@@ -611,6 +621,65 @@ function updateStatsUI(stats) {
     updateProgressBarAndStats();
 }
 
+/**
+ * Update group configuration hints at all levels
+ * @param {number} count - Current groups count
+ * @param {boolean} isConnected - Whether WhatsApp is connected
+ */
+function updateGroupConfigurationHints(count, isConnected) {
+    // Only show hints if connected and no groups configured
+    const shouldShowHints = isConnected && count === 0;
+    
+    // Check if burger menu is open
+    const burgerWrapper = document.querySelector('.burger-menu-wrapper');
+    const isMenuOpen = burgerWrapper && burgerWrapper.classList.contains('menu-open');
+    
+    // Level 1: Burger Menu Button Hint (only show when menu is closed)
+    const burgerBtn = document.getElementById('burger-menu-btn');
+    if (burgerBtn) {
+        if (shouldShowHints && !isMenuOpen) {
+            burgerBtn.classList.add('burger-menu-has-hint');
+        } else {
+            burgerBtn.classList.remove('burger-menu-has-hint');
+        }
+    }
+    
+    // Level 2: Settings Button Badge (only show when menu is open)
+    const settingsBtn = document.getElementById('settings-btn');
+    if (settingsBtn) {
+        // Always remove existing badge first
+        const existingBadge = settingsBtn.querySelector('.settings-btn-badge');
+        if (existingBadge) {
+            existingBadge.remove();
+        }
+        settingsBtn.classList.remove('settings-btn-has-hint');
+        
+        // Only add badge if menu is open and hints should be shown
+        if (shouldShowHints && isMenuOpen) {
+            // Create and add badge
+            const badge = document.createElement('span');
+            badge.className = 'settings-btn-badge';
+            badge.setAttribute('aria-label', 'Action required: Configure groups');
+            badge.innerHTML = '<i class="fas fa-exclamation"></i>';
+            settingsBtn.appendChild(badge);
+            settingsBtn.classList.add('settings-btn-has-hint');
+        }
+    }
+    
+    // Level 3: Groups Nav Item Breathing Border (in Settings Sidebar)
+    const groupsNavItem = document.querySelector('.settings-nav-item[data-category="groups"]');
+    if (groupsNavItem) {
+        if (shouldShowHints) {
+            groupsNavItem.classList.add('nav-item-has-hint');
+        } else {
+            groupsNavItem.classList.remove('nav-item-has-hint');
+        }
+    }
+    
+    // Store groups count globally for access by other modules
+    window.groupsCount = count;
+}
+
 // Logout function - disconnects from WhatsApp, clears auth data, and redirects
 function logout() {
     // Show confirmation modal before logging out
@@ -710,6 +779,13 @@ function initBurgerMenu() {
         burgerMenuOpen = !burgerMenuOpen;
         burgerWrapper.classList.toggle('menu-open', burgerMenuOpen);
         burgerBtn.setAttribute('aria-expanded', burgerMenuOpen.toString());
+        
+        // Update hints when menu state changes
+        // Hide burger hint when menu opens, show settings hint
+        if (typeof updateGroupConfigurationHints === 'function' && typeof groupsCount !== 'undefined') {
+            const isConnected = document.getElementById('connection-status')?.classList.contains('online');
+            updateGroupConfigurationHints(groupsCount, isConnected);
+        }
     }
     
     function closeMenu() {
@@ -717,6 +793,12 @@ function initBurgerMenu() {
             burgerMenuOpen = false;
             burgerWrapper.classList.remove('menu-open');
             burgerBtn.setAttribute('aria-expanded', 'false');
+            
+            // Update hints when menu closes
+            if (typeof updateGroupConfigurationHints === 'function' && typeof groupsCount !== 'undefined') {
+                const isConnected = document.getElementById('connection-status')?.classList.contains('online');
+                updateGroupConfigurationHints(groupsCount, isConnected);
+            }
         }
     }
     

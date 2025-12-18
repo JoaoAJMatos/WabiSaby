@@ -6,6 +6,7 @@
 let qrCodeInstance = null;
 let authPollInterval = null;
 let consecutiveFalseCount = 0; // Track consecutive false auth statuses
+let hadQRCode = false; // Track if we had a QR code (to detect when it's scanned)
 
 // Show auth page immediately - no loading screen needed
 // The page will show "Waiting for QR code" while it's being generated
@@ -41,6 +42,21 @@ function updateQRCode(qrData) {
         if (headerDescription) {
             headerDescription.textContent = 'Generating QR code... Please wait a moment';
         }
+    }
+}
+
+function showAuthenticating() {
+    const qrContainer = document.getElementById('qr-container');
+    const headerDescription = document.querySelector('.auth-header-text p');
+    
+    if (!qrContainer) return;
+    
+    // Clear QR code and show authenticating message
+    qrContainer.innerHTML = '<div class="qr-placeholder"><i class="fas fa-circle-notch fa-spin"></i><span>Authenticating...</span></div>';
+    qrCodeInstance = null;
+    
+    if (headerDescription) {
+        headerDescription.textContent = 'QR code scanned! Authenticating your WhatsApp account...';
     }
 }
 
@@ -92,8 +108,9 @@ async function fetchAuthStatus() {
             // If connected (explicitly true), redirect to dashboard immediately
             // UNLESS this is a logout action (user explicitly wants to see auth page)
             if (isConnected === true && !isLogout) {
-                // Reset counter on successful connection
+                // Reset counter and flags on successful connection
                 consecutiveFalseCount = 0;
+                hadQRCode = false;
                 // Redirect immediately - no loading message needed
                 window.location.replace('/pages/dashboard.html');
                 return;
@@ -118,6 +135,11 @@ async function fetchAuthStatus() {
             const hasQRCode = !!data.auth.qr;
             let shouldShowAuthPage = false;
             
+            // Track if we had a QR code (to detect when it's scanned)
+            if (hasQRCode) {
+                hadQRCode = true;
+            }
+            
             if (hasQRCode) {
                 // QR code present = definitive not authenticated, show auth page immediately
                 shouldShowAuthPage = true;
@@ -139,10 +161,14 @@ async function fetchAuthStatus() {
                 // Update status badge
                 updateStatusBadge(false);
                 
-                // Update QR code if available, otherwise show placeholder
+                // Update QR code if available
                 if (data.auth.qr) {
                     updateQRCode(data.auth.qr);
+                } else if (hadQRCode && !isConnected) {
+                    // QR was scanned but not connected yet - show "Authenticating"
+                    showAuthenticating();
                 } else {
+                    // No QR code and never had one - show waiting message
                     updateQRCode(null);
                 }
             } else {

@@ -156,7 +156,8 @@ function showSaveIndicator() {
     }, 2000);
 }
 
-function switchSettingsPanel(category) {
+// Make switchSettingsPanel globally accessible for modals.js
+window.switchSettingsPanel = function switchSettingsPanel(category) {
     // Update nav
     document.querySelectorAll('.settings-nav-item').forEach(item => {
         item.classList.toggle('active', item.dataset.category === category);

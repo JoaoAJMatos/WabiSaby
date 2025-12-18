@@ -74,11 +74,6 @@ function openSettingsModal() {
     if (modal) {
         modal.classList.add('active');
         document.body.style.overflow = 'hidden'; // Prevent background scroll
-        // Note: loadSettings() should be called from settings module
-        // Reset to first panel
-        if (typeof switchSettingsPanel === 'function') {
-            switchSettingsPanel('download');
-        }
         
         // Clear any previous search
         const searchInput = document.getElementById('settings-search');
@@ -86,6 +81,18 @@ function openSettingsModal() {
             searchInput.value = '';
             const clearBtn = document.getElementById('settings-search-clear');
             if (clearBtn) clearBtn.classList.add('hidden');
+        }
+        
+        // Auto-open groups panel if no groups configured
+        const currentGroupsCount = window.groupsCount || 0;
+        if (currentGroupsCount === 0 && typeof switchSettingsPanel === 'function') {
+            // Small delay to ensure modal is fully rendered
+            setTimeout(() => {
+                switchSettingsPanel('groups');
+            }, 100);
+        } else if (typeof switchSettingsPanel === 'function') {
+            // Reset to first panel if groups are configured
+            switchSettingsPanel('download');
         }
     }
 }

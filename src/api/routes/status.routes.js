@@ -6,6 +6,7 @@ const playbackController = require('../../core/playback.controller');
 const whatsappAdapter = require('../../core/whatsapp');
 const metadataService = require('../../services/metadata.service');
 const statsService = require('../../services/stats.service');
+const groupsService = require('../../services/groups.service');
 const helpersUtil = require('../../utils/helpers.util');
 
 const router = express.Router();
@@ -88,10 +89,14 @@ router.get('/status', async (req, res) => {
     const detailedStats = statsService.getStats();
     const isConnected = whatsappAdapter.getConnectionStatus();
     
+    // Get groups count for onboarding hints
+    const groupsCount = groupsService.getGroups().length;
+    
     res.json({
         auth: {
             isConnected,
-            qr: latestQR
+            qr: latestQR,
+            groupsCount
         },
         queue: {
             queue: queueWithThumbnails,

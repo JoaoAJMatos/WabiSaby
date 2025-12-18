@@ -51,7 +51,45 @@ async function loadGroups() {
         }
         
         if (groups.length === 0) {
-            container.innerHTML = '<div class="groups-empty"><i class="fas fa-users"></i><span>No groups monitored yet. Send !ping in a group to add it.</span></div>';
+            // Enhanced onboarding empty state
+            container.innerHTML = `
+                <div class="groups-empty groups-onboarding-state">
+                    <div class="groups-onboarding-icon">
+                        <i class="fas fa-users"></i>
+                    </div>
+                    <div class="groups-onboarding-content">
+                        <h3>Welcome! Let's set up your first group</h3>
+                        <p class="groups-onboarding-description">To start using WabiSaby, you need to add at least one WhatsApp group. The bot will listen to messages from groups you add here.</p>
+                        <div class="groups-onboarding-steps">
+                            <div class="groups-onboarding-step">
+                                <div class="step-number">1</div>
+                                <div class="step-content">
+                                    <strong>Send <code>!ping</code> in a WhatsApp group</strong>
+                                    <p>Open any WhatsApp group and send the command <code>!ping</code>. The request will appear in the "Pending Requests" section above.</p>
+                                </div>
+                            </div>
+                            <div class="groups-onboarding-step">
+                                <div class="step-number">2</div>
+                                <div class="step-content">
+                                    <strong>Confirm the request</strong>
+                                    <p>Click the checkmark button to approve the group. It will then appear in your monitored groups list.</p>
+                                </div>
+                            </div>
+                            <div class="groups-onboarding-step">
+                                <div class="step-number">3</div>
+                                <div class="step-content">
+                                    <strong>Or add manually</strong>
+                                    <p>You can also manually add a group using the form above by entering its WhatsApp ID (ends with @g.us).</p>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="groups-onboarding-cta">
+                            <i class="fas fa-arrow-up"></i>
+                            <span>Use the form above to get started</span>
+                        </div>
+                    </div>
+                </div>
+            `;
         } else {
             container.innerHTML = groups.map(group => {
                 const addedDate = group.addedAt ? new Date(group.addedAt).toLocaleDateString() : 'Unknown';
@@ -165,6 +203,10 @@ async function addGroup(groupId) {
                 
                 if (data.success) {
                     await loadGroups();
+                    // Trigger status update to refresh hints immediately
+                    if (typeof fetchData === 'function') {
+                        fetchData();
+                    }
                     if (typeof showSaveIndicator === 'function') {
                         showSaveIndicator();
                     }
@@ -219,6 +261,10 @@ window.removeGroup = async function(groupId) {
                 
                 if (data.success) {
                     await loadGroups();
+                    // Trigger status update to refresh hints immediately
+                    if (typeof fetchData === 'function') {
+                        fetchData();
+                    }
                     if (typeof showSaveIndicator === 'function') {
                         showSaveIndicator();
                     }
@@ -275,6 +321,10 @@ async function confirmGroup(groupId) {
                 
                 if (data.success) {
                     await loadGroups();
+                    // Trigger status update to refresh hints immediately
+                    if (typeof fetchData === 'function') {
+                        fetchData();
+                    }
                     if (typeof showSaveIndicator === 'function') {
                         showSaveIndicator();
                     }
