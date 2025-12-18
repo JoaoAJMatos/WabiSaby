@@ -19,7 +19,43 @@ const { updateVipName, setWhatsAppSocket: setPriorityServiceSocket } = require('
 const app = express();
 const PORT = config.server.port;
 
+// Middleware to restrict access to localhost only
+function localhostOnly(req, res, next) {
+    // Check various IP sources (including proxy headers)
+    const forwardedFor = req.headers['x-forwarded-for'];
+    const realIp = req.headers['x-real-ip'];
+    const ip = realIp || 
+               (forwardedFor ? forwardedFor.split(',')[0].trim() : null) ||
+               req.ip || 
+               req.connection?.remoteAddress || 
+               req.socket?.remoteAddress;
+    
+    const isLocalhost = ip === '127.0.0.1' || 
+                       ip === '::1' || 
+                       ip === '::ffff:127.0.0.1' ||
+                       req.hostname === 'localhost' ||
+                       req.hostname === '127.0.0.1';
+    
+    if (!isLocalhost) {
+        logger.warn(`Access denied to ${req.path} from ${ip} (${req.hostname})`);
+        return res.status(403).send('Access denied. This page is only accessible from localhost.');
+    }
+    
+    next();
+}
+
 app.use(express.json());
+
+// Serve dashboard and player pages with localhost restriction (before static middleware)
+app.get('/pages/dashboard.html', localhostOnly, (req, res) => {
+    res.sendFile(path.join(process.cwd(), 'public', 'pages', 'dashboard.html'));
+});
+
+app.get('/pages/player.html', localhostOnly, (req, res) => {
+    res.sendFile(path.join(process.cwd(), 'public', 'pages', 'player.html'));
+});
+
+// Serve static files (other pages remain accessible)
 app.use(express.static(path.join(process.cwd(), 'public')));
 
 app.use('/stream', express.static(config.paths.temp));
