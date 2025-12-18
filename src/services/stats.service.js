@@ -151,15 +151,28 @@ function getTopRequesters(limit = 20) {
  */
 function getHistory(limit = 20) {
     const history = dbService.getPlayHistory(limit, 0);
-    return history.map(item => ({
-        id: item.content,
-        title: item.title,
-        artist: item.artist,
-        requester: item.requester_name,
-        thumbnailUrl: item.thumbnail_url,
-        duration: item.duration,
-        playedAt: item.played_at * 1000 // Convert to milliseconds
-    }));
+    return history.map(item => {
+        // Handle timestamp conversion
+        // Database stores in seconds, but if value is > 1e10, it's likely corrupted (milliseconds stored as seconds)
+        let playedAt;
+        if (item.played_at > 1e10) {
+            // Already in milliseconds (corrupted data), use as-is
+            playedAt = item.played_at;
+        } else {
+            // Normal case: seconds, convert to milliseconds
+            playedAt = item.played_at * 1000;
+        }
+        
+        return {
+            id: item.content,
+            title: item.title,
+            artist: item.artist,
+            requester: item.requester_name,
+            thumbnailUrl: item.thumbnail_url,
+            duration: item.duration,
+            playedAt: playedAt
+        };
+    });
 }
 
 /**

@@ -78,7 +78,7 @@ async function playCommand(sock, msg, args, deps = defaultDeps) {
         }
     }
     
-    queueManager.add({ 
+    const result = queueManager.add({ 
         type: 'url', 
         content: url, 
         title: title,
@@ -88,7 +88,11 @@ async function playCommand(sock, msg, args, deps = defaultDeps) {
         sender: sender
     });
     
-    await sendMessageWithMention(sock, remoteJid, `Added: ${title}`, sender);
+    if (result === null) {
+        await sendMessageWithMention(sock, remoteJid, `Song already in queue: ${title}`, sender);
+    } else {
+        await sendMessageWithMention(sock, remoteJid, `Added: ${title}`, sender);
+    }
 }
 
 module.exports = playCommand;

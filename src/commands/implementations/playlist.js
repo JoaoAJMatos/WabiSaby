@@ -50,6 +50,7 @@ async function playlistCommand(sock, msg, args, deps = defaultDeps) {
         
         let successCount = 0;
         let failCount = 0;
+        let duplicateCount = 0;
         const maxTracksToShow = 5;
         const addedTracks = [];
         
@@ -74,8 +75,8 @@ async function playlistCommand(sock, msg, args, deps = defaultDeps) {
                     }
                 }
                 
-                // Add to queue
-                queueManager.add({ 
+                // Add to queue (returns null if duplicate)
+                const result = queueManager.add({ 
                     type: 'url', 
                     content: trackUrl, 
                     title: trackTitle,
@@ -84,9 +85,14 @@ async function playlistCommand(sock, msg, args, deps = defaultDeps) {
                     sender: sender
                 });
                 
-                successCount++;
-                if (addedTracks.length < maxTracksToShow) {
-                    addedTracks.push(trackTitle);
+                if (result === null) {
+                    // Duplicate was skipped
+                    duplicateCount++;
+                } else {
+                    successCount++;
+                    if (addedTracks.length < maxTracksToShow) {
+                        addedTracks.push(trackTitle);
+                    }
                 }
                 
                 // Progress updates removed to reduce spam
@@ -99,6 +105,9 @@ async function playlistCommand(sock, msg, args, deps = defaultDeps) {
         
         // Build final response message
         let responseText = `Added ${successCount} tracks`;
+        if (duplicateCount > 0) {
+            responseText += ` (${duplicateCount} duplicate${duplicateCount > 1 ? 's' : ''} skipped)`;
+        }
         if (failCount > 0) {
             responseText += ` (${failCount} failed)`;
         }

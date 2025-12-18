@@ -38,7 +38,27 @@ function escapeHtml(text) {
 
 // Get time ago string
 function getTimeAgo(timestamp) {
-    const seconds = Math.floor((Date.now() - timestamp) / 1000);
+    // Validate timestamp
+    if (!timestamp || isNaN(timestamp) || timestamp <= 0) {
+        return 'Unknown';
+    }
+    
+    // Check if timestamp is in seconds instead of milliseconds (fallback for edge cases)
+    // Valid millisecond timestamps are typically > 1e12 (dates after 2001)
+    if (timestamp < 1e10) {
+        timestamp = timestamp * 1000;
+    }
+    
+    const now = Date.now();
+    const seconds = Math.floor((now - timestamp) / 1000);
+    
+    // Handle invalid timestamps:
+    // - Negative means timestamp is in the future (likely corrupted data)
+    // - Timestamp way in the future (more than 1 year ahead) indicates corruption
+    // Note: We allow very old timestamps (seconds > 31536000) to display normally
+    if (seconds < 0 || timestamp > now + 31536000000) {
+        return 'Unknown';
+    }
     
     if (seconds < 60) return `${seconds}s ago`;
     if (seconds < 3600) return `${Math.floor(seconds / 60)}m ago`;

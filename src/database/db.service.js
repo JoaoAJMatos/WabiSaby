@@ -362,6 +362,13 @@ function addPlayHistory(historyData) {
         playedAt = Math.floor(playedAt.getTime() / 1000);
     } else if (typeof playedAt === 'string') {
         playedAt = Math.floor(new Date(playedAt).getTime() / 1000);
+    } else if (typeof playedAt === 'number') {
+        // If it's a number, check if it's in milliseconds (typically > 1e12 for dates after 2001)
+        // and convert to seconds if needed
+        if (playedAt > 1e12) {
+            playedAt = Math.floor(playedAt / 1000);
+        }
+        // If it's already in seconds (or a very old timestamp), use as-is
     } else if (!playedAt) {
         playedAt = Math.floor(Date.now() / 1000);
     }

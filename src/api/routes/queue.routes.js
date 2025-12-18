@@ -70,7 +70,15 @@ router.post('/queue/add', async (req, res) => {
             sender: 'WEB_DASHBOARD'
         };
 
-        queueManager.add(song);
+        const result = queueManager.add(song);
+        if (result === null) {
+            return res.status(409).json({ 
+                success: false, 
+                message: 'Song already in queue', 
+                title: title, 
+                artist: artist 
+            });
+        }
         res.json({ success: true, message: 'Song added to queue', title: title, artist: artist });
     } catch (error) {
         logger.error('[API] Error adding song:', error);

@@ -1,6 +1,7 @@
 const EventEmitter = require('events');
 const dbService = require('../database/db.service');
 const { checkPriority } = require('../services/priority.service');
+const { logger } = require('../utils/logger.util');
 const { QUEUE_ITEM_ADDED, QUEUE_ITEM_REMOVED, QUEUE_REORDERED, QUEUE_CLEARED, QUEUE_UPDATED } = require('./events');
 
 class QueueManager extends EventEmitter {
@@ -65,6 +66,19 @@ class QueueManager extends EventEmitter {
     }
 
     add(song) {
+        // Check for duplicate URL in queue
+        if (song.content && song.type === 'url') {
+            const existingIndex = this.queue.findIndex(item => 
+                item.content === song.content && item.type === 'url'
+            );
+            
+            if (existingIndex !== -1) {
+                const existingSong = this.queue[existingIndex];
+                logger.warn(`Skipping duplicate song: "${song.title || song.content}" (already in queue at position ${existingIndex + 1} as "${existingSong.title || existingSong.content}")`);
+                return null; // Return null to indicate the song was not added (duplicate)
+            }
+        }
+
         const isPriority = this.checkPriority(song.sender);
         song.isPriority = isPriority;
 
@@ -118,6 +132,8 @@ class QueueManager extends EventEmitter {
         this.saveQueue();
         this.emit(QUEUE_UPDATED);
         this.emit(QUEUE_ITEM_ADDED, { item: queueItem });
+        
+        return queueItem; // Return the added item on success
     }
 
     remove(index) {
