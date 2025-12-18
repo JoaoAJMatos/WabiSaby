@@ -421,6 +421,10 @@ bun start
 
 ## 🙏 Acknowledgments
 
+These are the actual smart people:
+
 - Built with [Bun](https://bun.sh) for blazing-fast performance
 - WhatsApp integration powered by [Baileys](https://github.com/WhiskeySockets/Baileys)
 - Audio processing with [FFmpeg](https://ffmpeg.org/)
+
+Support them.
