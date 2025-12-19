@@ -107,11 +107,15 @@ router.get('/status', async (req, res) => {
     // Get groups count for onboarding hints
     const groupsCount = groupsService.getGroups().length;
     
+    // Action required when connected but no groups configured
+    const actionRequired = isConnected && groupsCount === 0;
+    
     res.json({
         auth: {
             isConnected,
             qr: latestQR,
-            groupsCount
+            groupsCount,
+            actionRequired
         },
         queue: {
             queue: queueWithThumbnails,

@@ -292,10 +292,31 @@ class PlaybackController extends EventEmitter {
                 logger.info(`Playing locally: ${filePath}`);
                 
                 // Remove item from queue (it's now playing)
+                // Since processNext() always plays queue[0], remove the first item
                 const queue = queueManager.getQueue();
-                const index = queue.findIndex(q => q.id === item.id);
-                if (index !== -1) {
-                    queueManager.remove(index);
+                if (queue.length > 0) {
+                    const firstItem = queue[0];
+                    // Verify that the first item matches what we're playing (by ID if available)
+                    const matches = (item.id && firstItem.id) 
+                        ? (firstItem.id === item.id)
+                        : (firstItem === item);
+                    
+                    if (matches) {
+                        queueManager.remove(0);
+                    } else if (item.id) {
+                        // Fallback: try to find by ID if first item doesn't match
+                        const index = queue.findIndex(q => q.id === item.id);
+                        if (index !== -1) {
+                            logger.warn(`Queue item mismatch: expected first item but found at index ${index} (id: ${item.id})`);
+                            queueManager.remove(index);
+                        } else {
+                            logger.error(`Failed to remove item from queue: item not found (id: ${item.id}, title: ${item.title || 'unknown'})`);
+                        }
+                    } else {
+                        // No ID available - this shouldn't happen, but try to remove first item anyway
+                        logger.warn(`Removing first queue item without ID verification (title: ${item.title || 'unknown'})`);
+                        queueManager.remove(0);
+                    }
                 }
                 
                 // Emit playback_requested event to Player

@@ -50,6 +50,10 @@ router.post('/queue/add', async (req, res) => {
             const info = await metadataService.getTrackInfo(input);
             title = info.title;
             artist = info.artist;
+            // Warn if we got a fallback title
+            if (title.includes('Unknown Track') || title.includes('YouTube Video')) {
+                logger.warn(`[API] Got fallback title for ${input}: ${title}`);
+            }
         } else {
             // Treat as search query
             logger.info(`[API] Searching for: ${input}`);

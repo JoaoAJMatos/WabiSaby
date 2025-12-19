@@ -7,6 +7,7 @@ const whatsappAdapter = require('../../core/whatsapp');
 const metadataService = require('../../services/metadata.service');
 const helpersUtil = require('../../utils/helpers.util');
 const effectsService = require('../../services/effects.service');
+const groupsService = require('../../services/groups.service');
 const player = require('../../core/player');
 const { EFFECTS_CHANGED } = require('../../core/events');
 const { logger } = require('../../utils/logger.util');
@@ -130,6 +131,12 @@ router.get('/mobile/status', authenticateMobile, async (req, res) => {
         const queueWithThumbnails = queue.map(addThumbnailUrl);
         const isConnected = whatsappAdapter.getConnectionStatus();
         
+        // Get groups count for action required check
+        const groupsCount = groupsService.getGroups().length;
+        
+        // Action required when connected but no groups configured
+        const actionRequired = isConnected && groupsCount === 0;
+        
         // Include effects for cross-device synchronization
         const effects = effectsService.getEffects();
         const effectsPresets = effectsService.getPresetsInfo();
@@ -149,7 +156,8 @@ router.get('/mobile/status', authenticateMobile, async (req, res) => {
         
         res.json({
             auth: {
-                isConnected
+                isConnected,
+                actionRequired
             },
             user: {
                 whatsappId: req.vip?.whatsappId,

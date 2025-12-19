@@ -167,6 +167,16 @@ body.mobile-body {
     background: var(--error);
 }
 
+.mobile-status-badge.action-required {
+    background: rgba(245, 158, 11, 0.15);
+    border: 1px solid rgba(245, 158, 11, 0.3);
+    color: var(--warning);
+}
+
+.mobile-status-badge.action-required .dot {
+    background: var(--warning);
+}
+
 .mobile-status-badge .dot {
     width: 8px;
     height: 8px;

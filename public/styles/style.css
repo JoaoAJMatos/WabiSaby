@@ -959,6 +959,12 @@ a.navbar-icon-btn:active {
     color: var(--error);
 }
 
+.status-badge.action-required {
+    background: rgba(245, 158, 11, 0.15);
+    border-color: rgba(245, 158, 11, 0.3);
+    color: var(--warning);
+}
+
 .dot {
     width: 8px;
     height: 8px;
@@ -970,6 +976,11 @@ a.navbar-icon-btn:active {
 .status-badge.offline .dot {
     background: var(--error);
     animation: none;
+}
+
+.status-badge.action-required .dot {
+    background: var(--warning);
+    animation: dot-pulse 2s infinite;
 }
 
 @keyframes dot-pulse {

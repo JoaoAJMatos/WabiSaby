@@ -162,12 +162,21 @@ function updateMobileUI(data) {
     // Update connection status
     const statusBadge = document.getElementById('mobile-connection-status');
     if (statusBadge) {
-        if (auth && auth.isConnected) {
+        // Remove all status classes first
+        statusBadge.classList.remove('online', 'offline', 'action-required');
+        
+        if (auth && auth.actionRequired) {
+            statusBadge.classList.add('action-required');
+            const statusText = statusBadge.querySelector('span:not(.dot)');
+            if (statusText) statusText.textContent = 'ACTION REQUIRED';
+        } else if (auth && auth.isConnected) {
             statusBadge.classList.add('online');
-            statusBadge.classList.remove('offline');
+            const statusText = statusBadge.querySelector('span:not(.dot)');
+            if (statusText) statusText.textContent = 'LIVE';
         } else {
             statusBadge.classList.add('offline');
-            statusBadge.classList.remove('online');
+            const statusText = statusBadge.querySelector('span:not(.dot)');
+            if (statusText) statusText.textContent = 'OFFLINE';
         }
     }
     

@@ -64,6 +64,10 @@ broadcast.addEventListener('message', (event) => {
 
 // Auth status tracking
 let authStatusReceived = false;
+let currentAuthState = {
+    isConnected: false,
+    actionRequired: false
+};
 
 // Groups count tracking for onboarding hints
 let groupsCount = 0;
@@ -84,11 +88,17 @@ async function fetchData() {
         if (data.auth) {
             updateAuthUI(data.auth);
             
+            // Store current auth state for use in menu toggle
+            currentAuthState = {
+                isConnected: data.auth.isConnected || false,
+                actionRequired: data.auth.actionRequired || false
+            };
+            
             // Track groups count for onboarding hints
             if (typeof data.auth.groupsCount !== 'undefined') {
                 groupsCount = data.auth.groupsCount;
                 // Update onboarding hints based on groups count
-                updateGroupConfigurationHints(groupsCount, data.auth.isConnected);
+                updateGroupConfigurationHints(groupsCount, currentAuthState.isConnected);
             }
         }
         
@@ -780,11 +790,10 @@ function initBurgerMenu() {
         burgerWrapper.classList.toggle('menu-open', burgerMenuOpen);
         burgerBtn.setAttribute('aria-expanded', burgerMenuOpen.toString());
         
-        // Update hints when menu state changes
-        // Hide burger hint when menu opens, show settings hint
+        // Update hints immediately when menu state changes
+        // Use stored auth state instead of reading from DOM
         if (typeof updateGroupConfigurationHints === 'function' && typeof groupsCount !== 'undefined') {
-            const isConnected = document.getElementById('connection-status')?.classList.contains('online');
-            updateGroupConfigurationHints(groupsCount, isConnected);
+            updateGroupConfigurationHints(groupsCount, currentAuthState.isConnected);
         }
     }
     
@@ -794,10 +803,10 @@ function initBurgerMenu() {
             burgerWrapper.classList.remove('menu-open');
             burgerBtn.setAttribute('aria-expanded', 'false');
             
-            // Update hints when menu closes
+            // Update hints immediately when menu closes
+            // Use stored auth state instead of reading from DOM
             if (typeof updateGroupConfigurationHints === 'function' && typeof groupsCount !== 'undefined') {
-                const isConnected = document.getElementById('connection-status')?.classList.contains('online');
-                updateGroupConfigurationHints(groupsCount, isConnected);
+                updateGroupConfigurationHints(groupsCount, currentAuthState.isConnected);
             }
         }
     }

@@ -45,9 +45,19 @@ async function playCommand(sock, msg, args, deps = defaultDeps) {
             return;
         }
     } else if (isYouTubeUrl(input)) {
-        const info = await getTrackInfo(input);
-        title = info.title;
-        artist = info.artist;
+        try {
+            const info = await getTrackInfo(input);
+            title = info.title;
+            artist = info.artist;
+            // Warn if we got a fallback title
+            if (title.includes('Unknown Track') || title.includes('YouTube Video')) {
+                logger.warn(`[Play] Got fallback title for ${input}: ${title}`);
+            }
+        } catch (error) {
+            logger.error(`[Play] Failed to get track info for ${input}:`, error);
+            await sendMessageWithMention(sock, remoteJid, '❌ *YouTube Link Error*\n\nCouldn\'t resolve this YouTube link.\n\n💡 *Try:*\n• Search query (song name)\n• Different YouTube URL', sender);
+            return;
+        }
     } else {
         // Treat as search query
         try {

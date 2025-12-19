@@ -60,16 +60,19 @@ function showAuthenticating() {
     }
 }
 
-function updateStatusBadge(isConnected) {
+function updateStatusBadge(isConnected, actionRequired = false) {
     const statusBadge = document.getElementById('connection-status');
     if (!statusBadge) return;
     
-    if (isConnected) {
+    if (actionRequired) {
+        statusBadge.className = 'status-badge action-required';
+        statusBadge.innerHTML = '<span class="dot"></span> ACTION REQUIRED';
+    } else if (isConnected) {
         statusBadge.className = 'status-badge online';
-        statusBadge.innerHTML = '<span class="dot"></span> SYSTEM ONLINE';
+        statusBadge.innerHTML = '<span class="dot"></span> LIVE';
     } else {
         statusBadge.className = 'status-badge offline';
-        statusBadge.innerHTML = '<span class="dot"></span> SYSTEM OFFLINE';
+        statusBadge.innerHTML = '<span class="dot"></span> OFFLINE';
     }
 }
 

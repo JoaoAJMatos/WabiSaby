@@ -871,19 +871,30 @@ function scrollToLyricLine(index) {
 
     if (!stage || !line) return;
 
-    // Calculate position to center the active line
-    // We want the CENTER of the line to be at the CENTER of the screen (50%)
-    const stageHeight = stage.offsetHeight;
-    const lineTop = line.offsetTop;
-    const lineHeight = line.offsetHeight;
+    // Use requestAnimationFrame to ensure layout is complete before calculating
+    requestAnimationFrame(() => {
+        // Force a layout recalculation to ensure accurate measurements
+        void container.offsetHeight;
+        void stage.offsetHeight;
+        void line.offsetHeight;
 
-    // Center at 50% of screen height
-    // We don't add extra offset because line.offsetTop is relative to container top
-    const targetPosition = lineTop - (stageHeight * 0.5) + (lineHeight / 2);
+        // Get the line's position relative to the container
+        const lineTop = line.offsetTop;
+        const lineHeight = line.offsetHeight;
+        const stageHeight = stage.offsetHeight;
+        
+        // Calculate position to center the active line
+        // We want the CENTER of the line to be at the CENTER of the stage
+        // lineTop is the top of the line relative to container
+        // lineTop + lineHeight/2 is the center of the line
+        // stageHeight/2 is the center of the stage
+        // So we need: lineTop + lineHeight/2 - stageHeight/2
+        const targetPosition = lineTop + (lineHeight / 2) - (stageHeight / 2);
 
-    // Apply translation with smoother animation
-    // Allow negative values (scrolling down) to center top lines if needed
-    container.style.transform = `translateY(-${targetPosition}px)`;
+        // Apply translation with smoother animation
+        // Negative value moves container up, which moves content down (showing later lines)
+        container.style.transform = `translateY(-${Math.round(targetPosition)}px)`;
+    });
 }
 
 // ============================================
