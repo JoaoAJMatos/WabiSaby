@@ -1102,7 +1102,7 @@ function initEffectsListeners() {
     });
 
     // Quick adjustment buttons
-    document.getElementById('effects-quick-adjustments')?.addEventListener('click', (e) => {
+    document.querySelector('.effects-quick-adjustments')?.addEventListener('click', (e) => {
         if (e.target.closest('.quick-adjust-btn')) {
             const action = e.target.closest('.quick-adjust-btn').dataset.action;
             if (action) {
