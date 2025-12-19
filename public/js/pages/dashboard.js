@@ -859,6 +859,31 @@ document.getElementById('prefetch-btn').addEventListener('click', prefetchAll);
 document.getElementById('stats-collapse-btn').addEventListener('click', toggleStatsCollapse);
 document.getElementById('logout-btn').addEventListener('click', logout);
 
+// Spacebar keyboard shortcut for play/pause
+document.addEventListener('keydown', (e) => {
+    // Only trigger on spacebar
+    if (e.key !== ' ' && e.code !== 'Space') {
+        return;
+    }
+    
+    // Don't trigger if user is typing in an input field, textarea, or contenteditable element
+    const activeElement = document.activeElement;
+    const isInputField = activeElement && (
+        activeElement.tagName === 'INPUT' ||
+        activeElement.tagName === 'TEXTAREA' ||
+        activeElement.isContentEditable ||
+        activeElement.contentEditable === 'true'
+    );
+    
+    // Don't trigger if a modal is open (user might be interacting with it)
+    const isModalOpen = document.querySelector('.modal-overlay.active') !== null;
+    
+    if (!isInputField && !isModalOpen) {
+        e.preventDefault(); // Prevent page scroll
+        togglePause();
+    }
+});
+
 // Setup seek functionality (will be called after DOM is ready)
 setupSeekFunctionality();
 
