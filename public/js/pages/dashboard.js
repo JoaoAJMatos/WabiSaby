@@ -192,11 +192,13 @@ function updateQueueUI(data) {
             if (currentSong.isPaused) {
                 playPauseBtn.innerHTML = '<i class="fas fa-play"></i>';
                 playPauseBtn.setAttribute('data-paused', 'true');
-                playPauseBtn.setAttribute('title', 'Play');
+                const playTitle = window.i18n?.tSync('ui.dashboard.nowPlaying.play') || 'Play';
+                playPauseBtn.setAttribute('title', playTitle);
             } else {
                 playPauseBtn.innerHTML = '<i class="fas fa-pause"></i>';
                 playPauseBtn.setAttribute('data-paused', 'false');
-                playPauseBtn.setAttribute('title', 'Pause');
+                const pauseTitle = window.i18n?.tSync('ui.dashboard.nowPlaying.pause') || 'Pause';
+                playPauseBtn.setAttribute('title', pauseTitle);
             }
         }
 
@@ -306,10 +308,19 @@ function updateQueueUI(data) {
             console.log('⏳ Song preparing, showing idle animation:', currentSong.title || currentSong.content);
 
             // SHOW LOADING INDICATOR IN UI
-            const loadingText = currentSong.downloadStatus ? 
-                (currentSong.downloadStatus === 'downloading' ? `Downloading ${Math.round(currentSong.downloadProgress || 0)}%` : 
-                 currentSong.downloadStatus.charAt(0).toUpperCase() + currentSong.downloadStatus.slice(1) + '...') : 
-                "Preparing audio...";
+            let loadingText = '';
+            if (currentSong.downloadStatus) {
+                if (currentSong.downloadStatus === 'downloading') {
+                    const progress = Math.round(currentSong.downloadProgress || 0);
+                    loadingText = window.i18n?.tSync('ui.dashboard.queue.downloading', { progress }) || `Downloading ${progress}%`;
+                } else {
+                    const statusKey = `ui.dashboard.queue.status.${currentSong.downloadStatus}`;
+                    loadingText = window.i18n?.tSync(statusKey) || 
+                        (currentSong.downloadStatus.charAt(0).toUpperCase() + currentSong.downloadStatus.slice(1) + '...');
+                }
+            } else {
+                loadingText = window.i18n?.tSync('ui.dashboard.queue.preparingAudio') || "Preparing audio...";
+            }
             
             const progress = currentSong.downloadProgress || 0;
             
@@ -335,10 +346,12 @@ function updateQueueUI(data) {
         localCurrentSong = null;
         
         // Reset to idle state with new structure
+        const readyToPlayText = window.i18n?.tSync('ui.dashboard.nowPlaying.readyToPlay') || 'READY TO PLAY';
+        const addTrackHintText = window.i18n?.tSync('ui.dashboard.nowPlaying.addTrackHint') || 'Add a track to get started';
         currentSongContainer.innerHTML = `
             <div class="np-idle-state">
-                <span class="np-idle-label">READY TO PLAY</span>
-                <p class="np-idle-hint">Add a track to get started</p>
+                <span class="np-idle-label" data-i18n="ui.dashboard.nowPlaying.readyToPlay">${readyToPlayText}</span>
+                <p class="np-idle-hint" data-i18n="ui.dashboard.nowPlaying.addTrackHint">${addTrackHintText}</p>
             </div>
         `;
         
@@ -382,7 +395,8 @@ function updateQueueUI(data) {
         if (playPauseBtn) {
             playPauseBtn.disabled = true;
             playPauseBtn.classList.add('disabled');
-            playPauseBtn.setAttribute('title', 'No song playing');
+            const noSongTitle = window.i18n?.tSync('ui.dashboard.nowPlaying.noSongPlaying') || 'No song playing';
+            playPauseBtn.setAttribute('title', noSongTitle);
         }
     }
 
@@ -393,9 +407,10 @@ function updateQueueUI(data) {
     queueCount.textContent = queue.length;
     
     if (queue.length === 0) {
+        const queueEmptyText = window.i18n?.tSync('ui.dashboard.queue.queueEmpty') || 'Queue empty';
         queueList.innerHTML = `
             <li class="queue-item queue-empty">
-                <span>Queue empty</span>
+                <span>${queueEmptyText}</span>
             </li>`;
     } else {
         queue.forEach((item, index) => {
@@ -412,23 +427,17 @@ function updateQueueUI(data) {
             let statusHTML = '';
             if (item.downloadStatus === 'error') {
                 // Show error status
-                statusHTML = '<div class="status-badge-small error"><i class="fas fa-exclamation-triangle"></i> FAILED</div>';
+                const failedText = window.i18n?.tSync('ui.dashboard.queue.status.failed') || 'FAILED';
+                statusHTML = `<div class="status-badge-small error"><i class="fas fa-exclamation-triangle"></i> ${failedText}</div>`;
             } else if (item.type === 'url' && item.downloading) {
                 const progress = item.downloadProgress || 0;
                 const status = item.downloadStatus || 'waiting';
-                const statusText = {
-                    'preparing': 'INITIALIZING',
-                    'resolving': 'FETCHING',
-                    'searching': 'SEARCHING',
-                    'downloading': 'LOADING',
-                    'converting': 'PROCESSING',
-                    'complete': 'READY',
-                    'error': 'FAILED'
-                };
+                const statusKey = `ui.dashboard.queue.status.${status}`;
+                const statusText = window.i18n?.tSync(statusKey) || status.toUpperCase();
                 
                 statusHTML = `
                     <div class="download-status">
-                        <div class="status-text">${statusText[status] || status.toUpperCase()}</div>
+                        <div class="status-text">${statusText}</div>
                         <div class="progress-bar-small">
                             <div class="progress-fill" style="width: ${progress}%"></div>
                         </div>
@@ -436,9 +445,11 @@ function updateQueueUI(data) {
                     </div>
                 `;
             } else if (item.type === 'file' || item.downloadStatus === 'ready') {
-                statusHTML = '<div class="status-badge-small ready"><i class="fas fa-check-circle"></i> READY</div>';
+                const readyText = window.i18n?.tSync('ui.dashboard.queue.status.ready') || 'READY';
+                statusHTML = `<div class="status-badge-small ready"><i class="fas fa-check-circle"></i> ${readyText}</div>`;
             } else if (item.type === 'url') {
-                statusHTML = '<div class="status-badge-small queued"><i class="fas fa-circle"></i> QUEUED</div>';
+                const queuedText = window.i18n?.tSync('ui.dashboard.queue.status.queued') || 'QUEUED';
+                statusHTML = `<div class="status-badge-small queued"><i class="fas fa-circle"></i> ${queuedText}</div>`;
             }
             
             li.innerHTML = `
@@ -459,7 +470,7 @@ function updateQueueUI(data) {
                 </div>
                 <div class="queue-position">${index + 1}</div>
                 ${statusHTML}
-                <button onclick="removeSong(${index})" class="queue-remove-btn" title="Remove from queue">
+                <button onclick="removeSong(${index})" class="queue-remove-btn" title="${window.i18n?.tSync('ui.dashboard.queue.removeFromQueue') || 'Remove from queue'}">
                     <i class="fas fa-times"></i>
                 </button>
             `;
@@ -482,11 +493,13 @@ function updateQueueUI(data) {
         const hasNextSong = queue.length > 0;
         if (!hasNextSong) {
             skipBtn.disabled = true;
-            skipBtn.setAttribute('title', 'No songs in queue');
+            const noSongsTitle = window.i18n?.tSync('ui.dashboard.queue.noSongsInQueue') || 'No songs in queue';
+            skipBtn.setAttribute('title', noSongsTitle);
             skipBtn.classList.add('disabled');
         } else {
             skipBtn.disabled = false;
-            skipBtn.setAttribute('title', 'Skip');
+            const skipTitle = window.i18n?.tSync('ui.dashboard.nowPlaying.skip') || 'Skip';
+            skipBtn.setAttribute('title', skipTitle);
             skipBtn.classList.remove('disabled');
         }
     }
@@ -496,11 +509,13 @@ function updateQueueUI(data) {
     if (prefetchBtn) {
         if (queue.length === 0) {
             prefetchBtn.disabled = true;
-            prefetchBtn.setAttribute('title', 'Queue is empty');
+            const queueEmptyTitle = window.i18n?.tSync('ui.dashboard.queue.queueIsEmpty') || 'Queue is empty';
+            prefetchBtn.setAttribute('title', queueEmptyTitle);
             prefetchBtn.classList.add('disabled');
         } else {
             prefetchBtn.disabled = false;
-            prefetchBtn.setAttribute('title', 'Download all songs in queue');
+            const downloadAllTitle = window.i18n?.tSync('ui.dashboard.queue.downloadAllSongs') || 'Download all songs in queue';
+            prefetchBtn.setAttribute('title', downloadAllTitle);
             prefetchBtn.classList.remove('disabled');
         }
     }
@@ -669,7 +684,8 @@ function updateGroupConfigurationHints(count, isConnected) {
             // Create and add badge
             const badge = document.createElement('span');
             badge.className = 'settings-btn-badge';
-            badge.setAttribute('aria-label', 'Action required: Configure groups');
+            const actionRequiredLabel = window.i18n?.tSync('ui.dashboard.nav.actionRequired') || 'ACTION REQUIRED';
+            badge.setAttribute('aria-label', `${actionRequiredLabel}: Configure groups`);
             badge.innerHTML = '<i class="fas fa-exclamation"></i>';
             settingsBtn.appendChild(badge);
             settingsBtn.classList.add('settings-btn-has-hint');
@@ -693,9 +709,11 @@ function updateGroupConfigurationHints(count, isConnected) {
 // Logout function - disconnects from WhatsApp, clears auth data, and redirects
 function logout() {
     // Show confirmation modal before logging out
+    const logoutTitle = window.i18n?.tSync('ui.dashboard.logout') || window.i18n?.tSync('ui.dashboard.nav.logout') || 'Logout';
+    const logoutMessage = window.i18n?.tSync('ui.dashboard.logoutConfirm') || 'Are you sure you want to logout? This will disconnect from WhatsApp and clear all authentication data.';
     showConfirmationModal({
-        title: 'Logout',
-        message: 'Are you sure you want to logout? This will disconnect from WhatsApp and clear all authentication data.',
+        title: logoutTitle,
+        message: logoutMessage,
         icon: 'fa-sign-out-alt',
         onConfirm: async () => {
             try {
@@ -897,6 +915,146 @@ document.addEventListener('keydown', (e) => {
 setupSeekFunctionality();
 
 // Initialize VIP area unlock state
+/**
+ * Update all dashboard translations based on current language
+ * Finds all elements with data-i18n attributes and updates their text
+ * Made globally accessible for use in other modules
+ */
+function updateDashboardTranslations() {
+    if (!window.i18n || !window.i18n.tSync) {
+        console.warn('i18n not available, skipping translation update');
+        return;
+    }
+    
+    // Update elements with data-i18n (text content)
+    document.querySelectorAll('[data-i18n]').forEach(element => {
+        const key = element.getAttribute('data-i18n');
+        if (!key) return;
+        
+        const translation = window.i18n.tSync(key);
+        if (translation && translation !== key) {
+            // Skip input/textarea elements (they use placeholders, handled separately)
+            if (element.tagName === 'INPUT' || element.tagName === 'TEXTAREA') {
+                return;
+            }
+            
+            // Check if element contains icons - preserve them
+            const hasIcons = element.querySelector('i') !== null;
+            
+            if (hasIcons) {
+                // Element has icons - find the text span or text node to update
+                // Look for a span that doesn't contain icons
+                const textSpan = Array.from(element.querySelectorAll('span')).find(span => 
+                    !span.querySelector('i') && 
+                    !span.classList.contains('icon') &&
+                    !span.classList.contains('badge') &&
+                    span.getAttribute('data-i18n') === key
+                );
+                
+                if (textSpan) {
+                    // Update the span that has the data-i18n attribute
+                    textSpan.textContent = translation;
+                } else {
+                    // Look for any text span without icons
+                    const anyTextSpan = element.querySelector('span:not([class*="icon"]):not([class*="badge"])');
+                    if (anyTextSpan && !anyTextSpan.querySelector('i')) {
+                        anyTextSpan.textContent = translation;
+                    } else {
+                        // Update text nodes, preserving icons
+                        const textNodes = Array.from(element.childNodes).filter(node => 
+                            node.nodeType === Node.TEXT_NODE
+                        );
+                        if (textNodes.length > 0) {
+                            // Update first text node
+                            textNodes[0].textContent = ' ' + translation;
+                        }
+                    }
+                }
+            } else {
+                // No icons - safe to update textContent
+                element.textContent = translation;
+            }
+        }
+    });
+    
+    // Update elements with data-i18n-title (title attribute)
+    document.querySelectorAll('[data-i18n-title]').forEach(element => {
+        const key = element.getAttribute('data-i18n-title');
+        if (!key) return;
+        
+        const translation = window.i18n.tSync(key);
+        if (translation && translation !== key) {
+            element.setAttribute('title', translation);
+        }
+    });
+    
+    // Update elements with data-i18n-placeholder (placeholder attribute)
+    document.querySelectorAll('[data-i18n-placeholder]').forEach(element => {
+        const key = element.getAttribute('data-i18n-placeholder');
+        if (!key) return;
+        
+        const translation = window.i18n.tSync(key);
+        if (translation && translation !== key) {
+            element.setAttribute('placeholder', translation);
+        }
+    });
+    
+    // Update elements with data-i18n-aria-label (aria-label attribute)
+    document.querySelectorAll('[data-i18n-aria-label]').forEach(element => {
+        const key = element.getAttribute('data-i18n-aria-label');
+        if (!key) return;
+        
+        const translation = window.i18n.tSync(key);
+        if (translation && translation !== key) {
+            element.setAttribute('aria-label', translation);
+        }
+    });
+    
+    // Update play/pause button title dynamically
+    const playPauseBtn = document.getElementById('play-pause-btn');
+    if (playPauseBtn) {
+        const isPaused = playPauseBtn.getAttribute('data-paused') === 'true';
+        const titleKey = isPaused ? 'ui.dashboard.nowPlaying.play' : 'ui.dashboard.nowPlaying.pause';
+        playPauseBtn.setAttribute('title', window.i18n.tSync(titleKey));
+    }
+    
+    // Update effects mode label
+    const effectsModeLabel = document.getElementById('effects-mode-label');
+    if (effectsModeLabel) {
+        const isAdvanced = effectsModeLabel.textContent.trim().toLowerCase() === 'advanced' || 
+                          effectsModeLabel.textContent.trim().toLowerCase() === 'avançado';
+        const modeKey = isAdvanced ? 'ui.dashboard.effects.advanced' : 'ui.dashboard.effects.simple';
+        effectsModeLabel.textContent = window.i18n.tSync(modeKey);
+    }
+    
+    // Update effects expand/collapse button title
+    const effectsExpandBtn = document.getElementById('effects-expand-btn');
+    if (effectsExpandBtn) {
+        const isExpanded = document.getElementById('effects-expanded-content')?.style.display !== 'none';
+        const titleKey = isExpanded ? 'ui.dashboard.effects.collapseEffects' : 'ui.dashboard.effects.expandEffects';
+        effectsExpandBtn.setAttribute('title', window.i18n.tSync(titleKey));
+    }
+    
+    // Update stats collapse button title
+    const statsCollapseBtn = document.getElementById('stats-collapse-btn');
+    if (statsCollapseBtn) {
+        const isCollapsed = document.getElementById('stats')?.classList.contains('collapsed');
+        const titleKey = isCollapsed ? 'ui.dashboard.analytics.expandAnalytics' : 'ui.dashboard.analytics.collapseAnalytics';
+        statsCollapseBtn.setAttribute('title', window.i18n.tSync(titleKey));
+    }
+}
+
+// Make function globally accessible
+window.updateDashboardTranslations = updateDashboardTranslations;
+
+// Listen for language change events
+window.addEventListener('languageChanged', async (event) => {
+    await updateDashboardTranslations();
+    // Update any dynamically set text that might have been missed
+    // Re-fetch data to update queue UI with translations
+    fetchData();
+});
+
 initializeVipArea();
 
 // Polling interval handles both queue updates and auth checks
@@ -907,4 +1065,20 @@ setInterval(updateProgressBarAndStats, 1000);
 
 // Initial fetch (will hide loading screen on success)
 fetchData();
+
+// Initialize translations after i18n is ready
+if (window.i18n) {
+    window.i18n.init().then(() => {
+        updateDashboardTranslations();
+    });
+} else {
+    // Wait for i18n to load
+    document.addEventListener('DOMContentLoaded', () => {
+        if (window.i18n) {
+            window.i18n.init().then(() => {
+                updateDashboardTranslations();
+            });
+        }
+    });
+}
 

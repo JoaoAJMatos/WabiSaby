@@ -5154,7 +5154,7 @@ input:focus {
 .settings-sidebar-header {
     display: flex;
     align-items: center;
-    justify-content: space-between;
+    justify-content: flex-start;
     gap: 14px;
     padding: 24px 20px;
     border-bottom: 1px solid rgba(255, 255, 255, 0.05);
@@ -5499,7 +5499,7 @@ input:focus {
     display: flex;
     align-items: center;
     gap: 18px;
-    flex: 1;
+    flex: 0 1 auto;
     min-width: 0;
 }
 
@@ -5507,6 +5507,12 @@ input:focus {
     width: 44px;
     height: 44px;
     font-size: 1.1rem;
+    flex-shrink: 0;
+}
+
+.settings-main-header .panel-title {
+    flex: 0 1 auto;
+    min-width: 0;
 }
 
 .settings-main-header .panel-title h3 {
@@ -7831,13 +7837,23 @@ input:focus {
 }
 
 .groups-list-header {
-    display: flex;
-    align-items: center;
-    justify-content: space-between;
+    display: block;
     margin-bottom: 12px;
     font-weight: 600;
     color: var(--text-main);
     font-size: 0.95rem;
+}
+
+.groups-list-header span {
+    margin: 0;
+    padding: 0;
+}
+
+.groups-list-header #groups-count,
+.groups-list-header #pending-count {
+    margin-left: 0;
+    margin-right: 0;
+    padding: 0;
 }
 
 .groups-list {

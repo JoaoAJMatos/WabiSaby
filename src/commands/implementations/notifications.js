@@ -9,7 +9,7 @@ const dbService = require('../../database/db.service');
  * @param {Object} deps - Dependencies (injected, defaults to production dependencies)
  */
 async function notificationsCommand(sock, msg, args, deps = defaultDeps) {
-    const { notificationService, sendMessageWithMention } = deps;
+    const { notificationService, sendMessageWithMention, i18n, userLang = 'en' } = deps;
     const remoteJid = msg.key.remoteJid;
     const sender = msg.key.participant || msg.key.remoteJid;
     const action = args[0]?.toLowerCase();
@@ -29,11 +29,17 @@ async function notificationsCommand(sock, msg, args, deps = defaultDeps) {
         const globalStatus = globalEnabled ? 'enabled' : 'disabled';
         const userStatus = userEnabled ? 'enabled' : 'disabled';
         
-        let message = `🔔 *Notifications*\n\n${statusEmoji} Your notifications are *${status}*\n\n`;
-        message += `📊 *Status:*\n`;
-        message += `• Global: ${globalEnabled ? '✅' : '❌'} ${globalStatus}\n`;
-        message += `• Your preference: ${userEnabled ? '✅' : '❌'} ${userStatus}\n\n`;
-        message += `💡 Use \`!notifications on\` or \`!notifications off\` to change your preference`;
+        let message = i18n('commands.notifications.status', userLang, { statusEmoji, status });
+        message += i18n('commands.notifications.statusDetails', userLang);
+        message += i18n('commands.notifications.global', userLang, { 
+            emoji: globalEnabled ? '✅' : '❌', 
+            status: globalStatus 
+        });
+        message += i18n('commands.notifications.userPreference', userLang, { 
+            emoji: userEnabled ? '✅' : '❌', 
+            status: userStatus 
+        });
+        message += i18n('commands.notifications.hint', userLang);
         
         await sendMessageWithMention(sock, remoteJid, message, sender);
         return;
@@ -44,24 +50,24 @@ async function notificationsCommand(sock, msg, args, deps = defaultDeps) {
         case 'enable':
             // Set user-level preference
             dbService.setUserNotificationPreference(userWhatsappId, true);
-            await sendMessageWithMention(sock, remoteJid, '✅ *Notifications Enabled*\n\nYou\'ll be notified when your songs are coming up!', sender);
+            await sendMessageWithMention(sock, remoteJid, i18n('commands.notifications.enabled', userLang), sender);
             break;
             
         case 'off':
         case 'disable':
             // Set user-level preference
             dbService.setUserNotificationPreference(userWhatsappId, false);
-            await sendMessageWithMention(sock, remoteJid, '❌ *Notifications Disabled*\n\nYou won\'t receive upcoming song notifications.', sender);
+            await sendMessageWithMention(sock, remoteJid, i18n('commands.notifications.disabled', userLang), sender);
             break;
             
         case 'clear':
             // Clear notification history (global operation)
             notificationService.clearHistory();
-            await sendMessageWithMention(sock, remoteJid, '🗑️ *History Cleared*\n\nNotification history has been reset.', sender);
+            await sendMessageWithMention(sock, remoteJid, i18n('commands.notifications.historyCleared', userLang), sender);
             break;
             
         default:
-            await sendMessageWithMention(sock, remoteJid, '🔔 *Usage*\n\n`!notifications [on|off|clear]`\n\n✨ *Options:*\n• `on` - Enable notifications\n• `off` - Disable notifications\n• `clear` - Clear notification history', sender);
+            await sendMessageWithMention(sock, remoteJid, i18n('commands.notifications.usage', userLang), sender);
     }
 }
 

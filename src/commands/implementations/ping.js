@@ -45,7 +45,7 @@ function removePendingConfirmation(groupId) {
 async function pingCommand(sock, msg, deps) {
     const { deps: defaultDeps } = require('../dependencies');
     const actualDeps = deps || defaultDeps;
-    const { groupsService, sendMessageWithMention, logger } = actualDeps;
+    const { groupsService, sendMessageWithMention, logger, i18n, userLang = 'en' } = actualDeps;
     
     const remoteJid = msg.key.remoteJid;
     const sender = msg.key.participant || msg.key.remoteJid;
@@ -53,19 +53,19 @@ async function pingCommand(sock, msg, deps) {
     
     // Only work in groups
     if (!remoteJid.includes('@g.us')) {
-        await sendMessageWithMention(sock, remoteJid, 'This command only works in groups.', sender);
+        await sendMessageWithMention(sock, remoteJid, i18n('commands.ping.notInGroup', userLang), sender);
         return;
     }
     
     // Check if group is already monitored
     if (groupsService.isGroupMonitored(remoteJid)) {
-        await sendMessageWithMention(sock, remoteJid, 'This group is already being monitored.', sender);
+        await sendMessageWithMention(sock, remoteJid, i18n('commands.ping.alreadyMonitored', userLang), sender);
         return;
     }
     
     // Check if there's already a pending confirmation for this group
     if (pendingConfirmations.has(remoteJid)) {
-        await sendMessageWithMention(sock, remoteJid, 'A request to add this group is already pending. Please check the web dashboard to confirm.', sender);
+        await sendMessageWithMention(sock, remoteJid, i18n('commands.ping.pending', userLang), sender);
         return;
     }
     
@@ -90,7 +90,7 @@ async function pingCommand(sock, msg, deps) {
     // Cleanup old confirmations
     cleanupOldConfirmations();
     
-    await sendMessageWithMention(sock, remoteJid, `Request to add this group has been sent. Please check the web dashboard to confirm.`, sender);
+    await sendMessageWithMention(sock, remoteJid, i18n('commands.ping.requestSent', userLang), sender);
     logger.info(`Pending group confirmation: ${remoteJid} (${groupName}) from ${senderName} (${sender})`);
 }
 

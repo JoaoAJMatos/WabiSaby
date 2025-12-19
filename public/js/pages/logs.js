@@ -282,9 +282,11 @@
 
             // Clear button
             clearBtn.addEventListener('click', () => {
+                const clearTitle = window.i18n?.tSync('ui.dashboard.logs.clearAllLogs') || 'Clear All Logs';
+                const clearMessage = window.i18n?.tSync('ui.dashboard.logs.clearAllLogsMessage') || 'Are you sure you want to clear all logs? This action cannot be undone.';
                 showConfirmationModal({
-                    title: 'Clear All Logs',
-                    message: 'Are you sure you want to clear all logs? This action cannot be undone.',
+                    title: clearTitle,
+                    message: clearMessage,
                     icon: 'fa-trash-alt',
                     onConfirm: async () => {
                         try {

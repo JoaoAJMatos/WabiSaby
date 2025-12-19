@@ -941,7 +941,12 @@ function updateCurrentPresetDisplay(presetId) {
     const display = document.getElementById('effects-current-preset');
     if (display) {
         const preset = effectsPresets.find(p => p.id === presetId);
-        display.textContent = preset ? preset.name : 'Custom';
+        if (preset) {
+            display.textContent = preset.name;
+        } else {
+            const customText = window.i18n?.tSync('ui.dashboard.effects.custom') || 'Custom';
+            display.textContent = customText;
+        }
     }
 }
 

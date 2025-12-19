@@ -124,37 +124,44 @@ async function fetchOverviewView() {
             `;
         }
 
+        const totalSongsLabel = window.i18n?.tSync('ui.dashboard.analytics.totalSongs') || 'Total Songs';
+        const totalPlaytimeLabel = window.i18n?.tSync('ui.dashboard.analytics.totalPlaytime') || 'Total Playtime';
+        const uniqueDJsLabel = window.i18n?.tSync('ui.dashboard.analytics.uniqueDJs') || 'Unique DJs';
+        const artistsPlayedLabel = window.i18n?.tSync('ui.dashboard.analytics.artistsPlayed') || 'Artists Played';
+        const avgSongLabel = window.i18n?.tSync('ui.dashboard.analytics.avgSong') || 'Avg Song';
+        const peakHourLabel = window.i18n?.tSync('ui.dashboard.analytics.peakHour') || 'Peak Hour';
+        
         container.innerHTML = `
             <div class="overview-grid">
                 <div class="overview-stat">
                     <div class="overview-stat-icon"><i class="fas fa-play-circle"></i></div>
                     <div class="overview-stat-value">${data.songsPlayed || 0}</div>
-                    <div class="overview-stat-label">Total Songs</div>
+                    <div class="overview-stat-label">${totalSongsLabel}</div>
                 </div>
                 <div class="overview-stat">
                     <div class="overview-stat-icon"><i class="fas fa-hourglass-half"></i></div>
                     <div class="overview-stat-value">${data.totalDuration > 0 ? formatDuration(data.totalDuration) : '-'}</div>
-                    <div class="overview-stat-label">Total Playtime</div>
+                    <div class="overview-stat-label">${totalPlaytimeLabel}</div>
                 </div>
                 <div class="overview-stat">
                     <div class="overview-stat-icon"><i class="fas fa-users"></i></div>
                     <div class="overview-stat-value">${data.uniqueRequesters || 0}</div>
-                    <div class="overview-stat-label">Unique DJs</div>
+                    <div class="overview-stat-label">${uniqueDJsLabel}</div>
                 </div>
                 <div class="overview-stat">
                     <div class="overview-stat-icon"><i class="fas fa-star"></i></div>
                     <div class="overview-stat-value">${data.uniqueArtists || 0}</div>
-                    <div class="overview-stat-label">Artists Played</div>
+                    <div class="overview-stat-label">${artistsPlayedLabel}</div>
                 </div>
                 <div class="overview-stat">
                     <div class="overview-stat-icon"><i class="fas fa-clock"></i></div>
                     <div class="overview-stat-value">${data.avgDuration > 0 ? formatDuration(data.avgDuration) : '-'}</div>
-                    <div class="overview-stat-label">Avg Song</div>
+                    <div class="overview-stat-label">${avgSongLabel}</div>
                 </div>
                 <div class="overview-stat">
                     <div class="overview-stat-icon"><i class="fas fa-fire"></i></div>
                     <div class="overview-stat-value">${formatHour(data.peakHour)}</div>
-                    <div class="overview-stat-label">Peak Hour</div>
+                    <div class="overview-stat-label">${peakHourLabel}</div>
                 </div>
             </div>
             ${hourlyChart}
@@ -162,7 +169,8 @@ async function fetchOverviewView() {
         `;
     } catch (e) {
         console.error(e);
-        container.innerHTML = '<p class="stats-placeholder">Failed to load overview</p>';
+        const failedText = window.i18n?.tSync('ui.dashboard.analytics.failedToLoad') || 'Failed to load overview';
+        container.innerHTML = `<p class="stats-placeholder">${failedText}</p>`;
     }
 }
 
@@ -310,5 +318,21 @@ setInterval(fetchDetailedStats, 10000);
 // Initial fetch
 initStatsTabs();
 fetchDetailedStats();
+
+// Listen for language changes to refresh stats labels
+window.addEventListener('languageChanged', async (event) => {
+    // Refresh the active tab to update labels
+    const activeTab = document.querySelector('.stats-tab-btn.active');
+    if (activeTab) {
+        const tab = activeTab.dataset.tab;
+        if (tab === 'requesters') {
+            fetchRequestersView();
+        } else if (tab === 'history') {
+            fetchHistoryView();
+        } else {
+            fetchOverviewView();
+        }
+    }
+});
 
 

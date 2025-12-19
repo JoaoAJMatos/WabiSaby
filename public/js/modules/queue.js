@@ -17,7 +17,8 @@ async function addSong(e) {
     const requester = requesterInput.value;
 
     const originalBtnContent = btn.innerHTML;
-    btn.innerHTML = '<i class="fas fa-compact-disc fa-spin"></i> Adding...';
+    const addingText = window.i18n?.tSync('ui.dashboard.queue.notifications.adding') || 'Adding...';
+    btn.innerHTML = `<i class="fas fa-compact-disc fa-spin"></i> ${addingText}`;
     btn.disabled = true;
 
     try {
@@ -30,16 +31,19 @@ async function addSong(e) {
         if (response.ok) {
             const data = await response.json();
             urlInput.value = '';
-            showNotification(`ADDED: ${data.title || 'TRACK'}`, 'success');
+            const addedText = window.i18n?.tSync('ui.dashboard.queue.notifications.added', { title: data.title || 'TRACK' }) || `ADDED: ${data.title || 'TRACK'}`;
+            showNotification(addedText, 'success');
             fetchData();
             // Close the modal after successful add
             closeAddTrackModal();
         } else {
-            showNotification('FAILED TO ADD', 'error');
+            const failedText = window.i18n?.tSync('ui.dashboard.queue.notifications.failedToAdd') || 'FAILED TO ADD';
+            showNotification(failedText, 'error');
         }
     } catch (error) {
         console.error('Error adding song:', error);
-        showNotification('CONNECTION ERROR', 'error');
+        const errorText = window.i18n?.tSync('ui.dashboard.queue.notifications.connectionError') || 'CONNECTION ERROR';
+        showNotification(errorText, 'error');
     } finally {
         btn.innerHTML = originalBtnContent;
         btn.disabled = false;
@@ -52,9 +56,11 @@ async function skipSong() {
     const shouldConfirm = confirmSkipSetting ? confirmSkipSetting.checked : skipConfirmationEnabled;
     
     if (shouldConfirm) {
+        const skipTitle = window.i18n?.tSync('ui.dashboard.queue.notifications.skipTrack') || 'Skip Track';
+        const skipMessage = window.i18n?.tSync('ui.dashboard.queue.notifications.skipConfirm') || 'Are you sure you want to skip the current track?';
         showConfirmationModal({
-            title: 'Skip Track',
-            message: 'Are you sure you want to skip the current track?',
+            title: skipTitle,
+            message: skipMessage,
             icon: 'fa-forward',
             onConfirm: async () => {
                 await performSkip();
@@ -69,10 +75,12 @@ async function skipSong() {
 async function performSkip() {
     try {
         await fetch('/api/queue/skip', { method: 'POST' });
-        showNotification('TRACK SKIPPED', 'success');
+        const skippedText = window.i18n?.tSync('ui.dashboard.queue.notifications.trackSkipped') || 'TRACK SKIPPED';
+        showNotification(skippedText, 'success');
         fetchData();
     } catch (error) {
-        showNotification('SKIP FAILED', 'error');
+        const failedText = window.i18n?.tSync('ui.dashboard.queue.notifications.skipFailed') || 'SKIP FAILED';
+        showNotification(failedText, 'error');
     }
 }
 
@@ -90,28 +98,36 @@ async function togglePause() {
     try {
         const res = await fetch(endpoint, { method: 'POST' });
         if (res.ok) {
-            showNotification(isCurrentlyPaused ? 'RESUMED' : 'PAUSED', 'success');
+            const statusKey = isCurrentlyPaused ? 'ui.dashboard.queue.notifications.resumed' : 'ui.dashboard.queue.notifications.paused';
+            const statusText = window.i18n?.tSync(statusKey) || (isCurrentlyPaused ? 'RESUMED' : 'PAUSED');
+            showNotification(statusText, 'success');
             fetchData();
         } else {
-            showNotification('ACTION FAILED', 'error');
+            const failedText = window.i18n?.tSync('ui.dashboard.queue.notifications.actionFailed') || 'ACTION FAILED';
+            showNotification(failedText, 'error');
         }
     } catch (error) {
-        showNotification('CONNECTION ERROR', 'error');
+        const errorText = window.i18n?.tSync('ui.dashboard.queue.notifications.connectionError') || 'CONNECTION ERROR';
+        showNotification(errorText, 'error');
     }
 }
 
 window.removeSong = async function(index) {
+    const removeTitle = window.i18n?.tSync('ui.dashboard.queue.notifications.removeTrack') || 'Remove Track';
+    const removeMessage = window.i18n?.tSync('ui.dashboard.queue.notifications.removeConfirm') || 'Are you sure you want to remove this track from the queue?';
     showConfirmationModal({
-        title: 'Remove Track',
-        message: 'Are you sure you want to remove this track from the queue?',
+        title: removeTitle,
+        message: removeMessage,
         icon: 'fa-times',
         onConfirm: async () => {
             try {
                 await fetch(`/api/queue/remove/${index}`, { method: 'POST' });
-                showNotification('TRACK REMOVED', 'success');
+                const removedText = window.i18n?.tSync('ui.dashboard.queue.notifications.trackRemoved') || 'TRACK REMOVED';
+                showNotification(removedText, 'success');
                 fetchData();
             } catch (error) {
-                showNotification('REMOVAL FAILED', 'error');
+                const failedText = window.i18n?.tSync('ui.dashboard.queue.notifications.removalFailed') || 'REMOVAL FAILED';
+                showNotification(failedText, 'error');
             }
         }
     });
@@ -181,14 +197,17 @@ function handleDrop(e) {
         }).then(response => {
             if (response.ok) {
                 const newPosition = dropIndex + 1; // Position is 1-based for display
-                showNotification(`MOVED TO POSITION ${newPosition}`, 'success');
+                const movedText = window.i18n?.tSync('ui.dashboard.queue.notifications.movedToPosition', { position: newPosition }) || `MOVED TO POSITION ${newPosition}`;
+                showNotification(movedText, 'success');
                 fetchData();
             } else {
-                showNotification('REORDER FAILED', 'error');
+                const failedText = window.i18n?.tSync('ui.dashboard.queue.notifications.reorderFailed') || 'REORDER FAILED';
+                showNotification(failedText, 'error');
             }
         }).catch(err => {
             console.error('Error reordering queue:', err);
-            showNotification('REORDER FAILED', 'error');
+            const failedText = window.i18n?.tSync('ui.dashboard.queue.notifications.reorderFailed') || 'REORDER FAILED';
+            showNotification(failedText, 'error');
         });
     }
     
@@ -205,22 +224,26 @@ async function prefetchAll() {
     }
     
     const originalContent = btn.innerHTML;
-    btn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> DOWNLOADING...';
+    const downloadingText = window.i18n?.tSync('ui.dashboard.queue.notifications.downloadingBtn') || 'DOWNLOADING...';
+    btn.innerHTML = `<i class="fas fa-spinner fa-spin"></i> ${downloadingText}`;
     btn.disabled = true;
     
     try {
         const response = await fetch('/api/queue/prefetch', { method: 'POST' });
         if (response.ok) {
-            showNotification('PREFETCH STARTED', 'success');
+            const startedText = window.i18n?.tSync('ui.dashboard.queue.notifications.prefetchStarted') || 'PREFETCH STARTED';
+            showNotification(startedText, 'success');
             if (typeof fetchData === 'function') {
                 fetchData();
             }
         } else {
-            showNotification('PREFETCH FAILED', 'error');
+            const failedText = window.i18n?.tSync('ui.dashboard.queue.notifications.prefetchFailed') || 'PREFETCH FAILED';
+            showNotification(failedText, 'error');
         }
     } catch (error) {
         console.error('Error starting prefetch:', error);
-        showNotification('CONNECTION ERROR', 'error');
+        const errorText = window.i18n?.tSync('ui.dashboard.queue.notifications.connectionError') || 'CONNECTION ERROR';
+        showNotification(errorText, 'error');
     } finally {
         setTimeout(() => {
             btn.innerHTML = originalContent;
@@ -230,9 +253,11 @@ async function prefetchAll() {
 }
 
 async function startNewSession() {
+    const sessionTitle = window.i18n?.tSync('ui.dashboard.queue.notifications.startNewSession') || 'Start New Session';
+    const sessionMessage = window.i18n?.tSync('ui.dashboard.queue.notifications.newSessionConfirm') || 'Are you sure? This will stop the current song, clear the entire queue, and reset all session statistics.';
     showConfirmationModal({
-        title: 'Start New Session', 
-        message: 'Are you sure? This will stop the current song, clear the entire queue, and reset all session statistics.',
+        title: sessionTitle, 
+        message: sessionMessage,
         icon: 'fa-redo',
         onConfirm: async () => {
             try {
@@ -241,18 +266,21 @@ async function startNewSession() {
                 });
                 
                 if (response.ok) {
-                    showNotification('New session started', 'success');
+                    const startedText = window.i18n?.tSync('ui.dashboard.queue.notifications.newSessionStarted') || 'New session started';
+                    showNotification(startedText, 'success');
                     if (typeof fetchData === 'function') {
                         fetchData();
                     }
                     // Close settings modal if open
                     closeSettingsModal();
                 } else {
-                    showNotification('Failed to start new session', 'error');
+                    const failedText = window.i18n?.tSync('ui.dashboard.queue.notifications.newSessionFailed') || 'Failed to start new session';
+                    showNotification(failedText, 'error');
                 }
             } catch (error) {
                 console.error('Error starting new session:', error);
-                showNotification('Error starting new session', 'error');
+                const errorText = window.i18n?.tSync('ui.dashboard.queue.notifications.newSessionError') || 'Error starting new session';
+                showNotification(errorText, 'error');
             }
         }
     });

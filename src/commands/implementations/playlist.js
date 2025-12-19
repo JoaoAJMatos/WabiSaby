@@ -16,7 +16,9 @@ async function playlistCommand(sock, msg, args, deps = defaultDeps) {
         isPlaylistUrl,
         searchYouTube,
         logger,
-        sendMessageWithMention
+        sendMessageWithMention,
+        i18n,
+        userLang = 'en'
     } = deps;
     const remoteJid = msg.key.remoteJid;
     const sender = msg.key.participant || msg.key.remoteJid;
@@ -24,18 +26,18 @@ async function playlistCommand(sock, msg, args, deps = defaultDeps) {
     
     // Check if user is VIP
     if (!checkPriority(sender)) {
-        await sendMessageWithMention(sock, remoteJid, '🔒 *VIP Only*\n\nThis feature is exclusive to VIP users.\n\n✨ Contact an admin to get VIP access!', sender);
+        await sendMessageWithMention(sock, remoteJid, i18n('commands.playlist.vipOnly', userLang), sender);
         return;
     }
     
     if (!url) {
-        await sendMessageWithMention(sock, remoteJid, '🎵 *Usage*\n\n`!playlist <url>`\n\n✨ *Supported:*\n• Spotify playlist links\n• YouTube playlist links', sender);
+        await sendMessageWithMention(sock, remoteJid, i18n('commands.playlist.usage', userLang), sender);
         return;
     }
     
     // Verify it's a playlist URL
     if (!isPlaylistUrl(url)) {
-        await sendMessageWithMention(sock, remoteJid, '❌ *Invalid Playlist URL*\n\nPlease provide a valid:\n• Spotify playlist link\n• YouTube playlist link', sender);
+        await sendMessageWithMention(sock, remoteJid, i18n('commands.playlist.invalidUrl', userLang), sender);
         return;
     }
     
@@ -44,7 +46,7 @@ async function playlistCommand(sock, msg, args, deps = defaultDeps) {
         const tracks = await getPlaylistTracks(url);
         
         if (!tracks || tracks.length === 0) {
-            await sendMessageWithMention(sock, remoteJid, '🔍 *Empty Playlist*\n\nNo tracks found in this playlist.\n\n💡 Make sure the playlist is public and contains songs.', sender);
+            await sendMessageWithMention(sock, remoteJid, i18n('commands.playlist.empty', userLang), sender);
             return;
         }
         
@@ -104,19 +106,33 @@ async function playlistCommand(sock, msg, args, deps = defaultDeps) {
         }
         
         // Build final response message
-        let responseText = `✅ *Playlist Added*\n\n🎵 *${successCount}* track${successCount !== 1 ? 's' : ''} added to queue`;
+        // Handle pluralization based on language
+        let trackText, duplicateText, plural, dupPlural;
+        if (userLang === 'pt') {
+            trackText = successCount !== 1 ? 'faixas' : 'faixa';
+            duplicateText = duplicateCount > 1 ? 'duplicatas' : 'duplicata';
+            plural = successCount !== 1 ? 's' : '';
+            dupPlural = duplicateCount > 1 ? 's' : '';
+        } else {
+            trackText = successCount !== 1 ? 'tracks' : 'track';
+            duplicateText = duplicateCount > 1 ? 'duplicates' : 'duplicate';
+            plural = successCount !== 1 ? 's' : '';
+            dupPlural = duplicateCount > 1 ? 's' : '';
+        }
+        
+        let responseText = i18n('commands.playlist.added', userLang, { count: successCount, trackText, plural });
         if (duplicateCount > 0) {
-            responseText += `\n⚠️ *${duplicateCount}* duplicate${duplicateCount > 1 ? 's' : ''} skipped`;
+            responseText += i18n('commands.playlist.duplicates', userLang, { count: duplicateCount, duplicateText, plural: dupPlural });
         }
         if (failCount > 0) {
-            responseText += `\n❌ *${failCount}* failed`;
+            responseText += i18n('commands.playlist.failed', userLang, { count: failCount });
         }
         
         await sendMessageWithMention(sock, remoteJid, responseText, sender);
         
     } catch (error) {
         logger.error('Playlist command failed:', error);
-        await sendMessageWithMention(sock, remoteJid, `❌ *Playlist Error*\n\nFailed to process playlist:\n*${error.message}*\n\n💡 Make sure the playlist is public and accessible.`, sender);
+        await sendMessageWithMention(sock, remoteJid, i18n('commands.playlist.error', userLang, { error: error.message }), sender);
     }
 }
 

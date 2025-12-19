@@ -66,12 +66,16 @@ function updateStatusBadge(isConnected, actionRequired = false) {
     
     if (actionRequired) {
         statusBadge.className = 'status-badge action-required';
-        statusBadge.innerHTML = '<span class="dot"></span> ACTION REQUIRED';
+        const actionRequiredText = window.i18n?.tSync('ui.dashboard.nav.actionRequired') || 'ACTION REQUIRED';
+        statusBadge.innerHTML = `<span class="dot"></span> ${actionRequiredText}`;
     } else if (isConnected) {
         statusBadge.className = 'status-badge online';
-        statusBadge.innerHTML = '<span class="dot"></span> LIVE';
+        const liveText = window.i18n?.tSync('ui.dashboard.nav.live') || 'LIVE';
+        statusBadge.innerHTML = `<span class="dot"></span> ${liveText}`;
     } else {
         statusBadge.className = 'status-badge offline';
+        const offlineText = window.i18n?.tSync('ui.dashboard.nav.offline') || 'OFFLINE';
+        statusBadge.innerHTML = `<span class="dot"></span> ${offlineText}`;
         statusBadge.innerHTML = '<span class="dot"></span> OFFLINE';
     }
 }

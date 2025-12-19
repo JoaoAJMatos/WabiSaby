@@ -295,9 +295,11 @@ async function addVipFromMember(userId, userName) {
 
 window.removeVip = async function(id) {
     const displayId = id.length > 20 ? id.substring(0, 20) + '...' : id;
+    const removeTitle = window.i18n?.tSync('ui.dashboard.vip.removeVip') || 'Remove VIP';
+    const removeMessage = window.i18n?.tSync('ui.dashboard.vip.removeVipMessage', { displayId }) || `Are you sure you want to remove ${displayId} from VIP?`;
     showConfirmationModal({
-        title: 'Remove VIP',
-        message: `Are you sure you want to remove ${displayId} from VIP?`,
+        title: removeTitle,
+        message: removeMessage,
         icon: 'fa-user-times',
         onConfirm: async () => {
             try {

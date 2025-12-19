@@ -1,0 +1,468 @@
+{
+  "commands": {
+    "help": {
+      "title": "🎵 *WabiSaby Music Bot*\n\n",
+      "availableCommands": "*Available Commands:*\n\n",
+      "play": {
+        "title": "🎶 *Play Music*\n",
+        "usage": "`!play <url or search>`\n",
+        "description": "Add a song to the queue"
+      },
+      "skip": {
+        "title": "⏭️ *Skip*\n",
+        "usage": "`!skip`\n",
+        "description": "Skip the current song"
+      },
+      "queue": {
+        "title": "📋 *Queue*\n",
+        "usage": "`!queue`\n",
+        "description": "View the current queue"
+      },
+      "remove": {
+        "title": "🗑️ *Remove*\n",
+        "usage": "`!remove <number>`\n",
+        "description": "Remove a song from queue"
+      },
+      "nowPlaying": {
+        "title": "▶️ *Now Playing*\n",
+        "usage": "`!np`\n",
+        "description": "Show current song"
+      },
+      "notifications": {
+        "title": "🔔 *Notifications*\n",
+        "usage": "`!notifications [on|off|clear]`\n",
+        "description": "Manage song notifications"
+      },
+      "playlist": {
+        "title": "🎵 *Playlist* (VIP only)\n",
+        "usage": "`!playlist <url>`\n",
+        "description": "Add entire playlist to queue"
+      },
+      "ping": {
+        "title": "📡 *Ping*\n",
+        "usage": "`!ping`\n",
+        "description": "Add this group to monitoring"
+      },
+      "help": {
+        "title": "❓ *Help*\n",
+        "usage": "`!help`\n",
+        "description": "Show this message"
+      },
+      "language": {
+        "title": "🌐 *Language*\n",
+        "usage": "`!language [en|pt]`\n",
+        "description": "Set your language preference"
+      }
+    },
+    "play": {
+      "usage": "🎵 *Usage*\n\n`!play <url or search>`\n\n✨ *Examples:*\n• `!play https://youtube.com/...`\n• `!play Artist - Song Name`\n• `!play song name`",
+      "spotifyError": "❌ *Spotify Link Error*\n\nCouldn't resolve this Spotify link.\n\n💡 *Try:*\n• YouTube URL\n• Search query (song name)",
+      "youtubeError": "❌ *YouTube Link Error*\n\nCouldn't resolve this YouTube link.\n\n💡 *Try:*\n• Search query (song name)\n• Different YouTube URL",
+      "noResults": "🔍 *No Results Found*\n\nCouldn't find any matches for:\n*\"{input}\"*\n\n💡 *Try:*\n• More specific search terms\n• Include artist name\n• Use a YouTube or Spotify URL",
+      "alreadyInQueue": "⚠️ *Already in Queue*\n\n*\"{title}\"* is already queued.",
+      "added": "✅ *Added to Queue*\n\n🎶 *\"{title}\"*"
+    },
+    "queue": {
+      "title": "📋 *Queue*\n\n",
+      "nowPlaying": "▶️ *Now Playing*\n🎶 *{title}*{artist}\n\n",
+      "upcoming": "📝 *Upcoming ({count}):*\n",
+      "empty": "✨ *Queue is empty*\n\nAdd songs with `!play`"
+    },
+    "skip": {
+      "nothingPlaying": "⏸️ *Nothing Playing*\n\nNo song is currently playing.",
+      "skipped": "⏭️ *Skipped*\n\n*\"{title}\"* has been skipped.",
+      "permissionDenied": "🔒 *Permission Denied*\n\nYou can only skip your own songs.\n\n✨ VIPs can skip any song."
+    },
+    "remove": {
+      "usage": "🎵 *Usage*\n\n`!remove <number>`\n\n💡 Use `!queue` to see the queue numbers.",
+      "removed": "🗑️ *Removed*\n\n*\"{title}\"* has been removed from the queue.",
+      "invalidIndex": "❌ *Invalid Index*\n\nThat position doesn't exist in the queue.\n\n💡 Use `!queue` to see valid numbers."
+    },
+    "nowPlaying": {
+      "playing": "▶️ *Now Playing*\n\n🎶 *{title}*{artist}",
+      "nothingPlaying": "⏸️ *Nothing Playing*\n\nNo song is currently playing."
+    },
+    "notifications": {
+      "status": "🔔 *Notifications*\n\n{statusEmoji} Your notifications are *{status}*\n\n",
+      "statusDetails": "📊 *Status:*\n",
+      "global": "• Global: {emoji} {status}\n",
+      "userPreference": "• Your preference: {emoji} {status}\n\n",
+      "hint": "💡 Use `!notifications on` or `!notifications off` to change your preference",
+      "enabled": "✅ *Notifications Enabled*\n\nYou'll be notified when your songs are coming up!",
+      "disabled": "❌ *Notifications Disabled*\n\nYou won't receive upcoming song notifications.",
+      "historyCleared": "🗑️ *History Cleared*\n\nNotification history has been reset.",
+      "usage": "🔔 *Usage*\n\n`!notifications [on|off|clear]`\n\n✨ *Options:*\n• `on` - Enable notifications\n• `off` - Disable notifications\n• `clear` - Clear notification history"
+    },
+    "playlist": {
+      "vipOnly": "🔒 *VIP Only*\n\nThis feature is exclusive to VIP users.\n\n✨ Contact an admin to get VIP access!",
+      "usage": "🎵 *Usage*\n\n`!playlist <url>`\n\n✨ *Supported:*\n• Spotify playlist links\n• YouTube playlist links",
+      "invalidUrl": "❌ *Invalid Playlist URL*\n\nPlease provide a valid:\n• Spotify playlist link\n• YouTube playlist link",
+      "empty": "🔍 *Empty Playlist*\n\nNo tracks found in this playlist.\n\n💡 Make sure the playlist is public and contains songs.",
+      "added": "✅ *Playlist Added*\n\n🎵 *{count}* {trackText} added to queue",
+      "duplicates": "\n⚠️ *{count}* {duplicateText} skipped",
+      "failed": "\n❌ *{count}* failed",
+      "error": "❌ *Playlist Error*\n\nFailed to process playlist:\n*{error}*\n\n💡 Make sure the playlist is public and accessible."
+    },
+    "ping": {
+      "notInGroup": "This command only works in groups.",
+      "alreadyMonitored": "This group is already being monitored.",
+      "pending": "A request to add this group is already pending. Please check the web dashboard to confirm.",
+      "requestSent": "Request to add this group has been sent. Please check the web dashboard to confirm."
+    },
+    "unknown": "Unknown command: {command}. Type !help for commands.",
+    "error": "Error processing command."
+  },
+  "api": {
+    "errors": {
+      "tokenRequired": "Token required",
+      "fingerprintRequired": "Device fingerprint required",
+      "invalidToken": "Invalid token",
+      "fingerprintMismatch": "Device fingerprint mismatch",
+      "fingerprintMismatchMessage": "This link is bound to a different device.",
+      "authenticationFailed": "Authentication failed",
+      "mobileTokenRequired": "Mobile token required",
+      "urlRequired": "URL or search query is required",
+      "songAlreadyInQueue": "Song already in queue",
+      "failedToAddSong": "Failed to add song",
+      "titleRequired": "Title parameter is required",
+      "lyricsNotFound": "Lyrics not found",
+      "internalServerError": "Internal server error",
+      "invalidCategory": "Invalid category: {category}",
+      "settingNotEditable": "Setting '{key}' in category '{category}' cannot be modified",
+      "invalidValue": "Invalid value for {key}. Valid options: {options}",
+      "mustBeBoolean": "{key} must be a boolean",
+      "mustBeInteger": "{key} must be a non-negative integer"
+    },
+    "success": {
+      "songAdded": "Song added to queue",
+      "authenticationSuccess": "Authentication successful"
+    }
+  },
+  "ui": {
+    "mobile": {
+      "authenticating": "Authenticating...",
+      "authenticationFailed": "Authentication failed",
+      "noToken": "No access token found in URL",
+      "connectionFailed": "Failed to connect to server",
+      "wabisabyMobile": "WabiSaby Mobile",
+      "live": "LIVE",
+      "nowPlaying": "Now Playing",
+      "readyToPlay": "READY TO PLAY",
+      "waitingForMusic": "Waiting for music...",
+      "queue": "Queue",
+      "queueEmpty": "No songs in queue",
+      "effects": "Effects",
+      "normal": "Normal",
+      "moreControls": "More Controls",
+      "speed": "Speed",
+      "equalizer": "Equalizer",
+      "bass": "Bass",
+      "mid": "Mid",
+      "treble": "Treble"
+    },
+    "player": {
+      "waitingForMusic": "Waiting for music...",
+      "lyrics": "Lyrics",
+      "visualizer": "Visualizer",
+      "adjustSync": "Adjust Sync",
+      "decreaseOffset": "Decrease Offset",
+      "increaseOffset": "Increase Offset",
+      "showLyrics": "Show Lyrics",
+      "showVisualizer": "Show Visualizer"
+    },
+      "dashboard": {
+        "checkingAuth": "Checking authentication...",
+        "logout": "Logout",
+        "logoutConfirm": "Are you sure you want to logout? This will disconnect from WhatsApp and clear all authentication data.",
+        "logoutError": "Logout error: {error}. Clearing local data and redirecting...",
+        "noAudioData": "No audio data",
+      "nav": {
+        "settings": "Settings",
+        "systemLogs": "System Logs",
+        "logout": "Logout",
+        "menu": "Menu",
+        "live": "LIVE",
+        "offline": "OFFLINE",
+        "actionRequired": "ACTION REQUIRED"
+      },
+      "nowPlaying": {
+        "readyToPlay": "READY TO PLAY",
+        "addTrackHint": "Add a track to get started",
+        "play": "Play",
+        "pause": "Pause",
+        "skip": "Skip",
+        "fullscreen": "Fullscreen",
+        "noSongPlaying": "No song playing"
+      },
+      "queue": {
+        "title": "Up Next",
+        "prefetchAll": "PREFETCH ALL",
+        "addTrack": "ADD TRACK",
+        "empty": "No songs in queue",
+        "queueEmpty": "Queue empty",
+        "removeFromQueue": "Remove from queue",
+        "noSongsInQueue": "No songs in queue",
+        "queueIsEmpty": "Queue is empty",
+        "downloadAllSongs": "Download all songs in queue",
+        "status": {
+          "failed": "FAILED",
+          "initializing": "INITIALIZING",
+          "fetching": "FETCHING",
+          "searching": "SEARCHING",
+          "downloading": "LOADING",
+          "converting": "PROCESSING",
+          "ready": "READY",
+          "queued": "QUEUED"
+        },
+        "downloading": "Downloading {progress}%",
+        "preparingAudio": "Preparing audio...",
+        "notifications": {
+          "adding": "Adding...",
+          "added": "ADDED: {title}",
+          "failedToAdd": "FAILED TO ADD",
+          "connectionError": "CONNECTION ERROR",
+          "skipTrack": "Skip Track",
+          "skipConfirm": "Are you sure you want to skip the current track?",
+          "trackSkipped": "TRACK SKIPPED",
+          "skipFailed": "SKIP FAILED",
+          "resumed": "RESUMED",
+          "paused": "PAUSED",
+          "actionFailed": "ACTION FAILED",
+          "removeTrack": "Remove Track",
+          "removeConfirm": "Are you sure you want to remove this track from the queue?",
+          "trackRemoved": "TRACK REMOVED",
+          "removalFailed": "REMOVAL FAILED",
+          "movedToPosition": "MOVED TO POSITION {position}",
+          "reorderFailed": "REORDER FAILED",
+          "downloadingBtn": "DOWNLOADING...",
+          "prefetchStarted": "PREFETCH STARTED",
+          "prefetchFailed": "PREFETCH FAILED",
+          "startNewSession": "Start New Session",
+          "newSessionConfirm": "Are you sure? This will stop the current song, clear the entire queue, and reset all session statistics.",
+          "newSessionStarted": "New session started",
+          "newSessionFailed": "Failed to start new session",
+          "newSessionError": "Error starting new session"
+        }
+      },
+      "effects": {
+        "title": "Audio Effects",
+        "simple": "Simple",
+        "advanced": "Advanced",
+        "resetAll": "RESET ALL",
+        "normal": "Normal",
+        "bassUp": "Bass+",
+        "bassDown": "Bass-",
+        "reverbUp": "Reverb+",
+        "reverbDown": "Reverb-",
+        "faster": "Faster",
+        "slower": "Slower",
+        "speed": "Speed",
+        "equalizer": "Equalizer",
+        "effects": "Effects",
+        "reverb": "Reverb",
+        "echo": "Echo",
+        "distortion": "Distortion",
+        "compressor": "Compressor",
+        "intensity": "Intensity",
+        "size": "Size",
+        "wet": "Wet",
+        "delay": "Delay",
+        "decay": "Decay",
+        "drive": "Drive",
+        "thresh": "Thresh",
+        "ratio": "Ratio",
+        "bass": "Bass",
+        "mid": "Mid",
+        "treble": "Treble",
+        "toggleSimpleAdvanced": "Toggle Simple/Advanced Mode",
+        "resetAllEffects": "Reset All Effects",
+        "expandEffects": "Expand Effects",
+        "collapseEffects": "Collapse Effects",
+        "advancedControls": "Advanced Controls",
+        "reset": "Reset",
+        "toggleSpectrum": "Toggle spectrum visualization",
+        "simpleModeHint": "Use the quick adjustment buttons above to tweak effects, or switch to Advanced mode for full control.",
+        "custom": "Custom"
+      },
+      "analytics": {
+        "title": "Analytics",
+        "overview": "Overview",
+        "topRequesters": "Top Requesters",
+        "recentHistory": "Recent History",
+        "uptime": "UPTIME",
+        "songsPlayed": "SONGS PLAYED",
+        "inQueue": "IN QUEUE",
+        "expandAnalytics": "Expand Analytics",
+        "collapseAnalytics": "Collapse Analytics",
+        "loadingAnalytics": "Loading analytics...",
+        "topRequestersPlaceholder": "Top requesters will appear here",
+        "historyPlaceholder": "Playback history will appear here",
+        "totalSongs": "Total Songs",
+        "totalPlaytime": "Total Playtime",
+        "uniqueDJs": "Unique DJs",
+        "artistsPlayed": "Artists Played",
+        "avgSong": "Avg Song",
+        "peakHour": "Peak Hour",
+        "failedToLoad": "Failed to load overview"
+      },
+      "vip": {
+        "management": "VIP Management",
+        "enterPassword": "Enter password to manage priority users",
+        "passwordPlaceholder": "Admin password...",
+        "unlockArea": "Unlock VIP Area",
+        "access": "VIP Access",
+        "subtitle": "Priority queue for selected users",
+        "group": "Group",
+        "manual": "Manual",
+        "lockArea": "Lock VIP Area",
+        "addUser": "Add VIP User",
+        "currentVips": "Current VIPs",
+        "searchMembers": "Search members...",
+        "loadingMembers": "Loading members...",
+        "vipIdPlaceholder": "5511999999999@s.whatsapp.net",
+        "removeVip": "Remove VIP",
+        "removeVipMessage": "Are you sure you want to remove {displayId} from VIP?"
+      },
+      "logs": {
+        "clearAllLogs": "Clear All Logs",
+        "clearAllLogsMessage": "Are you sure you want to clear all logs? This action cannot be undone."
+      },
+      "settings": {
+        "title": "Settings",
+        "searchPlaceholder": "Search settings...",
+        "download": {
+          "title": "Download",
+          "description": "Configure audio format, quality, and download behavior",
+          "audioFormat": "Audio Format",
+          "audioFormatDesc": "Output format for downloaded audio files",
+          "audioQuality": "Audio Quality",
+          "audioQualityDesc": "Bitrate for audio encoding. Higher = better quality, larger files",
+          "playerClient": "YouTube Client",
+          "playerClientDesc": "Client to emulate when fetching from YouTube",
+          "downloadThumbnails": "Download Thumbnails",
+          "downloadThumbnailsDesc": "Save album artwork alongside audio files"
+        },
+        "playback": {
+          "title": "Playback",
+          "description": "Control playback behavior and transitions",
+          "cleanupAfterPlay": "Cleanup After Play",
+          "cleanupAfterPlayDesc": "Automatically delete audio files after playback completes",
+          "confirmSkip": "Confirm Skip",
+          "confirmSkipDesc": "Show confirmation dialog before skipping songs",
+          "showRequesterName": "Show Requester Name",
+          "showRequesterNameDesc": "Display the requester's name on the currently playing song",
+          "songTransitionDelay": "Transition Delay",
+          "songTransitionDelayDesc": "Pause between songs in milliseconds (0 - 10000)"
+        },
+        "performance": {
+          "title": "Performance",
+          "description": "Optimize loading and caching behavior",
+          "prefetchNext": "Enable Prefetch",
+          "prefetchNextDesc": "Download upcoming songs before they're needed",
+          "prefetchCount": "Prefetch Count",
+          "prefetchCountDesc": "Number of songs to preload ahead (0 = all queued songs)",
+          "proTip": "Pro Tip",
+          "proTipText": "Enable prefetch with count 2-3 for smooth playback without using too much storage."
+        },
+        "notifications": {
+          "title": "Notifications",
+          "description": "Configure WhatsApp notification behavior",
+          "enabled": "Enable Notifications",
+          "enabledDesc": "Send WhatsApp messages when songs are about to play",
+          "notifyAtPosition": "Notify at Position",
+          "notifyAtPositionDesc": "Alert users when their song reaches this queue position (1 = next up)",
+          "howItWorks": "How it works",
+          "howItWorksText": "When enabled, the person who requested a song gets a WhatsApp message when their song is about to play."
+        },
+        "groups": {
+          "title": "Monitored Groups",
+          "description": "Manage WhatsApp groups the bot listens to",
+          "addGroup": "Add Group",
+          "addGroupDesc": "Manually add a group by its WhatsApp ID (ends with @g.us)",
+          "groupPlaceholder": "123456789@g.us",
+          "add": "Add",
+          "pendingRequests": "Pending Requests",
+          "monitoredGroups": "Monitored Groups",
+          "loadingGroups": "Loading groups...",
+          "howToAdd": "How to add groups",
+          "howToAddText": "Send !ping in any WhatsApp group you want to add. The request will appear here for confirmation. You can also manually add groups using the form above.",
+          "invalidGroupId": "Invalid Group ID",
+          "invalidGroupIdMessage": "Group ID must be a WhatsApp group ID (ending with @g.us)",
+          "addGroupMessage": "Add group \"{groupId}\" to monitoring? The bot will start listening to messages from this group.",
+          "removeGroup": "Remove Group",
+          "removeGroupMessage": "Are you sure you want to remove \"{groupName}\" from monitoring? The bot will stop listening to messages from this group.",
+          "confirmGroup": "Confirm Group",
+          "confirmGroupMessage": "Add \"{groupName}\" to monitored groups? This group was requested by {senderName}.",
+          "error": "Error",
+          "failedToAdd": "Failed to add group",
+          "failedToAddRetry": "Failed to add group. Please try again.",
+          "failedToRemove": "Failed to remove group",
+          "failedToRemoveRetry": "Failed to remove group. Please try again.",
+          "failedToConfirm": "Failed to confirm group",
+          "failedToConfirmRetry": "Failed to confirm group. Please try again."
+        },
+        "system": {
+          "title": "System Control",
+          "description": "Manage session state and system maintenance",
+          "language": "Language",
+          "languageDesc": "Choose your preferred language for the web interface",
+          "newSession": "New Session",
+          "newSessionDesc": "Clear the current queue, stop playback, and reset all statistics. Use this when starting a fresh event or day.",
+          "startNewSession": "Start New Session",
+          "warning": "Warning",
+          "warningText": "Starting a new session is destructive. All playback history, stats, and the current queue will be cleared immediately.",
+          "loadingDiskUsage": "Loading disk usage...",
+          "totalStorage": "Total Storage",
+          "showDetails": "Show details",
+          "hideDetails": "Hide details",
+          "database": "Database",
+          "tempFiles": "Temp Files",
+          "media": "Media",
+          "thumbnails": "Thumbnails",
+          "dataFiles": "Data Files",
+          "auth": "Auth",
+          "diskUsageError": "Failed to load disk usage information"
+        },
+        "search": {
+          "title": "Search Results",
+          "settingsFound": "{count} settings found",
+          "noResults": "No settings match your search"
+        },
+        "footer": {
+          "resetAll": "Reset All",
+          "resetAllConfirmTitle": "Reset All Settings",
+          "resetAllConfirmMessage": "Are you sure you want to reset all settings to their default values? This cannot be undone.",
+          "saved": "Saved",
+          "footerNote": "Changes apply instantly. Server settings require .env edit and restart."
+        }
+      },
+      "modals": {
+        "addTrack": {
+          "title": "Add Track",
+          "songUrlLabel": "Song URL or Search",
+          "songUrlPlaceholder": "Paste YouTube/Spotify URL or search by name...",
+          "youtubeSupported": "YouTube supported",
+          "spotifySupported": "Spotify supported",
+          "requestedBy": "Requested By",
+          "optional": "Optional",
+          "requesterPlaceholder": "Your name or DJ alias...",
+          "addToQueue": "Add to Queue"
+        },
+        "confirmation": {
+          "title": "Confirm Action",
+          "cancel": "Cancel",
+          "confirm": "Confirm"
+        }
+      }
+    },
+    "auth": {
+      "scanQR": "Scan the QR code with your phone to link your WhatsApp account",
+      "waitingForQR": "Waiting for QR...",
+      "generatingQR": "Generating QR code... Please wait a moment"
+    }
+  },
+  "errors": {
+    "generic": "An error occurred"
+  }
+}
+

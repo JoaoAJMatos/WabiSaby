@@ -36,6 +36,8 @@ const groupsService = require('../services/groups.service');
 const { isSpotifyUrl, isYouTubeUrl, isPlaylistUrl } = require('../utils/url.util');
 const { logger } = require('../utils/logger.util');
 const { sendMessageWithMention } = require('../utils/helpers.util');
+const { t: i18n } = require('../utils/i18n.util');
+const dbService = require('../database/db.service');
 
 /**
  * Default dependencies for production use
@@ -60,7 +62,11 @@ const deps = {
     isYouTubeUrl,
     isPlaylistUrl,
     logger,
-    sendMessageWithMention
+    sendMessageWithMention,
+    
+    // i18n
+    i18n,
+    dbService
 };
 
 /**

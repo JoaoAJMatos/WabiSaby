@@ -31,7 +31,7 @@ function formatTime(ms) {
 }
 
 // Show error message
-function showError(message) {
+async function showError(message) {
     const errorEl = document.getElementById('auth-error');
     const messageEl = document.getElementById('auth-message');
     if (errorEl) {
@@ -39,7 +39,7 @@ function showError(message) {
         errorEl.classList.remove('hidden');
     }
     if (messageEl) {
-        messageEl.textContent = 'Authentication failed';
+        messageEl.textContent = await window.i18n.t('ui.mobile.authenticationFailed');
     }
 }
 
@@ -55,11 +55,17 @@ function showMainInterface() {
 async function authenticate() {
     const token = getTokenFromURL();
     if (!token) {
-        showError('No access token found in URL');
+        showError(await window.i18n.t('ui.mobile.noToken'));
         return false;
     }
     
     mobileToken = token;
+    
+    // Update auth message
+    const messageEl = document.getElementById('auth-message');
+    if (messageEl) {
+        messageEl.textContent = await window.i18n.t('ui.mobile.authenticating');
+    }
     
     try {
         // Generate device fingerprint
@@ -85,12 +91,13 @@ async function authenticate() {
             initializeMobileInterface();
             return true;
         } else {
-            showError(data.message || data.error || 'Authentication failed');
+            const errorMsg = data.message || data.error || await window.i18n.t('ui.mobile.authenticationFailed');
+            showError(errorMsg);
             return false;
         }
     } catch (error) {
         console.error('Authentication error:', error);
-        showError('Failed to connect to server');
+        showError(await window.i18n.t('ui.mobile.connectionFailed'));
         return false;
     }
 }
@@ -168,11 +175,14 @@ function updateMobileUI(data) {
         if (auth && auth.actionRequired) {
             statusBadge.classList.add('action-required');
             const statusText = statusBadge.querySelector('span:not(.dot)');
-            if (statusText) statusText.textContent = 'ACTION REQUIRED';
+            if (statusText) {
+                const actionRequiredText = window.i18n?.tSync('ui.dashboard.nav.actionRequired') || 'ACTION REQUIRED';
+                statusText.textContent = actionRequiredText;
+            }
         } else if (auth && auth.isConnected) {
             statusBadge.classList.add('online');
             const statusText = statusBadge.querySelector('span:not(.dot)');
-            if (statusText) statusText.textContent = 'LIVE';
+            if (statusText) statusText.textContent = window.i18n.tSync('ui.mobile.live');
         } else {
             statusBadge.classList.add('offline');
             const statusText = statusBadge.querySelector('span:not(.dot)');
@@ -216,8 +226,8 @@ function updateNowPlaying(currentSong) {
         if (infoEl) {
             infoEl.innerHTML = `
                 <div class="mobile-np-idle">
-                    <span>READY TO PLAY</span>
-                    <p>Waiting for music...</p>
+                    <span>${window.i18n.tSync('ui.mobile.readyToPlay')}</span>
+                    <p>${window.i18n.tSync('ui.mobile.waitingForMusic')}</p>
                 </div>
             `;
         }
@@ -279,7 +289,7 @@ function updateQueue(queue) {
     if (!queueList) return;
     
     if (queue.length === 0) {
-        queueList.innerHTML = '<li class="mobile-queue-empty">No songs in queue</li>';
+        queueList.innerHTML = `<li class="mobile-queue-empty">${window.i18n.tSync('ui.mobile.queueEmpty')}</li>`;
         return;
     }
     
@@ -647,9 +657,87 @@ function preventPageDrag() {
     }, { passive: false });
 }
 
+// Update all static UI text based on current language
+async function updateUIText() {
+    // Wait for i18n to be ready
+    if (!window.i18n) {
+        setTimeout(updateUIText, 100);
+        return;
+    }
+    
+    // Update static text elements
+    const authMessage = document.getElementById('auth-message');
+    if (authMessage && !isAuthenticated) {
+        authMessage.textContent = await window.i18n.t('ui.mobile.authenticating');
+    }
+    
+    const authTitle = document.querySelector('#auth-screen h2');
+    if (authTitle) {
+        authTitle.textContent = await window.i18n.t('ui.mobile.wabisabyMobile');
+    }
+    
+    // Update section headers (only if interface is visible)
+    const nowPlayingHeader = document.querySelector('#mobile-now-playing .mobile-card-header h2');
+    if (nowPlayingHeader) {
+        nowPlayingHeader.textContent = window.i18n.tSync('ui.mobile.nowPlaying');
+    }
+    
+    const queueHeader = document.querySelector('#mobile-queue .mobile-card-header h2');
+    if (queueHeader) {
+        queueHeader.textContent = window.i18n.tSync('ui.mobile.queue');
+    }
+    
+    const effectsHeader = document.querySelector('#mobile-effects .mobile-card-header h2');
+    if (effectsHeader) {
+        effectsHeader.textContent = window.i18n.tSync('ui.mobile.effects');
+    }
+    
+    // Update effects labels
+    const speedLabel = document.querySelector('#mobile-effect-speed')?.parentElement?.querySelector('.mobile-effect-label span');
+    if (speedLabel) {
+        const icon = speedLabel.previousElementSibling;
+        speedLabel.textContent = window.i18n.tSync('ui.mobile.speed');
+    }
+    
+    const eqLabels = document.querySelectorAll('.mobile-effect-label span');
+    eqLabels.forEach(label => {
+        if (label.textContent === 'Equalizer') {
+            label.textContent = window.i18n.tSync('ui.mobile.equalizer');
+        }
+    });
+    
+    // Update EQ band labels
+    const bassLabel = document.querySelector('.mobile-eq-band label');
+    if (bassLabel && bassLabel.textContent === 'Bass') {
+        bassLabel.textContent = window.i18n.tSync('ui.mobile.bass');
+    }
+    const midLabels = document.querySelectorAll('.mobile-eq-band label');
+    midLabels.forEach((label, index) => {
+        if (label.textContent === 'Mid' && index === 1) {
+            label.textContent = window.i18n.tSync('ui.mobile.mid');
+        } else if (label.textContent === 'Treble' && index === 2) {
+            label.textContent = window.i18n.tSync('ui.mobile.treble');
+        }
+    });
+    
+    // Update "More Controls" button
+    const moreControlsBtn = document.querySelector('#mobile-effects-expand-btn span');
+    if (moreControlsBtn) {
+        moreControlsBtn.textContent = window.i18n.tSync('ui.mobile.moreControls');
+    }
+}
+
+// Listen for language changes
+window.addEventListener('languageChanged', () => {
+    updateUIText();
+});
+
 // Initialize on page load
-document.addEventListener('DOMContentLoaded', () => {
+document.addEventListener('DOMContentLoaded', async () => {
     preventPageDrag();
+    // Wait for i18n to initialize
+    await window.i18n.init();
+    updateUIText();
     authenticate();
 });
 

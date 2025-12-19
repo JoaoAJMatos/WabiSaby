@@ -1,0 +1,476 @@
+{
+  "commands": {
+    "help": {
+      "title": "🎵 *WabiSaby Music Bot*\n\n",
+      "availableCommands": "*Comandos Disponíveis:*\n\n",
+      "play": {
+        "title": "🎶 *Tocar Música*\n",
+        "usage": "`!play <url ou procura>`\n",
+        "description": "Adicionar uma música à fila"
+      },
+      "skip": {
+        "title": "⏭️ *Passar*\n",
+        "usage": "`!skip`\n",
+        "description": "Passar a música atual"
+      },
+      "queue": {
+        "title": "📋 *Fila*\n",
+        "usage": "`!queue`\n",
+        "description": "Ver a fila atual"
+      },
+      "remove": {
+        "title": "🗑️ *Remover*\n",
+        "usage": "`!remove <número>`\n",
+        "description": "Remover uma música da fila"
+      },
+      "nowPlaying": {
+        "title": "▶️ *A Tocar Agora*\n",
+        "usage": "`!np`\n",
+        "description": "Mostrar música atual"
+      },
+      "notifications": {
+        "title": "🔔 *Notificações*\n",
+        "usage": "`!notifications [on|off|clear]`\n",
+        "description": "Gerir notificações de músicas"
+      },
+      "playlist": {
+        "title": "🎵 *Playlist* (só VIP)\n",
+        "usage": "`!playlist <url>`\n",
+        "description": "Adicionar playlist inteira à fila"
+      },
+      "ping": {
+        "title": "📡 *Ping*\n",
+        "usage": "`!ping`\n",
+        "description": "Adicionar este grupo ao monitoramento"
+      },
+      "help": {
+        "title": "❓ *Ajuda*\n",
+        "usage": "`!help`\n",
+        "description": "Mostrar esta mensagem"
+      },
+      "language": {
+        "title": "🌐 *Idioma*\n",
+        "usage": "`!language [en|pt]`\n",
+        "description": "Definir a tua preferência de idioma"
+      }
+    },
+    "play": {
+      "usage": "🎵 *Uso*\n\n`!play <url ou procura>`\n\n✨ *Exemplos:*\n• `!play https://youtube.com/...`\n• `!play Artista - Nome da Música`\n• `!play nome da música`",
+      "spotifyError": "❌ *Erro no Link do Spotify*\n\nNão foi possível resolver este link do Spotify.\n\n💡 *Tenta:*\n• URL do YouTube\n• Procura (nome da música)",
+      "youtubeError": "❌ *Erro no Link do YouTube*\n\nNão foi possível resolver este link do YouTube.\n\n💡 *Tenta:*\n• Procura (nome da música)\n• URL diferente do YouTube",
+      "noResults": "🔍 *Nenhum Resultado Encontrado*\n\nNão foi possível encontrar correspondências para:\n*\"{input}\"*\n\n💡 *Tenta:*\n• Termos de procura mais específicos\n• Incluir nome do artista\n• Usar uma URL do YouTube ou Spotify",
+      "alreadyInQueue": "⚠️ *Já na Fila*\n\n*\"{title}\"* já está na fila.",
+      "added": "✅ *Adicionado à Fila*\n\n🎶 *\"{title}\"*"
+    },
+    "queue": {
+      "title": "📋 *Fila*\n\n",
+      "nowPlaying": "▶️ *A Tocar Agora*\n🎶 *{title}*{artist}\n\n",
+      "upcoming": "📝 *Próximas ({count}):*\n",
+      "empty": "✨ *Fila vazia*\n\nAdiciona músicas com `!play`"
+    },
+    "skip": {
+      "nothingPlaying": "⏸️ *Nada a Tocar*\n\nNenhuma música está a tocar no momento.",
+      "skipped": "⏭️ *Passada*\n\n*\"{title}\"* foi passada.",
+      "permissionDenied": "🔒 *Permissão Negada*\n\nSó podes passar as tuas próprias músicas.\n\n✨ VIPs podem passar qualquer música."
+    },
+    "remove": {
+      "usage": "🎵 *Uso*\n\n`!remove <número>`\n\n💡 Usa `!queue` para ver os números da fila.",
+      "removed": "🗑️ *Removida*\n\n*\"{title}\"* foi removida da fila.",
+      "invalidIndex": "❌ *Índice Inválido*\n\nEssa posição não existe na fila.\n\n💡 Usa `!queue` para ver números válidos."
+    },
+    "nowPlaying": {
+      "playing": "▶️ *A Tocar Agora*\n\n🎶 *{title}*{artist}",
+      "nothingPlaying": "⏸️ *Nada a Tocar*\n\nNenhuma música está a tocar no momento."
+    },
+    "notifications": {
+      "status": "🔔 *Notificações*\n\n{statusEmoji} As tuas notificações estão *{status}*\n\n",
+      "statusDetails": "📊 *Estado:*\n",
+      "global": "• Global: {emoji} {status}\n",
+      "userPreference": "• A tua preferência: {emoji} {status}\n\n",
+      "hint": "💡 Usa `!notifications on` ou `!notifications off` para alterar a tua preferência",
+      "enabled": "✅ *Notificações Activadas*\n\nVais ser notificado quando as tuas músicas estiverem a chegar!",
+      "disabled": "❌ *Notificações Desactivadas*\n\nNão vais receber notificações de músicas próximas.",
+      "historyCleared": "🗑️ *Histórico Limpo*\n\nO histórico de notificações foi reposto.",
+      "usage": "🔔 *Uso*\n\n`!notifications [on|off|clear]`\n\n✨ *Opções:*\n• `on` - Activar notificações\n• `off` - Desactivar notificações\n• `clear` - Limpar histórico de notificações"
+    },
+    "playlist": {
+      "vipOnly": "🔒 *Apenas VIP*\n\nEste recurso é exclusivo para utilizadores VIP.\n\n✨ Contacta um administrador para obter acesso VIP!",
+      "usage": "🎵 *Uso*\n\n`!playlist <url>`\n\n✨ *Suportado:*\n• Links de playlist do Spotify\n• Links de playlist do YouTube",
+      "invalidUrl": "❌ *URL de Playlist Inválida*\n\nPor favor, fornece um:\n• Link de playlist do Spotify\n• Link de playlist do YouTube",
+      "empty": "🔍 *Playlist Vazia*\n\nNenhuma faixa encontrada nesta playlist.\n\n💡 Certifica-te de que a playlist é pública e contém músicas.",
+      "added": "✅ *Playlist Adicionada*\n\n🎵 *{count}* {trackText} adicionada{plural} à fila",
+      "trackText": {
+        "singular": "faixa",
+        "plural": "faixas"
+      },
+      "duplicateText": {
+        "singular": "duplicata",
+        "plural": "duplicatas"
+      },
+      "duplicates": "\n⚠️ *{count}* {duplicateText} ignorada{plural}",
+      "failed": "\n❌ *{count}* falhou",
+      "error": "❌ *Erro na Playlist*\n\nFalha ao processar a playlist:\n*{error}*\n\n💡 Certifica-te de que a playlist é pública e acessível."
+    },
+    "ping": {
+      "notInGroup": "Este comando só funciona em grupos.",
+      "alreadyMonitored": "Este grupo já está a ser monitorizado.",
+      "pending": "Um pedido para adicionar este grupo já está pendente. Por favor, verifica o painel web para confirmar.",
+      "requestSent": "Pedido para adicionar este grupo foi enviado. Por favor, verifica o painel web para confirmar."
+    },
+    "unknown": "Comando desconhecido: {command}. Escreve !help para ver os comandos.",
+    "error": "Erro ao processar comando."
+  },
+  "api": {
+    "errors": {
+      "tokenRequired": "Token necessário",
+      "fingerprintRequired": "Impressão digital do dispositivo necessária",
+      "invalidToken": "Token inválido",
+      "fingerprintMismatch": "Impressão digital do dispositivo não corresponde",
+      "fingerprintMismatchMessage": "Este link está vinculado a um dispositivo diferente.",
+      "authenticationFailed": "Falha na autenticação",
+      "mobileTokenRequired": "Token móvel necessário",
+      "urlRequired": "URL ou consulta de procura é necessária",
+      "songAlreadyInQueue": "Música já está na fila",
+      "failedToAddSong": "Falha ao adicionar música",
+      "titleRequired": "Parâmetro de título é necessário",
+      "lyricsNotFound": "Letra não encontrada",
+      "internalServerError": "Erro interno do servidor",
+      "invalidCategory": "Categoria inválida: {category}",
+      "settingNotEditable": "A definição '{key}' na categoria '{category}' não pode ser modificada",
+      "invalidValue": "Valor inválido para {key}. Opções válidas: {options}",
+      "mustBeBoolean": "{key} deve ser um booleano",
+      "mustBeInteger": "{key} deve ser um inteiro não negativo"
+    },
+    "success": {
+      "songAdded": "Música adicionada à fila",
+      "authenticationSuccess": "Autenticação bem-sucedida"
+    }
+  },
+  "ui": {
+    "mobile": {
+      "authenticating": "A autenticar...",
+      "authenticationFailed": "Falha na autenticação",
+      "noToken": "Nenhum token de acesso encontrado na URL",
+      "connectionFailed": "Falha ao conectar ao servidor",
+      "wabisabyMobile": "WabiSaby Mobile",
+      "live": "AO VIVO",
+      "nowPlaying": "A Tocar Agora",
+      "readyToPlay": "PRONTO PARA TOCAR",
+      "waitingForMusic": "À espera de música...",
+      "queue": "Fila",
+      "queueEmpty": "Nenhuma música na fila",
+      "effects": "Efeitos",
+      "normal": "Normal",
+      "moreControls": "Mais Controlos",
+      "speed": "Velocidade",
+      "equalizer": "Equalizador",
+      "bass": "Graves",
+      "mid": "Médios",
+      "treble": "Agudos"
+    },
+    "player": {
+      "waitingForMusic": "À espera de música...",
+      "lyrics": "Letras",
+      "visualizer": "Visualizador",
+      "adjustSync": "Ajustar Sincronização",
+      "decreaseOffset": "Diminuir Offset",
+      "increaseOffset": "Aumentar Offset",
+      "showLyrics": "Mostrar Letras",
+      "showVisualizer": "Mostrar Visualizador"
+    },
+      "dashboard": {
+        "checkingAuth": "A verificar autenticação...",
+        "logout": "Sair",
+        "logoutConfirm": "Tens a certeza de que queres sair? Isto vai desconectar do WhatsApp e limpar todos os dados de autenticação.",
+        "logoutError": "Erro ao sair: {error}. A limpar dados locais e a redireccionar...",
+        "noAudioData": "Sem dados de áudio",
+      "nav": {
+        "settings": "Definições",
+        "systemLogs": "Logs do Sistema",
+        "logout": "Sair",
+        "menu": "Menu",
+        "live": "AO VIVO",
+        "offline": "OFFLINE",
+        "actionRequired": "AÇÃO NECESSÁRIA"
+      },
+      "nowPlaying": {
+        "readyToPlay": "PRONTO PARA TOCAR",
+        "addTrackHint": "Adiciona uma música para começar",
+        "play": "Tocar",
+        "pause": "Pausar",
+        "skip": "Passar",
+        "fullscreen": "Ecrã Inteiro",
+        "noSongPlaying": "Nenhuma música a tocar"
+      },
+      "queue": {
+        "title": "Próximas",
+        "prefetchAll": "DESCARREGAR TODAS",
+        "addTrack": "ADICIONAR MÚSICA",
+        "empty": "Nenhuma música na fila",
+        "queueEmpty": "Fila vazia",
+        "removeFromQueue": "Remover da fila",
+        "noSongsInQueue": "Nenhuma música na fila",
+        "queueIsEmpty": "Fila está vazia",
+        "downloadAllSongs": "Descarregar todas as músicas da fila",
+        "status": {
+          "failed": "FALHOU",
+          "initializing": "A INICIALIZAR",
+          "fetching": "A PROCURAR",
+          "searching": "A PESQUISAR",
+          "downloading": "A CARREGAR",
+          "converting": "A PROCESSAR",
+          "ready": "PRONTO",
+          "queued": "NA FILA"
+        },
+        "downloading": "A descarregar {progress}%",
+        "preparingAudio": "A preparar áudio...",
+        "notifications": {
+          "adding": "A adicionar...",
+          "added": "ADICIONADO: {title}",
+          "failedToAdd": "FALHA AO ADICIONAR",
+          "connectionError": "ERRO DE LIGAÇÃO",
+          "skipTrack": "Passar Música",
+          "skipConfirm": "Tens a certeza de que queres passar a música actual?",
+          "trackSkipped": "MÚSICA PASSADA",
+          "skipFailed": "FALHA AO PASSAR",
+          "resumed": "RETOMADO",
+          "paused": "PAUSADO",
+          "actionFailed": "ACÇÃO FALHOU",
+          "removeTrack": "Remover Música",
+          "removeConfirm": "Tens a certeza de que queres remover esta música da fila?",
+          "trackRemoved": "MÚSICA REMOVIDA",
+          "removalFailed": "FALHA AO REMOVER",
+          "movedToPosition": "MOVIDO PARA POSIÇÃO {position}",
+          "reorderFailed": "FALHA AO REORDENAR",
+          "downloadingBtn": "A DESCARREGAR...",
+          "prefetchStarted": "PRÉ-BUSCA INICIADA",
+          "prefetchFailed": "FALHA NA PRÉ-BUSCA",
+          "startNewSession": "Iniciar Nova Sessão",
+          "newSessionConfirm": "Tens a certeza? Isto vai parar a música actual, limpar toda a fila e repor todas as estatísticas da sessão.",
+          "newSessionStarted": "Nova sessão iniciada",
+          "newSessionFailed": "Falha ao iniciar nova sessão",
+          "newSessionError": "Erro ao iniciar nova sessão"
+        }
+      },
+      "effects": {
+        "title": "Efeitos de Áudio",
+        "simple": "Simples",
+        "advanced": "Avançado",
+        "resetAll": "REPOR TUDO",
+        "normal": "Normal",
+        "bassUp": "Graves+",
+        "bassDown": "Graves-",
+        "reverbUp": "Reverb+",
+        "reverbDown": "Reverb-",
+        "faster": "Mais Rápido",
+        "slower": "Mais Lento",
+        "speed": "Velocidade",
+        "equalizer": "Equalizador",
+        "effects": "Efeitos",
+        "reverb": "Reverb",
+        "echo": "Eco",
+        "distortion": "Distorção",
+        "compressor": "Compressor",
+        "intensity": "Intensidade",
+        "size": "Tamanho",
+        "wet": "Wet",
+        "delay": "Atraso",
+        "decay": "Decaimento",
+        "drive": "Drive",
+        "thresh": "Limiar",
+        "ratio": "Razão",
+        "bass": "Graves",
+        "mid": "Médios",
+        "treble": "Agudos",
+        "toggleSimpleAdvanced": "Alternar Modo Simples/Avançado",
+        "resetAllEffects": "Repor Todos os Efeitos",
+        "expandEffects": "Expandir Efeitos",
+        "collapseEffects": "Recolher Efeitos",
+        "advancedControls": "Controlos Avançados",
+        "reset": "Repor",
+        "toggleSpectrum": "Alternar visualização de espectro",
+        "simpleModeHint": "Usa os botões de ajuste rápido acima para ajustar os efeitos, ou alterna para o modo Avançado para controlo total.",
+        "custom": "Personalizado"
+      },
+      "analytics": {
+        "title": "Estatísticas",
+        "overview": "Visão Geral",
+        "topRequesters": "Top Solicitadores",
+        "recentHistory": "Histórico Recente",
+        "uptime": "TEMPO ACTIVO",
+        "songsPlayed": "MÚSICAS TOCADAS",
+        "inQueue": "NA FILA",
+        "expandAnalytics": "Expandir Estatísticas",
+        "collapseAnalytics": "Recolher Estatísticas",
+        "loadingAnalytics": "A carregar estatísticas...",
+        "topRequestersPlaceholder": "Os principais solicitadores aparecerão aqui",
+        "historyPlaceholder": "O histórico de reprodução aparecerá aqui",
+        "totalSongs": "Total de Músicas",
+        "totalPlaytime": "Tempo Total",
+        "uniqueDJs": "DJs Únicos",
+        "artistsPlayed": "Artistas Tocados",
+        "avgSong": "Média por Música",
+        "peakHour": "Hora de Pico",
+        "failedToLoad": "Falha ao carregar visão geral"
+      },
+      "vip": {
+        "management": "Gestão VIP",
+        "enterPassword": "Escreve a palavra-passe para gerir utilizadores prioritários",
+        "passwordPlaceholder": "Palavra-passe do administrador...",
+        "unlockArea": "Desbloquear Área VIP",
+        "access": "Acesso VIP",
+        "subtitle": "Fila prioritária para utilizadores seleccionados",
+        "group": "Grupo",
+        "manual": "Manual",
+        "lockArea": "Bloquear Área VIP",
+        "addUser": "Adicionar Utilizador VIP",
+        "currentVips": "VIPs Actuais",
+        "searchMembers": "Procurar membros...",
+        "loadingMembers": "A carregar membros...",
+        "vipIdPlaceholder": "5511999999999@s.whatsapp.net",
+        "removeVip": "Remover VIP",
+        "removeVipMessage": "Tens a certeza de que queres remover {displayId} do VIP?"
+      },
+      "logs": {
+        "clearAllLogs": "Limpar Todos os Logs",
+        "clearAllLogsMessage": "Tens a certeza de que queres limpar todos os logs? Esta acção não pode ser desfeita."
+      },
+      "settings": {
+        "title": "Definições",
+        "searchPlaceholder": "Procurar definições...",
+        "download": {
+          "title": "Descarregamento",
+          "description": "Configura formato de áudio, qualidade e comportamento de descarregamento",
+          "audioFormat": "Formato de Áudio",
+          "audioFormatDesc": "Formato de saída para ficheiros de áudio descarregados",
+          "audioQuality": "Qualidade de Áudio",
+          "audioQualityDesc": "Taxa de bits para codificação de áudio. Maior = melhor qualidade, ficheiros maiores",
+          "playerClient": "Cliente do YouTube",
+          "playerClientDesc": "Cliente a emular ao procurar do YouTube",
+          "downloadThumbnails": "Descarregar Miniaturas",
+          "downloadThumbnailsDesc": "Guardar capas de álbum junto com ficheiros de áudio"
+        },
+        "playback": {
+          "title": "Reprodução",
+          "description": "Controlar comportamento de reprodução e transições",
+          "cleanupAfterPlay": "Limpar Após Tocar",
+          "cleanupAfterPlayDesc": "Eliminar automaticamente ficheiros de áudio após a reprodução terminar",
+          "confirmSkip": "Confirmar Passar",
+          "confirmSkipDesc": "Mostrar diálogo de confirmação antes de passar músicas",
+          "showRequesterName": "Mostrar Nome do Solicitante",
+          "showRequesterNameDesc": "Mostrar o nome do solicitante na música que está a tocar",
+          "songTransitionDelay": "Atraso de Transição",
+          "songTransitionDelayDesc": "Pausa entre músicas em milissegundos (0 - 10000)"
+        },
+        "performance": {
+          "title": "Desempenho",
+          "description": "Otimizar comportamento de carregamento e cache",
+          "prefetchNext": "Activar Pré-busca",
+          "prefetchNextDesc": "Descarregar músicas próximas antes que sejam necessárias",
+          "prefetchCount": "Contagem de Pré-busca",
+          "prefetchCountDesc": "Número de músicas para pré-carregar (0 = todas as músicas na fila)",
+          "proTip": "Dica Pro",
+          "proTipText": "Activa pré-busca com contagem 2-3 para reprodução suave sem usar muito armazenamento."
+        },
+        "notifications": {
+          "title": "Notificações",
+          "description": "Configurar comportamento de notificações do WhatsApp",
+          "enabled": "Activar Notificações",
+          "enabledDesc": "Enviar mensagens do WhatsApp quando as músicas estão prestes a tocar",
+          "notifyAtPosition": "Notificar na Posição",
+          "notifyAtPositionDesc": "Alertar utilizadores quando a tua música atingir esta posição na fila (1 = próxima)",
+          "howItWorks": "Como funciona",
+          "howItWorksText": "Quando activado, a pessoa que solicitou uma música recebe uma mensagem do WhatsApp quando a sua música está prestes a tocar."
+        },
+        "groups": {
+          "title": "Grupos Monitorizados",
+          "description": "Gerir grupos do WhatsApp que o bot ouve",
+          "addGroup": "Adicionar Grupo",
+          "addGroupDesc": "Adicionar manualmente um grupo pelo seu ID do WhatsApp (termina com @g.us)",
+          "groupPlaceholder": "123456789@g.us",
+          "add": "Adicionar",
+          "pendingRequests": "Pedidos Pendentes",
+          "monitoredGroups": "Grupos Monitorizados",
+          "loadingGroups": "A carregar grupos...",
+          "howToAdd": "Como adicionar grupos",
+          "howToAddText": "Envia !ping em qualquer grupo do WhatsApp que quiseres adicionar. O pedido aparecerá aqui para confirmação. Também podes adicionar grupos manualmente usando o formulário acima.",
+          "invalidGroupId": "ID de Grupo Inválido",
+          "invalidGroupIdMessage": "O ID do grupo deve ser um ID de grupo do WhatsApp (a terminar com @g.us)",
+          "addGroupMessage": "Adicionar grupo \"{groupId}\" ao monitoramento? O bot começará a ouvir mensagens deste grupo.",
+          "removeGroup": "Remover Grupo",
+          "removeGroupMessage": "Tens a certeza de que queres remover \"{groupName}\" do monitoramento? O bot parará de ouvir mensagens deste grupo.",
+          "confirmGroup": "Confirmar Grupo",
+          "confirmGroupMessage": "Adicionar \"{groupName}\" aos grupos monitorizados? Este grupo foi solicitado por {senderName}.",
+          "error": "Erro",
+          "failedToAdd": "Falha ao adicionar grupo",
+          "failedToAddRetry": "Falha ao adicionar grupo. Por favor, tenta novamente.",
+          "failedToRemove": "Falha ao remover grupo",
+          "failedToRemoveRetry": "Falha ao remover grupo. Por favor, tenta novamente.",
+          "failedToConfirm": "Falha ao confirmar grupo",
+          "failedToConfirmRetry": "Falha ao confirmar grupo. Por favor, tenta novamente."
+        },
+        "system": {
+          "title": "Controlos do Sistema",
+          "description": "Gerir estado da sessão e manutenção do sistema",
+          "language": "Idioma",
+          "languageDesc": "Escolhe o teu idioma preferido para a interface web",
+          "newSession": "Nova Sessão",
+          "newSessionDesc": "Limpar a fila actual, parar a reprodução e repor todas as estatísticas. Usa isto ao iniciar um novo evento ou dia.",
+          "startNewSession": "Iniciar Nova Sessão",
+          "warning": "Aviso",
+          "warningText": "Iniciar uma nova sessão é destrutivo. Todo o histórico de reprodução, estatísticas e a fila actual serão limpos imediatamente.",
+          "loadingDiskUsage": "A carregar uso do disco...",
+          "totalStorage": "Armazenamento Total",
+          "showDetails": "Mostrar detalhes",
+          "hideDetails": "Ocultar detalhes",
+          "database": "Base de Dados",
+          "tempFiles": "Ficheiros Temporários",
+          "media": "Média",
+          "thumbnails": "Miniaturas",
+          "dataFiles": "Ficheiros de Dados",
+          "auth": "Autenticação",
+          "diskUsageError": "Falha ao carregar informações de uso do disco"
+        },
+        "search": {
+          "title": "Resultados da Procura",
+          "settingsFound": "{count} definições encontradas",
+          "noResults": "Nenhuma definição corresponde à tua procura"
+        },
+        "footer": {
+          "resetAll": "Repor Tudo",
+          "resetAllConfirmTitle": "Repor Todas as Definições",
+          "resetAllConfirmMessage": "Tens a certeza de que queres repor todas as definições para os valores padrão? Isto não pode ser desfeito.",
+          "saved": "Guardado",
+          "footerNote": "As alterações são aplicadas instantaneamente. Definições do servidor requerem edição do .env e reinicialização."
+        }
+      },
+      "modals": {
+        "addTrack": {
+          "title": "Adicionar Música",
+          "songUrlLabel": "URL da Música ou Procura",
+          "songUrlPlaceholder": "Cola URL do YouTube/Spotify ou procura por nome e artista...",
+          "youtubeSupported": "YouTube suportado",
+          "spotifySupported": "Spotify suportado",
+          "requestedBy": "Solicitado Por",
+          "optional": "Opcional",
+          "requesterPlaceholder": "O teu nome ou alcunha de DJ...",
+          "addToQueue": "Adicionar à Fila"
+        },
+        "confirmation": {
+          "title": "Confirmar Acção",
+          "cancel": "Cancelar",
+          "confirm": "Confirmar"
+        }
+      }
+    },
+    "auth": {
+      "scanQR": "Escaneia o código QR com o teu telemóvel para vincular a tua conta do WhatsApp",
+      "waitingForQR": "À espera do QR...",
+      "generatingQR": "A gerar código QR... Por favor, espera um momento"
+    }
+  },
+  "errors": {
+    "generic": "Ocorreu um erro"
+  }
+}
+

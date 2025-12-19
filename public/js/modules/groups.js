@@ -176,18 +176,22 @@ async function loadPendingConfirmations() {
 
 async function addGroup(groupId) {
     if (!groupId || !groupId.includes('@g.us')) {
+        const invalidTitle = window.i18n?.tSync('ui.dashboard.settings.groups.invalidGroupId') || 'Invalid Group ID';
+        const invalidMessage = window.i18n?.tSync('ui.dashboard.settings.groups.invalidGroupIdMessage') || 'Group ID must be a WhatsApp group ID (ending with @g.us)';
         showConfirmationModal({
-            title: 'Invalid Group ID',
-            message: 'Group ID must be a WhatsApp group ID (ending with @g.us)',
+            title: invalidTitle,
+            message: invalidMessage,
             icon: 'fa-exclamation-triangle',
             onConfirm: () => {}
         });
         return;
     }
     
+    const addTitle = window.i18n?.tSync('ui.dashboard.settings.groups.addGroup') || 'Add Group';
+    const addMessage = window.i18n?.tSync('ui.dashboard.settings.groups.addGroupMessage', { groupId }) || `Add group "${groupId}" to monitoring? The bot will start listening to messages from this group.`;
     showConfirmationModal({
-        title: 'Add Group',
-        message: `Add group "${groupId}" to monitoring? The bot will start listening to messages from this group.`,
+        title: addTitle,
+        message: addMessage,
         icon: 'fa-plus-circle',
         onConfirm: async () => {
             try {
@@ -209,18 +213,22 @@ async function addGroup(groupId) {
                         showSaveIndicator();
                     }
                 } else {
+                    const errorTitle = window.i18n?.tSync('ui.dashboard.settings.groups.error') || 'Error';
+                    const errorMessage = data.error || (window.i18n?.tSync('ui.dashboard.settings.groups.failedToAdd') || 'Failed to add group');
                     showConfirmationModal({
-                        title: 'Error',
-                        message: data.error || 'Failed to add group',
+                        title: errorTitle,
+                        message: errorMessage,
                         icon: 'fa-exclamation-triangle',
                         onConfirm: () => {}
                     });
                 }
             } catch (error) {
                 console.error('Error adding group:', error);
+                const errorTitle = window.i18n?.tSync('ui.dashboard.settings.groups.error') || 'Error';
+                const errorMessage = window.i18n?.tSync('ui.dashboard.settings.groups.failedToAddRetry') || 'Failed to add group. Please try again.';
                 showConfirmationModal({
-                    title: 'Error',
-                    message: 'Failed to add group. Please try again.',
+                    title: errorTitle,
+                    message: errorMessage,
                     icon: 'fa-exclamation-triangle',
                     onConfirm: () => {}
                 });
@@ -245,9 +253,11 @@ window.removeGroup = async function(groupId) {
         // Ignore error, use groupId as fallback
     }
     
+    const removeTitle = window.i18n?.tSync('ui.dashboard.settings.groups.removeGroup') || 'Remove Group';
+    const removeMessage = window.i18n?.tSync('ui.dashboard.settings.groups.removeGroupMessage', { groupName }) || `Are you sure you want to remove "${groupName}" from monitoring? The bot will stop listening to messages from this group.`;
     showConfirmationModal({
-        title: 'Remove Group',
-        message: `Are you sure you want to remove "${groupName}" from monitoring? The bot will stop listening to messages from this group.`,
+        title: removeTitle,
+        message: removeMessage,
         icon: 'fa-trash',
         onConfirm: async () => {
             try {
@@ -267,18 +277,22 @@ window.removeGroup = async function(groupId) {
                         showSaveIndicator();
                     }
                 } else {
+                    const errorTitle = window.i18n?.tSync('ui.dashboard.settings.groups.error') || 'Error';
+                    const errorMessage = data.error || (window.i18n?.tSync('ui.dashboard.settings.groups.failedToRemove') || 'Failed to remove group');
                     showConfirmationModal({
-                        title: 'Error',
-                        message: data.error || 'Failed to remove group',
+                        title: errorTitle,
+                        message: errorMessage,
                         icon: 'fa-exclamation-triangle',
                         onConfirm: () => {}
                     });
                 }
             } catch (error) {
                 console.error('Error removing group:', error);
+                const errorTitle = window.i18n?.tSync('ui.dashboard.settings.groups.error') || 'Error';
+                const errorMessage = window.i18n?.tSync('ui.dashboard.settings.groups.failedToRemoveRetry') || 'Failed to remove group. Please try again.';
                 showConfirmationModal({
-                    title: 'Error',
-                    message: 'Failed to remove group. Please try again.',
+                    title: errorTitle,
+                    message: errorMessage,
                     icon: 'fa-exclamation-triangle',
                     onConfirm: () => {}
                 });
@@ -305,9 +319,11 @@ async function confirmGroup(groupId) {
         // Ignore error, use defaults
     }
     
+    const confirmTitle = window.i18n?.tSync('ui.dashboard.settings.groups.confirmGroup') || 'Confirm Group';
+    const confirmMessage = window.i18n?.tSync('ui.dashboard.settings.groups.confirmGroupMessage', { groupName, senderName }) || `Add "${groupName}" to monitored groups? This group was requested by ${senderName}.`;
     showConfirmationModal({
-        title: 'Confirm Group',
-        message: `Add "${groupName}" to monitored groups? This group was requested by ${senderName}.`,
+        title: confirmTitle,
+        message: confirmMessage,
         icon: 'fa-check-circle',
         onConfirm: async () => {
             try {
@@ -327,18 +343,22 @@ async function confirmGroup(groupId) {
                         showSaveIndicator();
                     }
                 } else {
+                    const errorTitle = window.i18n?.tSync('ui.dashboard.settings.groups.error') || 'Error';
+                    const errorMessage = data.error || (window.i18n?.tSync('ui.dashboard.settings.groups.failedToConfirm') || 'Failed to confirm group');
                     showConfirmationModal({
-                        title: 'Error',
-                        message: data.error || 'Failed to confirm group',
+                        title: errorTitle,
+                        message: errorMessage,
                         icon: 'fa-exclamation-triangle',
                         onConfirm: () => {}
                     });
                 }
             } catch (error) {
                 console.error('Error confirming group:', error);
+                const errorTitle = window.i18n?.tSync('ui.dashboard.settings.groups.error') || 'Error';
+                const errorMessage = window.i18n?.tSync('ui.dashboard.settings.groups.failedToConfirmRetry') || 'Failed to confirm group. Please try again.';
                 showConfirmationModal({
-                    title: 'Error',
-                    message: 'Failed to confirm group. Please try again.',
+                    title: errorTitle,
+                    message: errorMessage,
                     icon: 'fa-exclamation-triangle',
                     onConfirm: () => {}
                 });

@@ -8,39 +8,42 @@ const { deps: defaultDeps } = require('../dependencies');
  * @param {Object} deps - Dependencies (injected, defaults to production dependencies)
  */
 async function helpCommand(sock, msg, args, deps = defaultDeps) {
-    const { sendMessageWithMention } = deps;
+    const { sendMessageWithMention, i18n, userLang = 'en' } = deps;
     const remoteJid = msg.key.remoteJid;
     const sender = msg.key.participant || msg.key.remoteJid;
     
-    const helpText = `🎵 *WabiSaby Music Bot*\n\n` +
-        `*Available Commands:*\n\n` +
-        `🎶 *Play Music*\n` +
-        `\`!play <url or search>\`\n` +
-        `Add a song to the queue\n\n` +
-        `⏭️ *Skip*\n` +
-        `\`!skip\`\n` +
-        `Skip the current song\n\n` +
-        `📋 *Queue*\n` +
-        `\`!queue\`\n` +
-        `View the current queue\n\n` +
-        `🗑️ *Remove*\n` +
-        `\`!remove <number>\`\n` +
-        `Remove a song from queue\n\n` +
-        `▶️ *Now Playing*\n` +
-        `\`!np\`\n` +
-        `Show current song\n\n` +
-        `🔔 *Notifications*\n` +
-        `\`!notifications [on|off|clear]\`\n` +
-        `Manage song notifications\n\n` +
-        `🎵 *Playlist* (VIP only)\n` +
-        `\`!playlist <url>\`\n` +
-        `Add entire playlist to queue\n\n` +
-        `📡 *Ping*\n` +
-        `\`!ping\`\n` +
-        `Add this group to monitoring\n\n` +
-        `❓ *Help*\n` +
-        `\`!help\`\n` +
-        `Show this message`;
+    const helpText = i18n('commands.help.title', userLang) +
+        i18n('commands.help.availableCommands', userLang) +
+        i18n('commands.help.play.title', userLang) +
+        i18n('commands.help.play.usage', userLang) +
+        i18n('commands.help.play.description', userLang) + '\n\n' +
+        i18n('commands.help.skip.title', userLang) +
+        i18n('commands.help.skip.usage', userLang) +
+        i18n('commands.help.skip.description', userLang) + '\n\n' +
+        i18n('commands.help.queue.title', userLang) +
+        i18n('commands.help.queue.usage', userLang) +
+        i18n('commands.help.queue.description', userLang) + '\n\n' +
+        i18n('commands.help.remove.title', userLang) +
+        i18n('commands.help.remove.usage', userLang) +
+        i18n('commands.help.remove.description', userLang) + '\n\n' +
+        i18n('commands.help.nowPlaying.title', userLang) +
+        i18n('commands.help.nowPlaying.usage', userLang) +
+        i18n('commands.help.nowPlaying.description', userLang) + '\n\n' +
+        i18n('commands.help.notifications.title', userLang) +
+        i18n('commands.help.notifications.usage', userLang) +
+        i18n('commands.help.notifications.description', userLang) + '\n\n' +
+        i18n('commands.help.playlist.title', userLang) +
+        i18n('commands.help.playlist.usage', userLang) +
+        i18n('commands.help.playlist.description', userLang) + '\n\n' +
+        i18n('commands.help.ping.title', userLang) +
+        i18n('commands.help.ping.usage', userLang) +
+        i18n('commands.help.ping.description', userLang) + '\n\n' +
+        i18n('commands.help.help.title', userLang) +
+        i18n('commands.help.help.usage', userLang) +
+        i18n('commands.help.help.description', userLang) + '\n\n' +
+        i18n('commands.help.language.title', userLang) +
+        i18n('commands.help.language.usage', userLang) +
+        i18n('commands.help.language.description', userLang);
     
     await sendMessageWithMention(sock, remoteJid, helpText, sender);
 }

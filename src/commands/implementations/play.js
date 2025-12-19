@@ -17,14 +17,16 @@ async function playCommand(sock, msg, args, deps = defaultDeps) {
         getTrackInfo,
         getSpotifyMetadata,
         logger,
-        sendMessageWithMention
+        sendMessageWithMention,
+        i18n,
+        userLang = 'en'
     } = deps;
     const remoteJid = msg.key.remoteJid;
     const sender = msg.key.participant || msg.key.remoteJid;
     const input = args.join(' ');
     
     if (!input) {
-        await sendMessageWithMention(sock, remoteJid, '🎵 *Usage*\n\n`!play <url or search>`\n\n✨ *Examples:*\n• `!play https://youtube.com/...`\n• `!play Artist - Song Name`\n• `!play song name`', sender);
+        await sendMessageWithMention(sock, remoteJid, i18n('commands.play.usage', userLang), sender);
         return;
     }
 
@@ -41,7 +43,7 @@ async function playCommand(sock, msg, args, deps = defaultDeps) {
             logger.info(`[Play] Spotify track: "${title}" by ${artist}`);
         } catch (error) {
             logger.error('Failed to get Spotify metadata:', error);
-            await sendMessageWithMention(sock, remoteJid, '❌ *Spotify Link Error*\n\nCouldn\'t resolve this Spotify link.\n\n💡 *Try:*\n• YouTube URL\n• Search query (song name)', sender);
+            await sendMessageWithMention(sock, remoteJid, i18n('commands.play.spotifyError', userLang), sender);
             return;
         }
     } else if (isYouTubeUrl(input)) {
@@ -55,7 +57,7 @@ async function playCommand(sock, msg, args, deps = defaultDeps) {
             }
         } catch (error) {
             logger.error(`[Play] Failed to get track info for ${input}:`, error);
-            await sendMessageWithMention(sock, remoteJid, '❌ *YouTube Link Error*\n\nCouldn\'t resolve this YouTube link.\n\n💡 *Try:*\n• Search query (song name)\n• Different YouTube URL', sender);
+            await sendMessageWithMention(sock, remoteJid, i18n('commands.play.youtubeError', userLang), sender);
             return;
         }
     } else {
@@ -83,7 +85,7 @@ async function playCommand(sock, msg, args, deps = defaultDeps) {
             logger.info(`[Play] Found track: ${title} by ${artist} at ${url} (match score: ${searchResult.matchScore})`);
         } catch (error) {
             logger.error('Search failed:', error);
-            await sendMessageWithMention(sock, remoteJid, `🔍 *No Results Found*\n\nCouldn't find any matches for:\n*"${input}"*\n\n💡 *Try:*\n• More specific search terms\n• Include artist name\n• Use a YouTube or Spotify URL`, sender);
+            await sendMessageWithMention(sock, remoteJid, i18n('commands.play.noResults', userLang, { input }), sender);
             return;
         }
     }
@@ -99,9 +101,9 @@ async function playCommand(sock, msg, args, deps = defaultDeps) {
     });
     
     if (result === null) {
-        await sendMessageWithMention(sock, remoteJid, `⚠️ *Already in Queue*\n\n*"${title}"* is already queued.`, sender);
+        await sendMessageWithMention(sock, remoteJid, i18n('commands.play.alreadyInQueue', userLang, { title }), sender);
     } else {
-        await sendMessageWithMention(sock, remoteJid, `✅ *Added to Queue*\n\n🎶 *"${title}"*`, sender);
+        await sendMessageWithMention(sock, remoteJid, i18n('commands.play.added', userLang, { title }), sender);
     }
 }
 

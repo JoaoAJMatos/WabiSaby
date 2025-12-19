@@ -8,22 +8,22 @@ const { deps: defaultDeps } = require('../dependencies');
  * @param {Object} deps - Dependencies (injected, defaults to production dependencies)
  */
 async function removeCommand(sock, msg, args, deps = defaultDeps) {
-    const { queueManager, sendMessageWithMention } = deps;
+    const { queueManager, sendMessageWithMention, i18n, userLang = 'en' } = deps;
     const remoteJid = msg.key.remoteJid;
     const sender = msg.key.participant || msg.key.remoteJid;
     const index = parseInt(args[0]) - 1;
     
     if (isNaN(index)) {
-        await sendMessageWithMention(sock, remoteJid, '🎵 *Usage*\n\n`!remove <number>`\n\n💡 Use `!queue` to see the queue numbers.', sender);
+        await sendMessageWithMention(sock, remoteJid, i18n('commands.remove.usage', userLang), sender);
         return;
     }
     
     const removed = queueManager.remove(index);
     if (removed) {
         const removedTitle = removed.title || removed.content;
-        await sendMessageWithMention(sock, remoteJid, `🗑️ *Removed*\n\n*"${removedTitle}"* has been removed from the queue.`, sender);
+        await sendMessageWithMention(sock, remoteJid, i18n('commands.remove.removed', userLang, { title: removedTitle }), sender);
     } else {
-        await sendMessageWithMention(sock, remoteJid, '❌ *Invalid Index*\n\nThat position doesn\'t exist in the queue.\n\n💡 Use `!queue` to see valid numbers.', sender);
+        await sendMessageWithMention(sock, remoteJid, i18n('commands.remove.invalidIndex', userLang), sender);
     }
 }
 

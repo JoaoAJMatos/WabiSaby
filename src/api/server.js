@@ -14,6 +14,7 @@ const { router: effectsRouter } = require('./routes/effects.routes');
 const { router: groupsRouter, setWhatsAppSocket: setGroupsSocket } = require('./routes/groups.routes');
 const { router: mobileRouter } = require('./routes/mobile.routes');
 const { router: authRouter } = require('./routes/auth.routes');
+const { router: userRouter } = require('./routes/user.routes');
 const { updateVipName, setWhatsAppSocket: setPriorityServiceSocket } = require('../services/priority.service');
 
 const app = express();
@@ -62,6 +63,9 @@ app.use('/stream', express.static(config.paths.temp));
 
 app.use('/thumbnails', express.static(config.paths.thumbnails));
 
+// Serve locale files
+app.use('/locales', express.static(path.join(process.cwd(), 'locales')));
+
 app.use('/api', statusRouter);
 app.use('/api', queueRouter);
 app.use('/api', priorityRouter);
@@ -74,6 +78,7 @@ app.use('/api', effectsRouter);
 app.use('/api', groupsRouter);
 app.use('/api', mobileRouter);
 app.use('/api', authRouter);
+app.use('/api', userRouter);
 
 // Serve mobile VIP page
 app.get('/mobile/vip', (req, res) => {

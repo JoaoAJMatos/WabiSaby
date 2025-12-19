@@ -8,13 +8,13 @@ const { deps: defaultDeps } = require('../dependencies');
  * @param {Object} deps - Dependencies (injected, defaults to production dependencies)
  */
 async function skipCommand(sock, msg, args, deps = defaultDeps) {
-    const { playbackController, queueManager, sendMessageWithMention } = deps;
+    const { playbackController, queueManager, sendMessageWithMention, i18n, userLang = 'en' } = deps;
     const remoteJid = msg.key.remoteJid;
     const sender = msg.key.participant || msg.key.remoteJid;
     const currentSong = playbackController.getCurrent();
     
     if (!currentSong) {
-        await sendMessageWithMention(sock, remoteJid, '⏸️ *Nothing Playing*\n\nNo song is currently playing.', sender);
+        await sendMessageWithMention(sock, remoteJid, i18n('commands.skip.nothingPlaying', userLang), sender);
         return;
     }
     
@@ -27,9 +27,9 @@ async function skipCommand(sock, msg, args, deps = defaultDeps) {
     if (isVip || isRequester) {
         playbackController.skip();
         const currentTitle = currentSong.title || 'Current song';
-        await sendMessageWithMention(sock, remoteJid, `⏭️ *Skipped*\n\n*"${currentTitle}"* has been skipped.`, sender);
+        await sendMessageWithMention(sock, remoteJid, i18n('commands.skip.skipped', userLang, { title: currentTitle }), sender);
     } else {
-        await sendMessageWithMention(sock, remoteJid, '🔒 *Permission Denied*\n\nYou can only skip your own songs.\n\n✨ VIPs can skip any song.', sender);
+        await sendMessageWithMention(sock, remoteJid, i18n('commands.skip.permissionDenied', userLang), sender);
     }
 }
 

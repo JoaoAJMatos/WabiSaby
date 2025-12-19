@@ -982,6 +982,55 @@ function setUserNotificationPreference(whatsappId, enabled) {
 }
 
 // ============================================
+// User Language Preferences Operations
+// ============================================
+
+/**
+ * Get user language preference
+ * @param {string} whatsappId - WhatsApp user ID
+ * @returns {string} Language code (defaults to 'en' if not set)
+ */
+function getUserLanguage(whatsappId) {
+    if (!whatsappId) return 'en'; // Default to English
+    const db = getDatabase();
+    const result = db.prepare('SELECT language FROM user_notification_preferences WHERE whatsapp_id = ?').get(whatsappId);
+    
+    if (!result || !result.language) {
+        return 'en'; // Default to English if no preference set
+    }
+    
+    return result.language;
+}
+
+/**
+ * Set user language preference
+ * @param {string} whatsappId - WhatsApp user ID
+ * @param {string} language - Language code (e.g., 'en', 'pt')
+ */
+function setUserLanguage(whatsappId, language) {
+    if (!whatsappId || !language) return;
+    
+    // Validate language code
+    const validLanguages = ['en', 'pt'];
+    const normalizedLang = language.split('-')[0].toLowerCase();
+    
+    if (!validLanguages.includes(normalizedLang)) {
+        logger.warn(`Invalid language code: ${language}, defaulting to 'en'`);
+        return;
+    }
+    
+    const db = getDatabase();
+    // Ensure the row exists (create if not exists)
+    db.prepare(`
+        INSERT INTO user_notification_preferences (whatsapp_id, language, updated_at)
+        VALUES (?, ?, strftime('%s', 'now'))
+        ON CONFLICT(whatsapp_id) DO UPDATE SET
+            language = ?,
+            updated_at = strftime('%s', 'now')
+    `).run(whatsappId, normalizedLang, normalizedLang);
+}
+
+// ============================================
 // Effects Operations
 // ============================================
 
@@ -1171,6 +1220,10 @@ module.exports = {
     // User Notification Preferences
     getUserNotificationPreference,
     setUserNotificationPreference,
+    
+    // User Language Preferences
+    getUserLanguage,
+    setUserLanguage,
     
     // Effects
     getEffects,

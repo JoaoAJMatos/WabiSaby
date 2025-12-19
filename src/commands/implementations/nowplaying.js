@@ -8,7 +8,7 @@ const { deps: defaultDeps } = require('../dependencies');
  * @param {Object} deps - Dependencies (injected, defaults to production dependencies)
  */
 async function nowPlayingCommand(sock, msg, args, deps = defaultDeps) {
-    const { playbackController, sendMessageWithMention } = deps;
+    const { playbackController, sendMessageWithMention, i18n, userLang = 'en' } = deps;
     const remoteJid = msg.key.remoteJid;
     const sender = msg.key.participant || msg.key.remoteJid;
     const np = playbackController.getCurrent();
@@ -16,9 +16,9 @@ async function nowPlayingCommand(sock, msg, args, deps = defaultDeps) {
     if (np) {
         const npTitle = np.title || np.content;
         const npArtist = np.artist ? `\n👤 *${np.artist}*` : '';
-        await sendMessageWithMention(sock, remoteJid, `▶️ *Now Playing*\n\n🎶 *${npTitle}*${npArtist}`, sender);
+        await sendMessageWithMention(sock, remoteJid, i18n('commands.nowPlaying.playing', userLang, { title: npTitle, artist: npArtist }), sender);
     } else {
-        await sendMessageWithMention(sock, remoteJid, '⏸️ *Nothing Playing*\n\nNo song is currently playing.', sender);
+        await sendMessageWithMention(sock, remoteJid, i18n('commands.nowPlaying.nothingPlaying', userLang), sender);
     }
 }
 

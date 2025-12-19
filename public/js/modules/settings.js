@@ -50,6 +50,13 @@ async function loadSettings() {
         document.getElementById('setting-notificationsEnabled').checked = settings.notifications.enabled;
         document.getElementById('setting-notifyAtPosition').value = settings.notifications.notifyAtPosition;
         
+        // Populate language setting (from localStorage or browser)
+        const languageSelect = document.getElementById('setting-language');
+        if (languageSelect && window.i18n) {
+            const currentLang = window.i18n.getLanguage() || window.i18n.detectLanguage();
+            languageSelect.value = currentLang;
+        }
+        
     } catch (err) {
         console.error('Failed to load settings:', err);
     }
@@ -476,8 +483,13 @@ function performSettingsSearch(query) {
         }
     });
     
-    // Update UI
-    const countText = `${matches.length} setting${matches.length !== 1 ? 's' : ''} found`;
+    // Update UI with translation
+    let countText;
+    if (window.i18n && window.i18n.tSync) {
+        countText = window.i18n.tSync('ui.dashboard.settings.search.settingsFound', { count: matches.length });
+    } else {
+        countText = `${matches.length} setting${matches.length !== 1 ? 's' : ''} found`;
+    }
     if (countEl) {
         countEl.textContent = countText;
     }
@@ -584,9 +596,11 @@ function exitSearchMode() {
 }
 
 function handleSettingsReset() {
+    const resetTitle = window.i18n?.tSync('ui.dashboard.settings.footer.resetAllConfirmTitle') || 'Reset All Settings';
+    const resetMessage = window.i18n?.tSync('ui.dashboard.settings.footer.resetAllConfirmMessage') || 'Are you sure you want to reset all settings to their default values? This cannot be undone.';
     showConfirmationModal({
-        title: 'Reset All Settings',
-        message: 'Are you sure you want to reset all settings to their default values? This cannot be undone.',
+        title: resetTitle,
+        message: resetMessage,
         icon: 'fa-undo',
         onConfirm: async () => {
             try {
@@ -614,9 +628,33 @@ function initSettingsListeners() {
     
     // Handle all select changes in settings modal
     document.querySelectorAll('#settings-modal select').forEach(select => {
-        select.addEventListener('change', (e) => {
+        select.addEventListener('change', async (e) => {
             const category = e.target.dataset.category;
             const key = e.target.dataset.key;
+            
+            // Special handling for language setting
+            if (category === 'user' && key === 'language' && window.i18n) {
+                const newLang = e.target.value;
+                await window.i18n.setLanguage(newLang);
+                
+                // Show save indicator
+                const settingRow = e.target.closest('.setting-row');
+                if (settingRow) {
+                    settingRow.classList.add('saved');
+                    setTimeout(() => settingRow.classList.remove('saved'), 1500);
+                }
+                showSaveIndicator();
+                
+                // Update dashboard translations dynamically (no page reload needed)
+                if (typeof updateDashboardTranslations === 'function') {
+                    updateDashboardTranslations();
+                }
+                
+                // The languageChanged event is already dispatched by i18n.setLanguage()
+                // which will trigger the updateDashboardTranslations() in dashboard.js
+                return;
+            }
+            
             if (category && key) {
                 updateSetting(category, key, e.target.value);
             }
