@@ -134,9 +134,27 @@ router.get('/mobile/status', authenticateMobile, async (req, res) => {
         const effects = effectsService.getEffects();
         const effectsPresets = effectsService.getPresetsInfo();
         
+        // Fetch user profile picture
+        let profilePicUrl = null;
+        if (req.vip && req.vip.whatsappId) {
+            try {
+                const whatsappSocket = whatsappAdapter.socket;
+                if (whatsappSocket) {
+                    profilePicUrl = await whatsappSocket.profilePictureUrl(req.vip.whatsappId, 'image');
+                }
+            } catch (error) {
+                logger.error('Error fetching profile picture for mobile:', error.message);
+            }
+        }
+        
         res.json({
             auth: {
                 isConnected
+            },
+            user: {
+                whatsappId: req.vip?.whatsappId,
+                name: req.vip?.name,
+                profilePicUrl: profilePicUrl || null
             },
             queue: {
                 queue: queueWithThumbnails,

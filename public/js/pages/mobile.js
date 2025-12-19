@@ -156,7 +156,7 @@ async function fetchMobileStatus() {
 
 // Update mobile UI with status data
 function updateMobileUI(data) {
-    const { queue, auth } = data;
+    const { queue, auth, user } = data;
     const currentSong = queue?.currentSong;
     
     // Update connection status
@@ -171,11 +171,26 @@ function updateMobileUI(data) {
         }
     }
     
+    // Update user profile picture
+    updateUserProfilePicture(user);
+    
     // Update now playing
     updateNowPlaying(currentSong);
     
     // Update queue
     updateQueue(queue?.queue || []);
+}
+
+// Update user profile picture
+function updateUserProfilePicture(user) {
+    const avatarEl = document.getElementById('mobile-user-avatar');
+    if (!avatarEl) return;
+    
+    if (user && user.profilePicUrl) {
+        avatarEl.innerHTML = `<img src="${user.profilePicUrl}" alt="${user.name || 'User'}" onerror="this.style.display='none'; this.parentElement.innerHTML='<i class=\\'fas fa-user\\'></i>';" />`;
+    } else {
+        avatarEl.innerHTML = '<i class="fas fa-user"></i>';
+    }
 }
 
 // Update now playing section
@@ -560,8 +575,72 @@ async function updateMobileEffects(newEffects) {
     }
 }
 
+// Prevent page dragging on mobile
+function preventPageDrag() {
+    let touchStartY = 0;
+    let touchStartX = 0;
+    
+    // Prevent horizontal dragging and overscroll
+    document.addEventListener('touchstart', (e) => {
+        touchStartY = e.touches[0].clientY;
+        touchStartX = e.touches[0].clientX;
+        
+        // Prevent multi-touch gestures
+        if (e.touches.length > 1) {
+            e.preventDefault();
+        }
+    }, { passive: true });
+    
+    // Prevent horizontal page dragging while allowing vertical scrolling
+    document.addEventListener('touchmove', (e) => {
+        const touch = e.touches[0];
+        const deltaX = Math.abs(touch.clientX - touchStartX);
+        const deltaY = Math.abs(touch.clientY - touchStartY);
+        
+        // If horizontal movement is greater than vertical, prevent it
+        // This allows vertical scrolling but prevents horizontal dragging
+        if (deltaX > deltaY && deltaX > 10) {
+            e.preventDefault();
+        }
+        
+        // Prevent overscroll bounce effect
+        const target = e.target;
+        const scrollable = target.closest('.mobile-queue-container');
+        const container = target.closest('.mobile-container');
+        
+        // If we're at the top or bottom of a scrollable container, prevent overscroll
+        if (scrollable) {
+            const { scrollTop, scrollHeight, clientHeight } = scrollable;
+            const isAtTop = scrollTop === 0;
+            const isAtBottom = scrollTop + clientHeight >= scrollHeight - 1;
+            
+            if ((isAtTop && touch.clientY > touchStartY) || 
+                (isAtBottom && touch.clientY < touchStartY)) {
+                // Allow normal scrolling, but prevent overscroll bounce
+                return;
+            }
+        }
+        
+        // Prevent dragging on non-scrollable areas
+        if (!scrollable && !container) {
+            e.preventDefault();
+        }
+    }, { passive: false });
+    
+    // Prevent double-tap zoom
+    let lastTouchEnd = 0;
+    document.addEventListener('touchend', (e) => {
+        const now = Date.now();
+        if (now - lastTouchEnd <= 300) {
+            e.preventDefault();
+        }
+        lastTouchEnd = now;
+    }, { passive: false });
+}
+
 // Initialize on page load
 document.addEventListener('DOMContentLoaded', () => {
+    preventPageDrag();
     authenticate();
 });
 

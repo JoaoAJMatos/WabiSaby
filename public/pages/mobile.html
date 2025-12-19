@@ -1,8 +1,8 @@
 <!DOCTYPE html>
-<html lang="en">
+<html lang="en" class="mobile-html">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
     <title>WabiSaby Mobile</title>
     <link rel="icon" type="image/svg+xml" href="../assets/favicon.svg">
     <link rel="alternate icon" href="../assets/favicon.ico">
@@ -35,8 +35,13 @@
                 <i class="fas fa-leaf"></i>
                 <h1>Wabi<span class="highlight">Saby</span></h1>
             </div>
-            <div class="mobile-status-badge" id="mobile-connection-status">
-                <span class="dot"></span> <span>LIVE</span>
+            <div class="mobile-navbar-right">
+                <div class="mobile-status-badge" id="mobile-connection-status">
+                    <span class="dot"></span> <span>LIVE</span>
+                </div>
+                <div class="mobile-user-avatar" id="mobile-user-avatar">
+                    <i class="fas fa-user"></i>
+                </div>
             </div>
         </header>
 
@@ -188,6 +193,29 @@
                 </div>
             </section>
         </main>
+
+        <!-- Footer -->
+        <footer class="mobile-footer">
+            <div class="mobile-footer-content">
+                <div class="mobile-footer-brand">
+                    <i class="fas fa-leaf"></i>
+                    <span>Wabi<span class="highlight">Saby</span></span>
+                </div>
+                <div class="mobile-footer-info">
+                    <span class="mobile-footer-version">v1.0.0</span>
+                    <span class="mobile-footer-separator">•</span>
+                    <a href="https://github.com/JoaoAJMatos" target="_blank" rel="noopener noreferrer" class="mobile-footer-copyright" title="Copyright JoaoAJMatos">
+                        <span class="mobile-footer-author">JoaoAJMatos</span>
+                        <span class="mobile-footer-year">2024</span>
+                    </a>
+                    <span class="mobile-footer-separator">•</span>
+                    <a href="https://github.com/JoaoAJMatos/WabiSaby" target="_blank" rel="noopener noreferrer" class="mobile-footer-github-link" title="View on GitHub">
+                        <i class="fab fa-github"></i>
+                        <span>GitHub</span>
+                    </a>
+                </div>
+            </div>
+        </footer>
     </div>
 
     <!-- Core Modules -->
