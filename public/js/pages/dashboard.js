@@ -867,8 +867,10 @@ function initBurgerMenu() {
 // Initialize settings on load
 loadSettings();
 loadEffects();
+loadVolume();
 initSettingsListeners();
 initEffectsListeners();
+initVolumeListeners();
 initAddTrackModalListeners();
 initConfirmationModalListeners();
 

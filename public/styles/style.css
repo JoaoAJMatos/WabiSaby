@@ -1511,6 +1511,25 @@ h2 {
         height: 48px;
         font-size: 1rem;
     }
+    
+    .np-volume-btn {
+        width: 36px;
+        height: 36px;
+        font-size: 0.85rem;
+    }
+    
+    .np-volume-slider-wrapper {
+        max-width: 100px;
+    }
+    
+    #volume-slider {
+        width: 60px;
+    }
+    
+    .np-volume-value {
+        font-size: 0.7rem;
+        min-width: 32px;
+    }
 
     .np-fullscreen-btn {
         width: 34px !important;
@@ -6669,6 +6688,120 @@ input:focus {
 .effects-presets-row {
     padding: 16px 24px;
     border-bottom: 1px solid rgba(255, 255, 255, 0.04);
+}
+
+/* Volume Control in Now Playing */
+.np-volume-control {
+    position: relative;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+}
+
+.np-volume-btn {
+    width: 38px;
+    height: 38px;
+    border-radius: 50%;
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    background: rgba(255, 255, 255, 0.05);
+    color: var(--text-main);
+    font-size: 0.9rem;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transition: all 0.25s cubic-bezier(0.4, 0, 0.2, 1);
+    flex-shrink: 0;
+}
+
+.np-volume-btn:hover {
+    background: rgba(255, 255, 255, 0.1);
+    border-color: rgba(255, 255, 255, 0.2);
+    transform: scale(1.08);
+}
+
+.np-volume-btn:active {
+    transform: scale(0.95);
+}
+
+.np-volume-btn #volume-icon {
+    color: var(--primary);
+    transition: color 0.2s ease;
+}
+
+.np-volume-control:hover .np-volume-slider-wrapper,
+.np-volume-control:focus-within .np-volume-slider-wrapper,
+.np-volume-control.expanded .np-volume-slider-wrapper {
+    opacity: 1;
+    max-width: 120px;
+    pointer-events: all;
+}
+
+.np-volume-slider-wrapper {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    max-width: 0;
+    opacity: 0;
+    overflow: hidden;
+    pointer-events: none;
+    transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+#volume-slider {
+    width: 80px;
+    height: 4px;
+    border-radius: 2px;
+    background: rgba(255, 255, 255, 0.1);
+    outline: none;
+    -webkit-appearance: none;
+    appearance: none;
+    cursor: pointer;
+    flex-shrink: 0;
+}
+
+#volume-slider::-webkit-slider-thumb {
+    -webkit-appearance: none;
+    appearance: none;
+    width: 12px;
+    height: 12px;
+    border-radius: 50%;
+    background: var(--primary);
+    cursor: pointer;
+    transition: all 0.2s ease;
+    box-shadow: 0 0 0 2px rgba(52, 211, 153, 0.2);
+}
+
+#volume-slider::-webkit-slider-thumb:hover {
+    transform: scale(1.2);
+    box-shadow: 0 0 0 3px rgba(52, 211, 153, 0.3);
+}
+
+#volume-slider::-moz-range-thumb {
+    width: 12px;
+    height: 12px;
+    border-radius: 50%;
+    background: var(--primary);
+    cursor: pointer;
+    border: none;
+    transition: all 0.2s ease;
+    box-shadow: 0 0 0 2px rgba(52, 211, 153, 0.2);
+}
+
+#volume-slider::-moz-range-thumb:hover {
+    transform: scale(1.2);
+    box-shadow: 0 0 0 3px rgba(52, 211, 153, 0.3);
+}
+
+.np-volume-value {
+    font-size: 0.75rem;
+    font-weight: 600;
+    color: var(--primary);
+    font-family: 'JetBrains Mono', monospace;
+    min-width: 36px;
+    text-align: right;
+    flex-shrink: 0;
+    opacity: 0.8;
 }
 
 /* Quick Adjustments Row */

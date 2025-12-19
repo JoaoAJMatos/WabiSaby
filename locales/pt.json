@@ -292,6 +292,9 @@
         "simpleModeHint": "Usa os botões de ajuste rápido acima para ajustar os efeitos, ou alterna para o modo Avançado para controlo total.",
         "custom": "Personalizado"
       },
+      "volume": {
+        "title": "Volume"
+      },
       "analytics": {
         "title": "Estatísticas",
         "overview": "Visão Geral",

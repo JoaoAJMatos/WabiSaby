@@ -284,6 +284,9 @@
         "simpleModeHint": "Use the quick adjustment buttons above to tweak effects, or switch to Advanced mode for full control.",
         "custom": "Custom"
       },
+      "volume": {
+        "title": "Volume"
+      },
       "analytics": {
         "title": "Analytics",
         "overview": "Overview",

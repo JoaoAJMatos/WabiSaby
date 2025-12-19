@@ -43,6 +43,7 @@ let ffplayProcess = null;
 // Shared state
 let currentFilePath = null;
 let isPlaying = false;
+let currentVolume = 100; // Volume in percentage (0-100)
 
 // Event emitter for internal events (mpv_file_ended)
 const playerEvents = new EventEmitter();
@@ -238,6 +239,20 @@ async function startMpv(filePath, startTimeOffset = 0) {
     isPlaying = true;
 
     await connectToMpv();
+    
+    // Load and apply volume from database after connecting
+    try {
+        const dbService = require('../database/db.service');
+        const savedVolume = dbService.getSetting('volume');
+        if (savedVolume !== null) {
+            currentVolume = savedVolume;
+            await sendMpvCommand(['set_property', 'volume', currentVolume]);
+            logger.info(`Applied saved volume: ${currentVolume}%`);
+        }
+    } catch (err) {
+        // If database not available or volume not set, use default (100)
+        logger.debug('Could not load volume from database, using default:', err.message);
+    }
 }
 
 /**
@@ -417,6 +432,34 @@ async function getPosition() {
         }
     }
     return 0;
+}
+
+/**
+ * Set volume (0-100)
+ */
+async function setVolume(volume) {
+    // Clamp volume to 0-100
+    currentVolume = Math.max(0, Math.min(100, volume));
+    
+    if (audioBackend === 'mpv' && ipcSocket && !ipcSocket.destroyed) {
+        try {
+            // MPV volume is 0-100
+            await sendMpvCommand(['set_property', 'volume', currentVolume]);
+            logger.info(`Volume set to ${currentVolume}%`);
+        } catch (err) {
+            logger.error('Failed to set volume:', err);
+        }
+    } else if (audioBackend === 'ffplay') {
+        // For ffplay, volume will be applied via filter chain on next playback
+        logger.info(`Volume set to ${currentVolume}% (will apply on next playback)`);
+    }
+}
+
+/**
+ * Get current volume
+ */
+function getVolume() {
+    return currentVolume;
 }
 
 // ============================================
@@ -715,5 +758,7 @@ module.exports = {
     seekTo,
     getPosition,
     stopMpv,
-    stopFfplay
+    stopFfplay,
+    setVolume,
+    getVolume
 };

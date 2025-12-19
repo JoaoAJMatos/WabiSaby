@@ -411,6 +411,21 @@ class EffectsService extends EventEmitter {
             filters.push(`acompressor=threshold=${thresholdLinear.toFixed(4)}:ratio=${comp.ratio}:attack=5:release=50`);
         }
 
+        // Add volume filter at the end if volume is not 100%
+        // Use lazy require to avoid circular dependency
+        try {
+            const player = require('../core/player');
+            const volume = player.getVolume();
+            if (volume !== 100) {
+                // FFmpeg volume filter: volume=0.5 means 50% (0.0 to 1.0)
+                const volumeMultiplier = volume / 100;
+                filters.push(`volume=${volumeMultiplier}`);
+            }
+        } catch (err) {
+            // If player module not available, skip volume filter
+            logger.debug('Could not get volume from player module:', err.message);
+        }
+
         const chain = filters.join(',');
         return chain;
     }
