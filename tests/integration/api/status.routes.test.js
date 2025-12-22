@@ -23,8 +23,27 @@ let existsSyncStub;
 let getThumbnailUrlStub;
 
 beforeEach(() => {
-    // Clear queue
+    // Initialize database to ensure tables exist
+    const { initializeDatabase, getDatabase } = require('../../../src/database/index');
+    try {
+        initializeDatabase();
+        // Clear database tables
+        const db = getDatabase();
+        db.exec(`
+            DELETE FROM queue_items;
+            DELETE FROM play_history;
+            DELETE FROM songs;
+            DELETE FROM requesters;
+            DELETE FROM priority_users;
+        `);
+    } catch (e) {
+        // Already initialized or error - continue
+    }
+    
+    // Clear queue and reset loaded flag
     queueManager.queue = [];
+    queueManager._queueLoaded = false;
+    queueManager.queueItemIds.clear();
     queueManager.removeAllListeners();
     
     // Clear playback controller
@@ -215,15 +234,9 @@ test('GET /api/status should get duration for file type songs', async () => {
 test('GET /api/status should add thumbnail URLs to queue items', async () => {
     testServer = await startTestServer(createTestApp(router));
     
-    // Initialize database to avoid errors when adding to queue
-    const { initializeDatabase } = require('../../../src/database/index');
-    try {
-        initializeDatabase();
-    } catch (e) {
-        // Already initialized
-    }
+    playbackController.isPlaying = true;
+    queueManager._queueLoaded = true;
     
-    playbackController.isPlaying = true; // Prevent auto-processing
     queueManager.add({
         content: 'https://youtube.com/watch?v=test1',
         title: 'Test Song',
@@ -231,9 +244,7 @@ test('GET /api/status should add thumbnail URLs to queue items', async () => {
         sender: 'test@whatsapp'
     });
     
-    // Stub might not work if route imports directly, so make test more resilient
     getThumbnailUrlStub.returns('/thumbnails/thumb.jpg');
-    // Also stub fs.existsSync to return true for the thumbnail path
     existsSyncStub.callsFake((path) => {
         if (path === '/path/to/thumb.jpg') return true;
         return false;
