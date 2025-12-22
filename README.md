@@ -18,14 +18,14 @@
 
 ## 🎵 What is WabiSaby?
 
-WabiSaby is a music bot that brings collaborative music playback to your WhatsApp groups. Share YouTube or Spotify links, and the bot plays them on your server with a beautiful web dashboard for real-time control and visualization.
+WabiSaby is a music bot that brings collaborative music playback to your WhatsApp groups. Share YouTube/Spotify links or song names, and WabiSaby will play them. It also has a clean dashboard for real-time control and visualization.
 
 Perfect for:
 
-- 🎉 **Party hosts** who want to share music with guests
-- 👥 **Friend groups** who want to collaborate on playlists
-- 🏢 **Communities** looking for a shared music experience
-- 🎮 **Gaming sessions** that need background music
+- 🎊 **House parties** and spontaneous get-togethers with friends
+- 💈 **Barbershops and salons** curating a fresh vibe for customers and staff
+- 🍔 **Cafés, lounges, and small venues** creating a collaborative music mood
+- 🕹️ **Game nights** or casual hangouts needing communal background tunes
 
 > Hook the PC to a speaker and let your friends do the rest.
 
@@ -37,15 +37,19 @@ Perfect for:
 - Smart notifications when your song is about to play
 - VIP system with priority queue and playlist support
 - Support for multiple WhatsApp groups
+- **Groups management** - Use `!ping` to request group monitoring, manage groups from dashboard
+- **Multi-language support** - English and Portuguese with `!language` command
 
 ### 🎨 Web Dashboard
 
 - **Real-time audio visualizer** - See the music come alive
 - **Synchronized playback control** - Play, pause, skip, and seek
 - **Queue management** - Drag and drop to reorder songs
-- **Statistics dashboard** - Track uptime, top requesters, and playback history
+- **Statistics dashboard** - Track uptime, top requesters, playback history, and other cool stuff
 - **VIP management** - Control priority users from the web interface
+- **Groups management** - Add/remove monitored groups, approve pending requests
 - **System logs** - Monitor everything in real-time
+- **Fullscreen player** - Dedicated fullscreen window for music visualization and lyrics
 
 ### 📱 Mobile VIP Access
 
@@ -60,6 +64,7 @@ Perfect for:
 - Real-time audio effects (EQ, reverb, echo, speed control)
 - Preset effects (Normal, Bass Boost, Treble Boost, etc.)
 - Customizable filter chains
+- **Volume normalization** - Automatic volume leveling across songs with configurable thresholds
 
 ### 📊 Statistics & Analytics
 
@@ -181,6 +186,8 @@ docker-compose -f docker/docker-compose.yml logs -f
 | `!np` | Show currently playing song |
 | `!notifications [on\|off\|clear]` | Manage notification settings |
 | `!playlist <url>` | Add entire playlist (VIP only) |
+| `!ping` | Request to add this group to monitoring |
+| `!language [en\|pt]` | Set your language preference (English/Portuguese) |
 | `!help` | Show all available commands |
 
 ### Notification System
@@ -191,6 +198,25 @@ Get notified when your requested song is about to play! Configure the notificati
 - `!notifications on` - Enable
 - `!notifications off` - Disable
 - `!notifications clear` - Clear history
+
+### Groups Management
+
+Control which WhatsApp groups the bot monitors. Groups can request to be added using `!ping`, and you can approve or reject requests from the dashboard.
+
+- `!ping` - Request to add current group to monitoring (requires dashboard approval)
+- Manage groups from the Settings panel in the dashboard
+- View pending group requests and approve/reject them
+- Edit group names and remove groups as needed
+
+### Language Support
+
+WabiSaby supports multiple languages. Users can set their preferred language, and all bot messages will be in that language.
+
+- `!language` - Show current language preference
+- `!language en` - Set to English
+- `!language pt` - Set to Português
+
+Currently supported languages: 🇬🇧 English and 🇵🇹 Portuguese
 
 ---
 
@@ -277,6 +303,22 @@ When a user is granted VIP status, they automatically receive a mobile access li
 - **Real-time updates** - Current song, queue, and connection status
 - **Audio effects control** - Full control over speed, EQ, reverb, echo, distortion, and compressor
 - **Device security** - Link is bound to the first device that accesses it for security
+
+### Volume Normalization
+
+You know when a song comes on and it's too loud, so you rush to turn it down? Or when the next track is way too quiet and you can barely hear it? Volume normalization fixes that automatically.
+
+WabiSaby analyzes each song when it's added to the queue and adjusts the volume so everything plays at a consistent level. No more jumping for the volume knob between tracks! You can configure what's considered "too quiet" or "too loud" and set your preferred target volume level.
+
+- **Automatic analysis** - Songs are analyzed when added to the queue
+- **Configurable thresholds** - Set what's considered "too quiet" or "too loud"
+- **Target level** - Adjust all songs to a consistent target volume
+- **Per-song gain** - Each song gets its own volume adjustment
+- Manage settings from the Settings panel in the dashboard
+
+### Playback State Persistence
+
+WabiSaby automatically saves and restores playback state, so you can restart the bot without losing your place in the current song or queue position.
 
 ---
 
