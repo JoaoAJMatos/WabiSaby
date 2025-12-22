@@ -247,9 +247,13 @@ test('GET /api/status should add thumbnail URLs to queue items', async () => {
     
     const data = await parseJsonResponse(response);
     expect(data.queue.queue.length).toBeGreaterThan(0);
-    // If stub works, thumbnailUrl should be added. If not, that's okay for integration test
-    // Just verify the queue item exists
     expect(data.queue.queue[0]).toBeDefined();
+    
+    expect(data.queue.queue[0]).toHaveProperty('thumbnailUrl');
+    expect(data.queue.queue[0].thumbnailUrl).toBe('/thumbnails/thumb.jpg');
+    
+    expect(existsSyncStub.called).toBe(true);
+    expect(getThumbnailUrlStub.called).toBe(true);
 });
 
 test('GET /api/status should reflect auth connection status', async () => {
