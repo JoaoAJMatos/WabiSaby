@@ -8847,3 +8847,360 @@ input:focus {
         transform: translateY(120%);
     }
 }
+
+/* ========================================
+   Volume Normalization Graph
+   ======================================== */
+
+/* Container */
+.volume-normalization-range-container {
+    background: var(--glass-bg);
+    border: 1px solid var(--glass-border);
+    border-radius: var(--card-radius-sm);
+    padding: 24px;
+    margin: 20px 0;
+    backdrop-filter: blur(10px);
+    transition: all 0.3s ease;
+}
+
+.volume-normalization-range-container:hover {
+    border-color: var(--glass-border-hover);
+    background: rgba(18, 18, 28, 0.75);
+}
+
+.volume-normalization-range-container.has-errors {
+    border-color: var(--error);
+    background: rgba(239, 68, 68, 0.05);
+}
+
+.volume-range-header {
+    margin-bottom: 16px;
+}
+
+.volume-range-header label {
+    font-size: 0.9rem;
+    font-weight: 600;
+    color: var(--text-main);
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+}
+
+/* Visual Range */
+.volume-range-visual {
+    position: relative;
+    width: 100%;
+    margin-bottom: 12px;
+}
+
+.volume-range-track {
+    position: relative;
+    width: 100%;
+    height: 80px;
+    background: rgba(255, 255, 255, 0.03);
+    border: 1px solid rgba(255, 255, 255, 0.08);
+    border-radius: var(--card-radius-xs);
+    overflow: hidden;
+}
+
+/* Zones */
+.volume-zone {
+    position: absolute;
+    top: 0;
+    height: 100%;
+    transition: all 0.3s ease;
+}
+
+.volume-zone-too-low {
+    left: 0;
+    background: linear-gradient(90deg, 
+        rgba(234, 179, 8, 0.25) 0%, 
+        rgba(234, 179, 8, 0.15) 100%);
+    border-right: 2px solid rgba(234, 179, 8, 0.4);
+}
+
+.volume-zone-ok {
+    background: linear-gradient(90deg, 
+        rgba(34, 197, 94, 0.25) 0%, 
+        rgba(34, 197, 94, 0.15) 100%);
+    border-left: 2px solid rgba(34, 197, 94, 0.4);
+    border-right: 2px solid rgba(34, 197, 94, 0.4);
+}
+
+.volume-zone-too-high {
+    background: linear-gradient(90deg, 
+        rgba(239, 68, 68, 0.25) 0%, 
+        rgba(239, 68, 68, 0.15) 100%);
+    border-left: 2px solid rgba(239, 68, 68, 0.4);
+}
+
+/* Markers */
+.volume-marker {
+    position: absolute;
+    top: 0;
+    bottom: 0;
+    width: 2px;
+    transform: translateX(-50%);
+    z-index: 10;
+    transition: left 0.3s ease;
+}
+
+/* Draggable markers */
+.draggable-marker {
+    cursor: grab;
+    touch-action: none;
+    /* Increase interaction area */
+    padding: 0 20px;
+    margin: 0 -20px;
+    min-width: 44px; /* Minimum touch target size for mobile */
+}
+
+.draggable-marker:hover {
+    z-index: 15;
+}
+
+.draggable-marker:hover .marker-line {
+    opacity: 1;
+    transform: translateX(-50%) scaleX(1.5);
+}
+
+.draggable-marker:hover .marker-label,
+.draggable-marker:hover .marker-value {
+    transform: translateX(-50%) scale(1.1);
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
+}
+
+.draggable-marker.dragging {
+    cursor: grabbing;
+    z-index: 20;
+}
+
+.draggable-marker.dragging .marker-line {
+    opacity: 1;
+    transform: translateX(-50%) scaleX(2);
+}
+
+.draggable-marker.dragging .marker-label,
+.draggable-marker.dragging .marker-value {
+    transform: translateX(-50%) scale(1.15);
+    box-shadow: 0 6px 16px rgba(0, 0, 0, 0.4);
+}
+
+.marker-line {
+    position: absolute;
+    top: 0;
+    left: 50%;
+    transform: translateX(-50%);
+    width: 2px;
+    height: 100%;
+    background: currentColor;
+    opacity: 0.6;
+}
+
+.volume-marker-too-low .marker-line {
+    color: #eab308;
+    box-shadow: 0 0 4px rgba(234, 179, 8, 0.5);
+    transition: opacity 0.2s ease, transform 0.2s ease;
+}
+
+.volume-marker-too-high .marker-line {
+    color: #ef4444;
+    box-shadow: 0 0 4px rgba(239, 68, 68, 0.5);
+    transition: opacity 0.2s ease, transform 0.2s ease;
+}
+
+.volume-marker-target .marker-line {
+    color: #3b82f6;
+    width: 3px;
+    box-shadow: 0 0 6px rgba(59, 130, 246, 0.6);
+    opacity: 0.8;
+    transition: opacity 0.2s ease, transform 0.2s ease;
+}
+
+.volume-marker-current .marker-line {
+    color: #06b6d4;
+    width: 2px;
+    box-shadow: 0 0 4px rgba(6, 182, 212, 0.5);
+    opacity: 0.7;
+    animation: pulse-marker 2s ease-in-out infinite;
+}
+
+@keyframes pulse-marker {
+    0%, 100% {
+        opacity: 0.7;
+        transform: translateX(-50%) scaleY(1);
+    }
+    50% {
+        opacity: 1;
+        transform: translateX(-50%) scaleY(1.05);
+    }
+}
+
+.marker-label {
+    position: absolute;
+    top: 8px;
+    left: 50%;
+    transform: translateX(-50%);
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    background: rgba(10, 10, 15, 0.9);
+    padding: 4px 8px;
+    border-radius: 6px;
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    font-size: 0.75rem;
+    font-weight: 500;
+    color: var(--text-main);
+    white-space: nowrap;
+    backdrop-filter: blur(8px);
+    transition: transform 0.2s ease, box-shadow 0.2s ease;
+    pointer-events: none;
+}
+
+.marker-label i {
+    font-size: 0.7rem;
+}
+
+.marker-value {
+    position: absolute;
+    bottom: 8px;
+    left: 50%;
+    transform: translateX(-50%);
+    background: rgba(10, 10, 15, 0.9);
+    padding: 3px 8px;
+    border-radius: 6px;
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    font-size: 0.75rem;
+    font-weight: 600;
+    font-family: var(--font-mono);
+    color: var(--text-main);
+    white-space: nowrap;
+    backdrop-filter: blur(8px);
+    min-width: 40px;
+    text-align: center;
+    pointer-events: none;
+}
+
+.volume-marker-too-low .marker-value {
+    color: #eab308;
+    border-color: rgba(234, 179, 8, 0.3);
+    transition: transform 0.2s ease, box-shadow 0.2s ease;
+}
+
+.volume-marker-too-high .marker-value {
+    color: #ef4444;
+    border-color: rgba(239, 68, 68, 0.3);
+    transition: transform 0.2s ease, box-shadow 0.2s ease;
+}
+
+.volume-marker-target .marker-value {
+    color: #3b82f6;
+    border-color: rgba(59, 130, 246, 0.3);
+    font-weight: 700;
+    transition: transform 0.2s ease, box-shadow 0.2s ease;
+}
+
+.volume-marker-current .marker-value {
+    color: #06b6d4;
+    border-color: rgba(6, 182, 212, 0.3);
+}
+
+/* Axis */
+.volume-range-axis {
+    position: relative;
+    width: 100%;
+    height: 32px;
+    margin-top: 8px;
+    margin-bottom: 16px;
+}
+
+.volume-axis-tick {
+    position: absolute;
+    top: 0;
+    transform: translateX(-50%);
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+}
+
+.volume-axis-tick::before {
+    content: '';
+    width: 1px;
+    height: 8px;
+    background: rgba(255, 255, 255, 0.2);
+    margin-bottom: 4px;
+}
+
+.volume-axis-tick-label {
+    font-size: 0.7rem;
+    color: var(--text-muted);
+    font-family: var(--font-mono);
+    white-space: nowrap;
+}
+
+/* Legend */
+.volume-range-legend {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 16px;
+    margin-top: 16px;
+    padding-top: 16px;
+    border-top: 1px solid rgba(255, 255, 255, 0.08);
+}
+
+.legend-item {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    font-size: 0.8rem;
+    color: var(--text-secondary);
+}
+
+.legend-color {
+    width: 16px;
+    height: 16px;
+    border-radius: 4px;
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    flex-shrink: 0;
+}
+
+/* Error Message */
+.range-error-message {
+    margin-top: 12px;
+    padding: 12px;
+    background: rgba(239, 68, 68, 0.1);
+    border: 1px solid rgba(239, 68, 68, 0.3);
+    border-radius: var(--card-radius-xs);
+    color: var(--error);
+    font-size: 0.85rem;
+    display: none;
+}
+
+.volume-normalization-range-container.has-errors .range-error-message {
+    display: block;
+}
+
+/* Responsive */
+@media (max-width: 768px) {
+    .volume-normalization-range-container {
+        padding: 16px;
+    }
+    
+    .volume-range-track {
+        height: 60px;
+    }
+    
+    .marker-label {
+        font-size: 0.7rem;
+        padding: 3px 6px;
+    }
+    
+    .marker-value {
+        font-size: 0.7rem;
+        padding: 2px 6px;
+    }
+    
+    .volume-range-legend {
+        flex-direction: column;
+        gap: 12px;
+    }
+}

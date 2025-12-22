@@ -720,6 +720,11 @@
                             <span data-i18n="ui.dashboard.settings.playback.title">Playback</span>
                             <span class="nav-indicator"></span>
                         </li>
+                        <li class="settings-nav-item" data-category="audio">
+                            <i class="fas fa-volume-high"></i>
+                            <span data-i18n="ui.dashboard.settings.audio.title">Audio</span>
+                            <span class="nav-indicator"></span>
+                        </li>
                         <li class="settings-nav-item" data-category="performance">
                             <i class="fas fa-bolt"></i>
                             <span data-i18n="ui.dashboard.settings.performance.title">Performance</span>
@@ -997,6 +1002,122 @@
                                 <div>
                                     <strong data-i18n="ui.dashboard.settings.performance.proTip">Pro Tip</strong>
                                     <p data-i18n="ui.dashboard.settings.performance.proTipText">Enable prefetch with count 2-3 for smooth playback without using too much storage.</p>
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <!-- Volume Normalization Settings Panel -->
+                        <div class="settings-panel" data-panel="audio">
+                            <div class="panel-header">
+                                <div class="panel-icon audio">
+                                    <i class="fas fa-volume-high"></i>
+                                </div>
+                                <div class="panel-title">
+                                    <h3 data-i18n="ui.dashboard.settings.audio.title">Audio Normalization</h3>
+                                    <p data-i18n="ui.dashboard.settings.audio.description">Automatically adjust song volumes to consistent levels</p>
+                                </div>
+                            </div>
+                            
+                            <div class="settings-group">
+                                <div class="setting-row" data-searchable="enable volume normalization automatic adjust levels">
+                                    <div class="setting-info">
+                                        <label for="setting-volumeNormalizationEnabled" data-i18n="ui.dashboard.settings.audio.enabled">Enable Volume Normalization</label>
+                                        <p class="setting-description" data-i18n="ui.dashboard.settings.audio.enabledDesc">Automatically analyze and adjust song volumes based on configured thresholds</p>
+                                    </div>
+                                    <div class="setting-control">
+                                        <label class="toggle-switch-v2">
+                                            <input type="checkbox" id="setting-volumeNormalizationEnabled" data-category="volumeNormalization" data-key="enabled">
+                                            <span class="toggle-track">
+                                                <span class="toggle-thumb"></span>
+                                            </span>
+                                        </label>
+                                    </div>
+                                </div>
+                            </div>
+                            
+                            <!-- Visual Threshold Range Component -->
+                            <div class="volume-normalization-range-container" id="volume-normalization-range">
+                                <div class="volume-range-header">
+                                    <label data-i18n="ui.dashboard.settings.audio.rangeTitle">Volume Level Range (dB)</label>
+                                </div>
+                                <div class="volume-range-visual">
+                                    <div class="volume-range-track">
+                                        <div class="volume-zone volume-zone-too-low" id="zone-too-low"></div>
+                                        <div class="volume-zone volume-zone-ok" id="zone-ok"></div>
+                                        <div class="volume-zone volume-zone-too-high" id="zone-too-high"></div>
+                                        <div class="volume-marker volume-marker-too-low draggable-marker" id="marker-too-low" data-marker-type="thresholdTooLow">
+                                            <div class="marker-line"></div>
+                                            <div class="marker-label">
+                                                <i class="fas fa-circle" style="color: #eab308;"></i>
+                                                <span data-i18n="ui.dashboard.settings.audio.tooLow">Too Low</span>
+                                            </div>
+                                            <div class="marker-value" id="value-too-low">-20</div>
+                                        </div>
+                                        <div class="volume-marker volume-marker-too-high draggable-marker" id="marker-too-high" data-marker-type="thresholdTooHigh">
+                                            <div class="marker-line"></div>
+                                            <div class="marker-label">
+                                                <i class="fas fa-circle" style="color: #ef4444;"></i>
+                                                <span data-i18n="ui.dashboard.settings.audio.tooHigh">Too High</span>
+                                            </div>
+                                            <div class="marker-value" id="value-too-high">-6</div>
+                                        </div>
+                                        <div class="volume-marker volume-marker-target draggable-marker" id="marker-target" data-marker-type="targetLevel">
+                                            <div class="marker-line"></div>
+                                            <div class="marker-label">
+                                                <i class="fas fa-bullseye" style="color: #3b82f6;"></i>
+                                                <span data-i18n="ui.dashboard.settings.audio.target">Target</span>
+                                            </div>
+                                            <div class="marker-value" id="value-target">-12</div>
+                                        </div>
+                                        <div class="volume-marker volume-marker-current" id="marker-current-song" style="display: none;">
+                                            <div class="marker-line"></div>
+                                            <div class="marker-label">
+                                                <i class="fas fa-music" style="color: #06b6d4;"></i>
+                                                <span data-i18n="ui.dashboard.settings.audio.nowPlaying">Now Playing</span>
+                                            </div>
+                                            <div class="marker-value" id="value-current-song">-18</div>
+                                        </div>
+                                    </div>
+                                </div>
+                                <div class="volume-range-axis" id="volume-range-axis">
+                                    <!-- Decibel axis will be generated by JavaScript -->
+                                </div>
+                                <div class="volume-range-legend">
+                                    <div class="legend-item">
+                                        <span class="legend-color" style="background: rgba(234, 179, 8, 0.3);"></span>
+                                        <span data-i18n="ui.dashboard.settings.audio.legendTooLow">Songs below threshold → Boosted</span>
+                                    </div>
+                                    <div class="legend-item">
+                                        <span class="legend-color" style="background: rgba(34, 197, 94, 0.3);"></span>
+                                        <span data-i18n="ui.dashboard.settings.audio.legendOk">Songs in range → Fine-tuned</span>
+                                    </div>
+                                    <div class="legend-item">
+                                        <span class="legend-color" style="background: rgba(239, 68, 68, 0.3);"></span>
+                                        <span data-i18n="ui.dashboard.settings.audio.legendTooHigh">Songs above threshold → Reduced</span>
+                                    </div>
+                                    <div class="legend-item">
+                                        <span class="legend-color" style="background: rgba(59, 130, 246, 0.3);"></span>
+                                        <span data-i18n="ui.dashboard.settings.audio.legendTarget">Target level → Desired volume</span>
+                                    </div>
+                                </div>
+                            </div>
+                            
+                            
+                            <!-- How It Works Card -->
+                            <div class="settings-info-card audio">
+                                <i class="fas fa-info-circle"></i>
+                                <div>
+                                    <strong data-i18n="ui.dashboard.settings.audio.howItWorks">How it works</strong>
+                                    <p data-i18n="ui.dashboard.settings.audio.howItWorksText">When a song is downloaded, its volume level is analyzed. Songs that are too quiet or too loud are automatically adjusted to match your target level. For example, a song at -25 dB will be boosted by 13 dB to reach the -12 dB target.</p>
+                                </div>
+                            </div>
+                            
+                            <!-- Threshold Guide Card -->
+                            <div class="settings-info-card audio">
+                                <i class="fas fa-book"></i>
+                                <div>
+                                    <strong data-i18n="ui.dashboard.settings.audio.thresholdGuide">Threshold Guide</strong>
+                                    <p data-i18n="ui.dashboard.settings.audio.thresholdGuideText"><strong>Too Low:</strong> Songs quieter than this threshold will be boosted.<br><strong>OK:</strong> Songs in this range are acceptable but may be fine-tuned.<br><strong>Too High:</strong> Songs louder than this threshold will be reduced.<br><strong>Target:</strong> The desired volume level for all normalized songs.</p>
                                 </div>
                             </div>
                         </div>
@@ -1309,6 +1430,7 @@
     <script src="../js/modules/settings.js"></script>
     <script src="../js/modules/effects.js"></script>
     <script src="../js/modules/volume.js"></script>
+    <script src="../js/modules/volume-normalization.js"></script>
     <script src="../js/modules/stats.js"></script>
     <script src="../js/modules/groups.js"></script>
     <script src="../js/modules/fullscreen.js"></script>

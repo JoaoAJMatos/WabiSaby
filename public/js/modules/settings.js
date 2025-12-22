@@ -219,6 +219,22 @@ window.switchSettingsPanel = function switchSettingsPanel(category) {
         stopDiskUsagePolling();
     }
     
+    // Load volume normalization settings when switching to audio panel
+    if (category === 'audio') {
+        if (window.volumeNormalization && typeof window.volumeNormalization.loadSettings === 'function') {
+            window.volumeNormalization.loadSettings();
+        }
+        // Start RMS monitoring when switching to audio panel
+        if (window.volumeNormalization && typeof window.volumeNormalization.startRMSMonitoring === 'function') {
+            window.volumeNormalization.startRMSMonitoring();
+        }
+    } else {
+        // Stop RMS monitoring when switching away from audio panel
+        if (window.volumeNormalization && typeof window.volumeNormalization.stopRMSMonitoring === 'function') {
+            window.volumeNormalization.stopRMSMonitoring();
+        }
+    }
+    
     // Clear search when switching panels (but not when switching to search-results)
     if (category !== 'search-results') {
         const searchInput = document.getElementById('settings-search');

@@ -335,11 +335,37 @@ class EffectsService extends EventEmitter {
      * @returns {string} Filter chain string for -af parameter
      */
     buildFilterChain() {
-        if (!this.effects.enabled) {
-            return '';
-        }
-
         const filters = [];
+        
+        // Check for volume normalization first (works independently of effects)
+        try {
+            const playbackController = require('../core/playback.controller');
+            const current = playbackController.getCurrent();
+            
+            if (current?.songId) {
+                const volumeNormalization = require('./volume-normalization.service');
+                const settings = volumeNormalization.getNormalizationSettings();
+                
+                if (settings.enabled) {
+                    const gainDb = volumeNormalization.getSongGain(current.songId);
+                    if (gainDb !== 0) {
+                        // Convert dB to linear gain: gain = 10^(dB/20)
+                        const linearGain = Math.pow(10, gainDb / 20);
+                        filters.push(`volume=${linearGain.toFixed(6)}`);
+                        logger.debug(`Applied volume normalization: ${gainDb.toFixed(2)} dB (${linearGain.toFixed(3)}x)`);
+                    }
+                }
+            }
+        } catch (err) {
+            // If playback controller or normalization service not available, skip
+            logger.debug('Could not apply volume normalization:', err.message);
+        }
+        
+        // If effects are disabled, return early (but normalization may have been added above)
+        if (!this.effects.enabled) {
+            const chain = filters.join(',');
+            return chain;
+        }
 
         // Speed/Tempo adjustment using atempo (supports 0.5-2.0)
         if (this.effects.speed !== 1.0) {

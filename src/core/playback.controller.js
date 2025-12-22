@@ -253,6 +253,16 @@ class PlaybackController extends EventEmitter {
                         thumbnail_path: result.thumbnailPath,
                         thumbnail_url: result.thumbnailPath ? getThumbnailUrl(result.thumbnailPath) : null
                     });
+                    
+                    // Analyze audio and store volume gain (async, non-blocking)
+                    const volumeNormalization = require('../services/volume-normalization.service');
+                    const settings = volumeNormalization.getNormalizationSettings();
+                    if (settings.enabled) {
+                        volumeNormalization.analyzeAndStoreGain(item.songId, filePath)
+                            .catch(err => {
+                                logger.error('Volume normalization analysis failed (non-blocking):', err);
+                            });
+                    }
                 }
                 
                 item.type = 'file';

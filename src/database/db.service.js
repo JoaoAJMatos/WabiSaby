@@ -123,6 +123,10 @@ function updateSong(songId, updates) {
         fields.push('source_url = ?');
         values.push(updates.source_url);
     }
+    if (updates.volume_gain_db !== undefined) {
+        fields.push('volume_gain_db = ?');
+        values.push(updates.volume_gain_db);
+    }
     
     if (fields.length === 0) {
         return; // Nothing to update
@@ -130,6 +134,17 @@ function updateSong(songId, updates) {
     
     values.push(songId);
     db.prepare(`UPDATE songs SET ${fields.join(', ')} WHERE id = ?`).run(...values);
+}
+
+/**
+ * Update volume gain for a song
+ * @param {number} songId - Song ID
+ * @param {number} gainDb - Gain adjustment in dB
+ */
+function updateSongVolumeGain(songId, gainDb) {
+    const db = getDatabase();
+    db.prepare('UPDATE songs SET volume_gain_db = ? WHERE id = ?')
+        .run(gainDb, songId);
 }
 
 // ============================================
@@ -1159,6 +1174,7 @@ module.exports = {
     getOrCreateSong,
     getSong,
     updateSong,
+    updateSongVolumeGain,
     
     // Requesters
     getOrCreateRequester,
