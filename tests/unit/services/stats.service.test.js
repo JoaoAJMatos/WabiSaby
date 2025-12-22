@@ -176,19 +176,30 @@ test('updateLastSong should not update if no history exists', () => {
     }).not.toThrow();
 });
 
-test('getHistory should return recent songs', () => {
-    // Record multiple songs
+test('getHistory should return recent songs', async () => {
+    // Record multiple songs with delays to ensure different timestamps
     for (let i = 0; i < 5; i++) {
         statsService.recordSongPlayed({
             title: `Song ${i}`,
             requester: 'User',
             content: `url${i}`
         });
+        // Wait at least 1 second between recordings to ensure different timestamps
+        // (database stores in seconds, so we need at least 1 second difference)
+        if (i < 4) {
+            await new Promise(resolve => setTimeout(resolve, 1100)); // 1.1 second delay
+        }
     }
     
     const history = statsService.getHistory(3);
     expect(history.length).toBe(3);
-    expect(history[0].title).toBe('Song 4'); // Most recent first
+    // Most recent should be last recorded (Song 4)
+    const titles = history.map(h => h.title);
+    expect(titles).toContain('Song 4');
+    expect(titles).toContain('Song 3');
+    expect(titles).toContain('Song 2');
+    // Most recent should be first
+    expect(history[0].title).toBe('Song 4');
 });
 
 test('getHistory should respect limit parameter', () => {

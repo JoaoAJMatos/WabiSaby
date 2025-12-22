@@ -297,6 +297,9 @@ test('QueueManager should load queue from database on initialization', () => {
     // Prevent auto-processing when queue loads
     playbackController.isPlaying = true;
     
+    // Reset queue loaded flag to allow reloading
+    queueManager._queueLoaded = false;
+    
     // Seed database manually
     const songId = dbService.getOrCreateSong({
         content: 'https://youtube.com/watch?v=test1',

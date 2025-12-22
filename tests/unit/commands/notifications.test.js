@@ -58,86 +58,125 @@ test('notifications command should show disabled status', async () => {
 });
 
 test('notifications command should enable with "on"', async () => {
-    let setEnabledCalled = false;
-    let setEnabledValue = null;
+    let setUserPreferenceCalled = false;
+    let setUserPreferenceValue = null;
+    let setUserPreferenceUserId = null;
     
     const testDeps = createDeps({
         notificationService: {
-            isEnabled: false,
-            setEnabled: (value) => {
-                setEnabledCalled = true;
-                setEnabledValue = value;
+            isEnabled: false
+        },
+        sendMessageWithMention: mockSendMessageWithMention,
+        dbService: {
+            getUserNotificationPreference: () => true,
+            setUserNotificationPreference: (userId, value) => {
+                setUserPreferenceCalled = true;
+                setUserPreferenceValue = value;
+                setUserPreferenceUserId = userId;
             }
         },
-        sendMessageWithMention: mockSendMessageWithMention
+        i18n: (key, lang, params) => {
+            if (key === 'commands.notifications.enabled') {
+                return 'Notifications enabled';
+            }
+            return key;
+        }
     });
     
     await notificationsCommand(mockSock, mockMsg, ['on'], testDeps);
     
-    expect(setEnabledCalled).toBe(true);
-    expect(setEnabledValue).toBe(true);
+    expect(setUserPreferenceCalled).toBe(true);
+    expect(setUserPreferenceValue).toBe(true);
+    expect(setUserPreferenceUserId).toBe('user@whatsapp');
     expect(mockSendMessageCalls.length).toBe(1);
     expect(mockSendMessageCalls[0].text).toContain('Notifications enabled');
 });
 
 test('notifications command should enable with "enable"', async () => {
-    let setEnabledCalled = false;
+    let setUserPreferenceCalled = false;
     
     const testDeps = createDeps({
         notificationService: {
-            isEnabled: false,
-            setEnabled: () => {
-                setEnabledCalled = true;
+            isEnabled: false
+        },
+        sendMessageWithMention: mockSendMessageWithMention,
+        dbService: {
+            getUserNotificationPreference: () => true,
+            setUserNotificationPreference: () => {
+                setUserPreferenceCalled = true;
             }
         },
-        sendMessageWithMention: mockSendMessageWithMention
+        i18n: (key, lang, params) => {
+            if (key === 'commands.notifications.enabled') {
+                return 'Notifications enabled';
+            }
+            return key;
+        }
     });
     
     await notificationsCommand(mockSock, mockMsg, ['enable'], testDeps);
     
-    expect(setEnabledCalled).toBe(true);
+    expect(setUserPreferenceCalled).toBe(true);
     expect(mockSendMessageCalls[0].text).toContain('enabled');
 });
 
 test('notifications command should disable with "off"', async () => {
-    let setEnabledCalled = false;
-    let setEnabledValue = null;
+    let setUserPreferenceCalled = false;
+    let setUserPreferenceValue = null;
     
     const testDeps = createDeps({
         notificationService: {
-            isEnabled: true,
-            setEnabled: (value) => {
-                setEnabledCalled = true;
-                setEnabledValue = value;
+            isEnabled: true
+        },
+        sendMessageWithMention: mockSendMessageWithMention,
+        dbService: {
+            getUserNotificationPreference: () => true,
+            setUserNotificationPreference: (userId, value) => {
+                setUserPreferenceCalled = true;
+                setUserPreferenceValue = value;
             }
         },
-        sendMessageWithMention: mockSendMessageWithMention
+        i18n: (key, lang, params) => {
+            if (key === 'commands.notifications.disabled') {
+                return 'Notifications disabled';
+            }
+            return key;
+        }
     });
     
     await notificationsCommand(mockSock, mockMsg, ['off'], testDeps);
     
-    expect(setEnabledCalled).toBe(true);
-    expect(setEnabledValue).toBe(false);
+    expect(setUserPreferenceCalled).toBe(true);
+    expect(setUserPreferenceValue).toBe(false);
     expect(mockSendMessageCalls.length).toBe(1);
     expect(mockSendMessageCalls[0].text).toContain('Notifications disabled');
 });
 
 test('notifications command should disable with "disable"', async () => {
-    let setEnabledCalled = false;
+    let setUserPreferenceCalled = false;
     
     const testDeps = createDeps({
         notificationService: {
-            isEnabled: true,
-            setEnabled: () => {
-                setEnabledCalled = true;
+            isEnabled: true
+        },
+        sendMessageWithMention: mockSendMessageWithMention,
+        dbService: {
+            getUserNotificationPreference: () => true,
+            setUserNotificationPreference: () => {
+                setUserPreferenceCalled = true;
             }
         },
-        sendMessageWithMention: mockSendMessageWithMention
+        i18n: (key, lang, params) => {
+            if (key === 'commands.notifications.disabled') {
+                return 'Notifications disabled';
+            }
+            return key;
+        }
     });
     
     await notificationsCommand(mockSock, mockMsg, ['disable'], testDeps);
     
-    expect(setEnabledCalled).toBe(true);
+    expect(setUserPreferenceCalled).toBe(true);
     expect(mockSendMessageCalls[0].text).toContain('disabled');
 });
 
@@ -151,7 +190,17 @@ test('notifications command should clear history', async () => {
                 clearHistoryCalled = true;
             }
         },
-        sendMessageWithMention: mockSendMessageWithMention
+        sendMessageWithMention: mockSendMessageWithMention,
+        dbService: {
+            getUserNotificationPreference: () => true,
+            setUserNotificationPreference: () => {}
+        },
+        i18n: (key, lang, params) => {
+            if (key === 'commands.notifications.historyCleared') {
+                return 'Notification history cleared';
+            }
+            return key;
+        }
     });
     
     await notificationsCommand(mockSock, mockMsg, ['clear'], testDeps);
@@ -177,20 +226,29 @@ test('notifications command should show usage for invalid action', async () => {
 });
 
 test('notifications command should handle case insensitive actions', async () => {
-    let setEnabledCalled = false;
+    let setUserPreferenceCalled = false;
     
     const testDeps = createDeps({
         notificationService: {
-            isEnabled: false,
-            setEnabled: () => {
-                setEnabledCalled = true;
+            isEnabled: false
+        },
+        sendMessageWithMention: mockSendMessageWithMention,
+        dbService: {
+            getUserNotificationPreference: () => true,
+            setUserNotificationPreference: () => {
+                setUserPreferenceCalled = true;
             }
         },
-        sendMessageWithMention: mockSendMessageWithMention
+        i18n: (key, lang, params) => {
+            if (key === 'commands.notifications.enabled') {
+                return 'Notifications enabled';
+            }
+            return key;
+        }
     });
     
     await notificationsCommand(mockSock, mockMsg, ['ON'], testDeps);
     
-    expect(setEnabledCalled).toBe(true);
+    expect(setUserPreferenceCalled).toBe(true);
     expect(mockSendMessageCalls[0].text).toContain('enabled');
 });

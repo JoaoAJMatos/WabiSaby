@@ -72,7 +72,13 @@ test('remove command should show error for out of range index', async () => {
         queueManager: {
             remove: () => null
         },
-        sendMessageWithMention: mockSendMessageWithMention
+        sendMessageWithMention: mockSendMessageWithMention,
+        i18n: (key, lang, params) => {
+            if (key === 'commands.remove.invalidIndex') {
+                return 'Invalid index';
+            }
+            return key;
+        }
     });
     
     await removeCommand(mockSock, mockMsg, ['10'], testDeps);

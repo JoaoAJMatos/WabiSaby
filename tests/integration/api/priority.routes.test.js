@@ -7,6 +7,7 @@ const sinon = require('sinon');
 const { createTestApp, startTestServer, makeRequest, parseJsonResponse } = require('../../helpers/test-server');
 const { router, setWhatsAppSocket } = require('../../../src/api/routes/priority.routes');
 const priorityService = require('../../../src/services/priority.service');
+const groupsService = require('../../../src/services/groups.service');
 
 let testServer;
 let mockWhatsAppSocket;
@@ -15,6 +16,7 @@ let addPriorityUserStub;
 let removePriorityUserStub;
 let regenerateMobileTokenStub;
 let sendMobileAccessLinkStub;
+let getGroupsStub;
 
 beforeEach(() => {
     mockWhatsAppSocket = {
@@ -27,6 +29,7 @@ beforeEach(() => {
     removePriorityUserStub = sinon.stub(priorityService, 'removePriorityUser');
     regenerateMobileTokenStub = sinon.stub(priorityService, 'regenerateMobileToken');
     sendMobileAccessLinkStub = sinon.stub(priorityService, 'sendMobileAccessLink');
+    getGroupsStub = sinon.stub(groupsService, 'getGroups');
     
     setWhatsAppSocket(mockWhatsAppSocket);
 });
@@ -163,40 +166,34 @@ test('GET /api/priority/group-members should return group members', async () => 
     mockWhatsAppSocket.groupMetadata.resolves(mockGroupMetadata);
     mockWhatsAppSocket.profilePictureUrl.resolves(null);
     
-    // Mock config
-    const config = require('../../../src/config');
-    const originalGroupId = config.whatsapp.targetGroupId;
-    config.whatsapp.targetGroupId = 'group@g.us';
+    // Mock groupsService to return a group
+    getGroupsStub.returns([
+        { id: 'group@g.us', name: 'Test Group' }
+    ]);
     
-    try {
-        const response = await makeRequest(testServer.url, 'GET', '/api/priority/group-members');
-        expect(response.status).toBe(200);
-        
-        const data = await parseJsonResponse(response);
-        expect(data.groupName).toBe('Test Group');
-        expect(data.participants).toBeInstanceOf(Array);
-        expect(data.participants.length).toBe(2);
-    } finally {
-        config.whatsapp.targetGroupId = originalGroupId;
-    }
+    // Mock priorityService to return empty VIP list
+    getPriorityUsersStub.returns([]);
+    
+    const response = await makeRequest(testServer.url, 'GET', '/api/priority/group-members');
+    expect(response.status).toBe(200);
+    
+    const data = await parseJsonResponse(response);
+    expect(data.groupName).toBe('Test Group');
+    expect(data.participants).toBeInstanceOf(Array);
+    expect(data.participants.length).toBe(2);
 });
 
 test('GET /api/priority/group-members should return 400 when no target group configured', async () => {
     testServer = await startTestServer(createTestApp(router));
     
-    const config = require('../../../src/config');
-    const originalGroupId = config.whatsapp.targetGroupId;
-    config.whatsapp.targetGroupId = null;
+    // Mock groupsService to return empty array (no groups configured)
+    getGroupsStub.returns([]);
     
-    try {
-        const response = await makeRequest(testServer.url, 'GET', '/api/priority/group-members');
-        expect(response.status).toBe(400);
-        
-        const data = await parseJsonResponse(response);
-        expect(data.error).toContain('No target group configured');
-    } finally {
-        config.whatsapp.targetGroupId = originalGroupId;
-    }
+    const response = await makeRequest(testServer.url, 'GET', '/api/priority/group-members');
+    expect(response.status).toBe(400);
+    
+    const data = await parseJsonResponse(response);
+    expect(data.error).toContain('No groups configured');
 });
 
 test('GET /api/priority/group-members should return 503 when WhatsApp not connected', async () => {

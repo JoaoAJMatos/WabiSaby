@@ -51,7 +51,13 @@ test('nowplaying command should show message when nothing playing', async () => 
         playbackController: {
             getCurrent: () => null
         },
-        sendMessageWithMention: mockSendMessageWithMention
+        sendMessageWithMention: mockSendMessageWithMention,
+        i18n: (key, lang, params) => {
+            if (key === 'commands.nowPlaying.nothingPlaying') {
+                return 'Nothing playing.';
+            }
+            return key;
+        }
     });
     
     await nowPlayingCommand(mockSock, mockMsg, [], testDeps);

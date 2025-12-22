@@ -30,7 +30,13 @@ beforeEach(() => {
 test('playlist command should deny non-VIP users', async () => {
     const testDeps = createDeps({
         checkPriority: () => false,
-        sendMessageWithMention: mockSendMessageWithMention
+        sendMessageWithMention: mockSendMessageWithMention,
+        i18n: (key, lang, params) => {
+            if (key === 'commands.playlist.vipOnly') {
+                return 'Only VIP users can add playlists';
+            }
+            return key;
+        }
     });
     
     await playlistCommand(mockSock, mockMsg, ['https://spotify.com/playlist/123'], testDeps);
@@ -56,7 +62,13 @@ test('playlist command should reject invalid playlist URL', async () => {
     const testDeps = createDeps({
         checkPriority: () => true,
         isPlaylistUrl: () => false,
-        sendMessageWithMention: mockSendMessageWithMention
+        sendMessageWithMention: mockSendMessageWithMention,
+        i18n: (key, lang, params) => {
+            if (key === 'commands.playlist.invalidUrl') {
+                return 'Invalid playlist URL';
+            }
+            return key;
+        }
     });
     
     await playlistCommand(mockSock, mockMsg, ['https://invalid.com'], testDeps);
@@ -70,7 +82,13 @@ test('playlist command should handle empty playlist', async () => {
         checkPriority: () => true,
         isPlaylistUrl: () => true,
         getPlaylistTracks: async () => [],
-        sendMessageWithMention: mockSendMessageWithMention
+        sendMessageWithMention: mockSendMessageWithMention,
+        i18n: (key, lang, params) => {
+            if (key === 'commands.playlist.empty') {
+                return 'No tracks found in playlist';
+            }
+            return key;
+        }
     });
     
     await playlistCommand(mockSock, mockMsg, ['https://spotify.com/playlist/123'], testDeps);
@@ -96,7 +114,13 @@ test('playlist command should add tracks from playlist', async () => {
             }
         },
         sendMessageWithMention: mockSendMessageWithMention,
-        logger: { info: () => {}, error: () => {} }
+        logger: { info: () => {}, error: () => {} },
+        i18n: (key, lang, params) => {
+            if (key === 'commands.playlist.added') {
+                return `Added ${params.count} tracks`;
+            }
+            return key;
+        }
     });
     
     await playlistCommand(mockSock, mockMsg, ['https://spotify.com/playlist/123'], testDeps);
@@ -164,7 +188,16 @@ test('playlist command should handle partial failures', async () => {
             }
         },
         sendMessageWithMention: mockSendMessageWithMention,
-        logger: { info: () => {}, error: () => {} }
+        logger: { info: () => {}, error: () => {} },
+        i18n: (key, lang, params) => {
+            if (key === 'commands.playlist.added') {
+                return `Added ${params.count} tracks`;
+            }
+            if (key === 'commands.playlist.failed') {
+                return `\n${params.count} failed`;
+            }
+            return key;
+        }
     });
     
     await playlistCommand(mockSock, mockMsg, ['https://spotify.com/playlist/123'], testDeps);

@@ -86,7 +86,16 @@ test('queue command should display empty queue', async () => {
         playbackController: {
             getCurrent: () => null
         },
-        sendMessageWithMention: mockSendMessageWithMention
+        sendMessageWithMention: mockSendMessageWithMention,
+        i18n: (key, lang, params) => {
+            if (key === 'commands.queue.title') {
+                return 'Queue\n';
+            }
+            if (key === 'commands.queue.empty') {
+                return 'Empty';
+            }
+            return key;
+        }
     });
     
     await queueCommand(mockSock, mockMsg, [], testDeps);

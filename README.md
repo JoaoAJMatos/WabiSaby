@@ -2,7 +2,7 @@
 
 ![WabiSaby Banner](./docs/assets/banner.svg)
 
-# WabiSaby
+# WabiSaby 🍃
 
 **A collaborative music bot for WhatsApp groups with a beautiful web dashboard**
 

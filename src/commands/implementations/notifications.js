@@ -1,5 +1,4 @@
 const { deps: defaultDeps } = require('../dependencies');
-const dbService = require('../../database/db.service');
 
 /**
  * !notifications command - Toggle or check notification status (user-level)
@@ -9,7 +8,7 @@ const dbService = require('../../database/db.service');
  * @param {Object} deps - Dependencies (injected, defaults to production dependencies)
  */
 async function notificationsCommand(sock, msg, args, deps = defaultDeps) {
-    const { notificationService, sendMessageWithMention, i18n, userLang = 'en' } = deps;
+    const { notificationService, sendMessageWithMention, i18n, dbService, userLang = 'en' } = deps;
     const remoteJid = msg.key.remoteJid;
     const sender = msg.key.participant || msg.key.remoteJid;
     const action = args[0]?.toLowerCase();

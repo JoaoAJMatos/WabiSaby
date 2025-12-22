@@ -166,7 +166,13 @@ test('play command should handle Spotify metadata failure', async () => {
             throw new Error('Spotify API error');
         },
         sendMessageWithMention: mockSendMessageWithMention,
-        logger: { info: () => {}, error: () => {} }
+        logger: { info: () => {}, error: () => {} },
+        i18n: (key, lang, params) => {
+            if (key === 'commands.play.spotifyError') {
+                return 'Failed to resolve Spotify link';
+            }
+            return key;
+        }
     });
     
     await playCommand(mockSock, mockMsg, ['https://open.spotify.com/track/123'], testDeps);
@@ -183,7 +189,13 @@ test('play command should handle search failure', async () => {
             throw new Error('Search failed');
         },
         sendMessageWithMention: mockSendMessageWithMention,
-        logger: { info: () => {}, error: () => {} }
+        logger: { info: () => {}, error: () => {} },
+        i18n: (key, lang, params) => {
+            if (key === 'commands.play.noResults') {
+                return 'No results found';
+            }
+            return key;
+        }
     });
     
     await playCommand(mockSock, mockMsg, ['nonexistent', 'song'], testDeps);

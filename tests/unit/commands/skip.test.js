@@ -36,7 +36,13 @@ test('skip command should deny when nothing is playing', async () => {
             getCurrent: () => null,
             skip: () => {}
         },
-        sendMessageWithMention: mockSendMessageWithMention
+        sendMessageWithMention: mockSendMessageWithMention,
+        i18n: (key, lang, params) => {
+            if (key === 'commands.skip.nothingPlaying') {
+                return 'Nothing is playing.';
+            }
+            return key;
+        }
     });
     
     await skipCommand(mockSock, mockMsg, [], testDeps);
@@ -63,7 +69,13 @@ test('skip command should allow skip by requester', async () => {
                 return true;
             }
         },
-        sendMessageWithMention: mockSendMessageWithMention
+        sendMessageWithMention: mockSendMessageWithMention,
+        i18n: (key, lang, params) => {
+            if (key === 'commands.skip.skipped') {
+                return 'Skipped';
+            }
+            return key;
+        }
     });
     
     await skipCommand(mockSock, mockMsg, [], testDeps);
@@ -90,7 +102,13 @@ test('skip command should allow skip by VIP', async () => {
                 return true;
             }
         },
-        sendMessageWithMention: mockSendMessageWithMention
+        sendMessageWithMention: mockSendMessageWithMention,
+        i18n: (key, lang, params) => {
+            if (key === 'commands.skip.skipped') {
+                return 'Skipped';
+            }
+            return key;
+        }
     });
     
     await skipCommand(mockSock, mockMsg, [], testDeps);
@@ -140,7 +158,13 @@ test('skip command should work with any args', async () => {
             }),
             skip: () => true
         },
-        sendMessageWithMention: mockSendMessageWithMention
+        sendMessageWithMention: mockSendMessageWithMention,
+        i18n: (key, lang, params) => {
+            if (key === 'commands.skip.skipped') {
+                return 'Skipped';
+            }
+            return key;
+        }
     });
     
     await skipCommand(mockSock, mockMsg, ['extra', 'args'], testDeps);
