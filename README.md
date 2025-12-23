@@ -94,14 +94,35 @@ Perfect for:
 ### Prerequisites
 
 - **[Bun](https://bun.sh)** (latest version recommended)
-- **[FFmpeg](https://ffmpeg.org/)** (includes `ffplay` for server-side playback)
+- **yt-dlp** and **FFmpeg** - **Automatically installed** after `bun install`!
 
 <details>
-<summary><b>Install FFmpeg</b></summary>
+<summary><b>Automatic Installation</b></summary>
 
-- **macOS**: `brew install ffmpeg`
-- **Linux**: `sudo apt install ffmpeg`
-- **Windows**: Download from [ffmpeg.org](https://ffmpeg.org/download.html) and add `bin` folder to PATH
+WabiSaby automatically installs `yt-dlp` and `FFmpeg` when you run `bun install` via the `postinstall` script.
+
+**How it works:**
+1. Tries to install via system package managers (Chocolatey on Windows, Homebrew on macOS, apt/yum/dnf on Linux)
+2. Falls back to downloading binaries to `./bin` directory if package managers aren't available
+3. No manual PATH configuration needed - binaries are automatically detected
+
+**Package Manager Requirements:**
+- **Windows**: [Chocolatey](https://chocolatey.org/install) (optional - will download binaries if not available)
+- **macOS**: [Homebrew](https://brew.sh/) (optional - will download binaries if not available)
+- **Linux**: `apt`, `yum`, `dnf`, or `pacman` (optional - will download binaries if not available)
+
+**Manual Setup:**
+If automatic installation fails, you can run the setup script manually:
+```bash
+bun run setup
+```
+
+Or install manually:
+- **yt-dlp**: Download from [GitHub releases](https://github.com/yt-dlp/yt-dlp/releases/latest)
+- **FFmpeg**: 
+  - **macOS**: `brew install ffmpeg`
+  - **Linux**: `sudo apt install ffmpeg` (or equivalent)
+  - **Windows**: Download from [ffmpeg.org](https://ffmpeg.org/download.html)
 
 </details>
 
@@ -123,7 +144,7 @@ WabiSaby uses SQLite for data storage. **No additional setup is required** - the
 git clone <repository-url>
 cd wpp-music-bot
 
-# 2. Install dependencies
+# 2. Install dependencies (automatically installs yt-dlp and FFmpeg)
 bun install
 
 # 3. (Optional) Configure API keys
@@ -133,6 +154,11 @@ cp config.example .env
 # 4. Start the bot
 bun start
 ```
+
+**That's it!** The `bun install` command will automatically:
+- Install Node.js dependencies
+- Install `yt-dlp` and `FFmpeg` via package managers or download binaries
+- Set everything up for you
 
 Open `http://localhost:3000` in your browser and scan the QR code to connect WhatsApp!
 

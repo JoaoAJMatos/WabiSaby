@@ -20,8 +20,8 @@ function verifyMigrationTables(db, migrationName) {
         '007-add-mobile-token-columns.js': ['priority_users'], // modifies existing table
         '008-create-user-notification-preferences.js': ['user_notification_preferences'],
         '009-add-source-url-to-songs.js': ['songs'], // modifies existing table
-        '010-add-user-language-preference.js': ['priority_users'], // modifies existing table
-        '011-add-volume-normalization.js': ['volume_normalization'],
+        '010-add-user-language-preference.js': ['user_notification_preferences'], // modifies existing table
+        '011-add-volume-normalization.js': ['songs'], // modifies existing table
     };
 
     const expectedTables = migrationTables[migrationName];

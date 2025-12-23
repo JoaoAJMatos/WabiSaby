@@ -6,7 +6,6 @@ const fs = require('fs');
  * Provides translation functionality for the application
  */
 
-// Cache for loaded translations
 const translationsCache = {};
 
 /**
@@ -33,12 +32,10 @@ function loadTranslations(lang) {
         console.error(`Error loading translation file for ${lang}:`, error);
     }
     
-    // Fallback to English if translation file doesn't exist
     if (lang !== 'en') {
         return loadTranslations('en');
     }
     
-    // If even English doesn't exist, return empty object
     return {};
 }
 
@@ -95,28 +92,22 @@ function t(key, lang = 'en', params = {}) {
         return '';
     }
     
-    // Normalize language code (e.g., 'pt-BR' -> 'pt')
     const normalizedLang = lang.split('-')[0].toLowerCase();
     
-    // Load translations for the language
     const translations = loadTranslations(normalizedLang);
     
-    // Get translation value
     let translation = getNestedValue(translations, key);
     
-    // If translation not found, try English fallback
     if (translation === undefined && normalizedLang !== 'en') {
         const enTranslations = loadTranslations('en');
         translation = getNestedValue(enTranslations, key);
     }
     
-    // If still not found, return the key itself
     if (translation === undefined) {
         console.warn(`Translation missing for key: ${key} (lang: ${normalizedLang})`);
         return key;
     }
     
-    // Replace parameters
     return replaceParams(translation, params);
 }
 

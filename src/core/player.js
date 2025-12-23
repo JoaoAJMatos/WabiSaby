@@ -6,6 +6,7 @@ const path = require('path');
 const config = require('../config');
 const { logger } = require('../utils/logger.util');
 const effectsService = require('../services/effects.service');
+const { isFFplayAvailable, getFFplayPath, isCommandInPath } = require('../utils/dependencies.util');
 const {
     PLAYBACK_REQUESTED,
     PLAYBACK_STARTED,
@@ -56,12 +57,7 @@ const playerEvents = new EventEmitter();
  * Check if a command is available
  */
 function isCommandAvailable(command) {
-    try {
-        execSync(`which ${command}`, { stdio: 'ignore' });
-        return true;
-    } catch {
-        return false;
-    }
+    return isCommandInPath(command);
 }
 
 /**
@@ -74,7 +70,7 @@ function detectBackend() {
     if (isCommandAvailable('mpv')) {
         audioBackend = 'mpv';
         logger.info('🎵 Audio backend: MPV (seamless effect changes)');
-    } else if (isCommandAvailable('ffplay')) {
+    } else if (isFFplayAvailable()) {
         audioBackend = 'ffplay';
         logger.info('🎵 Audio backend: ffplay (effect changes may cause brief interruption)');
         logger.info('   For seamless effects, install MPV: brew install mpv (or see docs/adr/001-audio-player-backend.md)');
@@ -334,10 +330,11 @@ function buildFfplayArgs(filePath, startTimeOffset = 0) {
  */
 function startFfplay(filePath, startTimeOffset = 0) {
     const args = buildFfplayArgs(filePath, startTimeOffset);
+    const ffplayBinary = getFFplayPath();
 
-    logger.info(`Starting ffplay: ffplay ${args.slice(0, 5).join(' ')} ...`);
+    logger.info(`Starting ffplay: ${ffplayBinary} ${args.slice(0, 5).join(' ')} ...`);
 
-    ffplayProcess = spawn('ffplay', args);
+    ffplayProcess = spawn(ffplayBinary, args);
     currentFilePath = filePath;
     isPlaying = true;
 

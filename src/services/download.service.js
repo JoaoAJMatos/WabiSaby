@@ -9,6 +9,7 @@ const { getSpotifyMetadata } = require('./metadata.service');
 const { searchYouTube } = require('./search.service');
 const { CacheManager } = require('../utils/cache.util');
 const { isSpotifyUrl, isYouTubeUrl } = require('../utils/url.util');
+const { getYtDlpPath } = require('../utils/dependencies.util');
 
 // Validation cache for URL validation (shared with search service)
 const validationCache = new CacheManager({ ttl: Infinity, maxSize: 200 }); // No expiration, 200 entries max
@@ -78,7 +79,8 @@ async function downloadWithYtDlp(url, outputPath, title = '', progressCallback =
             }
             
             const audioOutputTemplate = outputPath.replace(`.${config.download.audioFormat}`, '') + `.%(ext)s`;
-            const ytDlpCmd = `yt-dlp -x --audio-format ${config.download.audioFormat} --audio-quality ${config.download.audioQuality} ${thumbnailFlags} --newline --extractor-args "youtube:player_client=${config.download.playerClient}" -o "${audioOutputTemplate}" "${url}"`;
+            const ytDlpBinary = getYtDlpPath();
+            const ytDlpCmd = `"${ytDlpBinary}" -x --audio-format ${config.download.audioFormat} --audio-quality ${config.download.audioQuality} ${thumbnailFlags} --newline --extractor-args "youtube:player_client=${config.download.playerClient}" -o "${audioOutputTemplate}" "${url}"`;
             logger.info(`[downloadWithYtDlp] Running: ${ytDlpCmd}`);
             
             const process = exec(ytDlpCmd);
@@ -111,7 +113,30 @@ async function downloadWithYtDlp(url, outputPath, title = '', progressCallback =
             process.on('close', (code) => {
                 if (code !== 0) {
                     logger.error(`[downloadWithYtDlp] yt-dlp stderr: ${stderrOutput}`);
-                    reject(new Error(`yt-dlp exited with code ${code}: ${stderrOutput.substring(0, 200)}`));
+                    
+                    // Check if yt-dlp command was not found
+                    if (stderrOutput.includes('not recognized') || stderrOutput.includes('not found') || stderrOutput.includes('command not found')) {
+                        const installInstructions = process.platform === 'win32' 
+                            ? '\n\n📥 To install yt-dlp on Windows:\n' +
+                              '   1. Download from: https://github.com/yt-dlp/yt-dlp/releases/latest\n' +
+                              '   2. Download yt-dlp.exe (or yt-dlp_x86.exe for 32-bit)\n' +
+                              '   3. Place it in a folder (e.g., C:\\yt-dlp)\n' +
+                              '   4. Add that folder to your system PATH:\n' +
+                              '      - Search "Environment Variables" in Windows\n' +
+                              '      - Edit "Path" under System variables\n' +
+                              '      - Add the folder path (e.g., C:\\yt-dlp)\n' +
+                              '   5. Restart your terminal/application\n' +
+                              '   6. Verify: Run "yt-dlp --version" in a new terminal'
+                            : '\n\n📥 To install yt-dlp:\n' +
+                              '   - Using pip: pip install yt-dlp\n' +
+                              '   - Using pipx: pipx install yt-dlp\n' +
+                              '   - Using homebrew (macOS): brew install yt-dlp\n' +
+                              '   - Or download from: https://github.com/yt-dlp/yt-dlp/releases/latest';
+                        
+                        reject(new Error(`yt-dlp is not installed or not in your PATH.${installInstructions}`));
+                    } else {
+                        reject(new Error(`yt-dlp exited with code ${code}: ${stderrOutput.substring(0, 200)}`));
+                    }
                     return;
                 }
                 
@@ -167,7 +192,30 @@ async function downloadWithYtDlp(url, outputPath, title = '', progressCallback =
             
             process.on('error', (error) => {
                 logger.error(`[downloadWithYtDlp] yt-dlp error: ${error.message}`);
-                reject(new Error(`yt-dlp failed: ${error.message}`));
+                
+                // Check if yt-dlp is not found
+                if (error.message.includes('not recognized') || error.message.includes('not found') || error.code === 'ENOENT') {
+                    const installInstructions = process.platform === 'win32' 
+                        ? '\n\n📥 To install yt-dlp on Windows:\n' +
+                          '   1. Download from: https://github.com/yt-dlp/yt-dlp/releases/latest\n' +
+                          '   2. Download yt-dlp.exe (or yt-dlp_x86.exe for 32-bit)\n' +
+                          '   3. Place it in a folder (e.g., C:\\yt-dlp)\n' +
+                          '   4. Add that folder to your system PATH:\n' +
+                          '      - Search "Environment Variables" in Windows\n' +
+                          '      - Edit "Path" under System variables\n' +
+                          '      - Add the folder path (e.g., C:\\yt-dlp)\n' +
+                          '   5. Restart your terminal/application\n' +
+                          '   6. Verify: Run "yt-dlp --version" in a new terminal'
+                        : '\n\n📥 To install yt-dlp:\n' +
+                          '   - Using pip: pip install yt-dlp\n' +
+                          '   - Using pipx: pipx install yt-dlp\n' +
+                          '   - Using homebrew (macOS): brew install yt-dlp\n' +
+                          '   - Or download from: https://github.com/yt-dlp/yt-dlp/releases/latest';
+                    
+                    reject(new Error(`yt-dlp is not installed or not in your PATH.${installInstructions}`));
+                } else {
+                    reject(new Error(`yt-dlp failed: ${error.message}`));
+                }
             });
         });
     } catch (err) {

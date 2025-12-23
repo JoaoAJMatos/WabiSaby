@@ -7,10 +7,17 @@ module.exports = {
     async up(db) {
         // Add volume_gain_db column to songs table
         // Stores the required gain adjustment in dB (positive = boost, negative = cut)
-        db.exec(`
-            ALTER TABLE songs 
-            ADD COLUMN volume_gain_db REAL DEFAULT 0
-        `);
+        try {
+            db.exec(`
+                ALTER TABLE songs 
+                ADD COLUMN volume_gain_db REAL DEFAULT 0
+            `);
+        } catch (error) {
+            // Column might already exist, which is fine
+            if (!error.message.includes('duplicate column') && !error.message.includes('already exists')) {
+                throw error;
+            }
+        }
         
         // Create index for faster lookups when building filter chains
         db.exec('CREATE INDEX IF NOT EXISTS idx_songs_volume_gain ON songs(volume_gain_db)');

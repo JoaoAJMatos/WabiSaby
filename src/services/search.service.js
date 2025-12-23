@@ -398,14 +398,17 @@ async function executeSearch(query, expectedTitle, expectedArtist, preferAPI = t
         searchResults = playDlResults;
     }
     
-    // Score and cache results
-    const scoredResults = searchResults.map(result => ({
-        result,
-        score: scoreSearchResult(result, expectedTitle, expectedArtist),
-        query
-    }));
+    let scoredResults;
+    if (searchResults.length > 0 && searchResults[0].result !== undefined) {
+        scoredResults = searchResults;
+    } else {
+        scoredResults = searchResults.map(result => ({
+            result,
+            score: scoreSearchResult(result, expectedTitle, expectedArtist),
+            query
+        }));
+    }
     
-    // Cache the results
     searchCache.set(query, scoredResults);
     
     return scoredResults;

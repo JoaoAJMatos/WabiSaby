@@ -17,3 +17,6 @@ priority.json
 .DS_Store
 
 *.lock
+
+# Downloaded binaries
+bin/

@@ -7,13 +7,16 @@
     "start": "bun src/app/index.js",
     "test": "bun test",
     "test:watch": "bun test --watch",
-    "test:coverage": "bun test --coverage"
+    "test:coverage": "bun test --coverage",
+    "postinstall": "bun scripts/setup-dependencies.js",
+    "setup": "bun scripts/setup-dependencies.js"
   },
   "keywords": ["music", "bot", "whatsapp", "youtube", "spotify", "dashboard"],
   "author": "JoaoAJMatos",
   "license": "",
   "dependencies": {
     "@whiskeysockets/baileys": "^7.0.0-rc.9",
+    "adm-zip": "^0.5.16",
     "axios": "^1.13.2",
     "cheerio": "^1.1.2",
     "dotenv": "^17.2.3",
