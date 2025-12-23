@@ -1,6 +1,7 @@
 const path = require('path');
 const fs = require('fs');
 const os = require('os');
+const { execSync } = require('child_process');
 require('dotenv').config();
 
 /**
@@ -303,6 +304,22 @@ class Config {
         }
         
         try {
+            // First, try to kill any orphaned ffplay processes that might be holding files
+            try {
+                const { execSync } = require('child_process');
+                if (process.platform === 'win32') {
+                    // On Windows, try to kill any ffplay.exe processes
+                    execSync('taskkill /f /im ffplay.exe 2>nul', { stdio: 'ignore' });
+                } else {
+                    // On Unix-like systems
+                    execSync('pkill -9 ffplay 2>/dev/null', { stdio: 'ignore' });
+                }
+            } catch (e) {
+                // Ignore errors - processes might not exist
+            }
+
+            // Processes should be killed immediately
+
             const files = fs.readdirSync(tempDir);
             let cleanedCount = 0;
             const deletedFiles = [];

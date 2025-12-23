@@ -361,8 +361,19 @@ class EffectsService extends EventEmitter {
             logger.debug('Could not apply volume normalization:', err.message);
         }
         
-        // If effects are disabled, return early (but normalization may have been added above)
+        // If effects are disabled, apply volume and return early
         if (!this.effects.enabled) {
+            // Apply manual volume control even when effects are disabled
+            try {
+                const player = require('../core/player');
+                const volume = player.getVolume();
+                if (volume !== 100) {
+                    const volumeMultiplier = volume / 100;
+                    filters.push(`volume=${volumeMultiplier}`);
+                }
+            } catch (err) {
+                logger.debug('Could not get volume from player module:', err.message);
+            }
             const chain = filters.join(',');
             return chain;
         }
@@ -437,8 +448,7 @@ class EffectsService extends EventEmitter {
             filters.push(`acompressor=threshold=${thresholdLinear.toFixed(4)}:ratio=${comp.ratio}:attack=5:release=50`);
         }
 
-        // Add volume filter at the end if volume is not 100%
-        // Use lazy require to avoid circular dependency
+        // Apply manual volume control (always applied, even with effects enabled)
         try {
             const player = require('../core/player');
             const volume = player.getVolume();

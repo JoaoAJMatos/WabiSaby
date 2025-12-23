@@ -41,19 +41,13 @@ router.put('/volume', (req, res) => {
             return res.status(400).json({ error: 'Volume must be a number between 0 and 100' });
         }
         
-        // Set volume in player
         player.setVolume(volume);
         
-        // Save to database
         dbService.setSetting('volume', volume);
         
-        // Trigger effects update to apply volume filter (for ffplay)
         const backend = player.getBackend();
         if (backend === 'ffplay') {
-            const current = playbackController.getCurrent();
-            if (current) {
-                playbackController.emit(EFFECTS_CHANGED);
-            }
+            playbackController.emit(EFFECTS_CHANGED);
         }
         
         res.json({ volume });

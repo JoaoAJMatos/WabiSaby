@@ -346,11 +346,45 @@ function startFfplay(filePath, startTimeOffset = 0) {
 }
 
 /**
+ * Forcefully kill a process on Windows
+ */
+function killProcessWindows(pid) {
+    if (process.platform === 'win32') {
+        try {
+            // Use taskkill for immediate termination on Windows
+            execSync(`taskkill /F /T /PID ${pid}`, { stdio: 'ignore', timeout: 1000 });
+        } catch (e) {
+            // Process might already be dead, ignore
+        }
+    }
+}
+
+/**
  * Stop ffplay
  */
 function stopFfplay() {
     if (ffplayProcess) {
-        ffplayProcess.kill('SIGKILL');
+        const pid = ffplayProcess.pid;
+        // On Windows, use taskkill for immediate termination
+        if (process.platform === 'win32') {
+            try {
+                killProcessWindows(pid);
+            } catch (err) {
+                logger.debug('ffplay process termination error:', err.message);
+            }
+        } else {
+            // Unix-like systems
+            try {
+                ffplayProcess.kill('SIGTERM');
+                setTimeout(() => {
+                    if (ffplayProcess && !ffplayProcess.killed) {
+                        ffplayProcess.kill('SIGKILL');
+                    }
+                }, 100);
+            } catch (err) {
+                logger.debug('ffplay process termination error:', err.message);
+            }
+        }
         ffplayProcess = null;
     }
     isPlaying = false;
@@ -607,36 +641,90 @@ async function playFileWithFfplay(filePath, startOffset = 0) {
                             logger.info(`Paused at position ${currentOffset}ms`);
                             playbackStartTime = null; // Reset so effects change logic knows we're paused
                         }
-                        p.kill('SIGKILL');
+                        // Force kill the process - use Windows-specific method
+                        try {
+                            if (process.platform === 'win32') {
+                                killProcessWindows(p.pid);
+                            } else {
+                                p.kill('SIGTERM');
+                                setTimeout(() => {
+                                    if (!p.killed) {
+                                        p.kill('SIGKILL');
+                                    }
+                                }, 100);
+                            }
+                        } catch (e) {
+                            // Process might already be dead
+                        }
                     },
                     [PLAYBACK_SKIP]: () => {
                         killed = true;
                         killReason = 'skipped';
-                        p.kill('SIGKILL');
+                        // Force kill the process - use Windows-specific method
+                        try {
+                            if (process.platform === 'win32') {
+                                killProcessWindows(p.pid);
+                            } else {
+                                p.kill('SIGTERM');
+                                setTimeout(() => {
+                                    if (!p.killed) {
+                                        p.kill('SIGKILL');
+                                    }
+                                }, 100);
+                            }
+                        } catch (e) {
+                            // Process might already be dead
+                        }
                     },
                     [PLAYBACK_SEEK]: ({ positionMs }) => {
                         killed = true;
                         killReason = 'seek';
                         currentOffset = positionMs;
                         playbackStartTime = null;
-                        p.kill('SIGKILL');
+                        // Force kill the process - use Windows-specific method
+                        try {
+                            if (process.platform === 'win32') {
+                                killProcessWindows(p.pid);
+                            } else {
+                                p.kill('SIGTERM');
+                                setTimeout(() => {
+                                    if (!p.killed) {
+                                        p.kill('SIGKILL');
+                                    }
+                                }, 100);
+                            }
+                        } catch (e) {
+                            // Process might already be dead
+                        }
                     },
                     [EFFECTS_CHANGED]: () => {
                         killed = true;
                         killReason = 'effects';
                         // Calculate current position before killing
                         if (playbackStartTime) {
-                            const elapsed = isPaused && pauseStartTime
-                                ? pauseStartTime - playbackStartTime
-                                : Date.now() - playbackStartTime;
+                            const elapsed = Date.now() - playbackStartTime;
                             currentOffset = currentOffset + elapsed;
                             logger.info(`Restarting ffplay with new effects at position ${currentOffset}ms`);
                         } else {
                             // If playbackStartTime is null, we're likely in pause state
-                            // currentOffset should already be correct, just log
+                            // currentOffset should already be correct from pause handler, just log
                             logger.info(`Restarting ffplay with new effects at position ${currentOffset}ms`);
                         }
-                        p.kill('SIGKILL');
+                        // Force kill the process - use Windows-specific method
+                        try {
+                            if (process.platform === 'win32') {
+                                killProcessWindows(p.pid);
+                            } else {
+                                p.kill('SIGTERM');
+                                setTimeout(() => {
+                                    if (!p.killed) {
+                                        p.kill('SIGKILL');
+                                    }
+                                }, 100);
+                            }
+                        } catch (e) {
+                            // Process might already be dead
+                        }
                     }
                 };
                 
@@ -715,13 +803,23 @@ async function playFile(filePath, startOffset = 0) {
  */
 function initializeEventListeners() {
     const playbackController = require('./playback.controller');
-    
+
     // Listen for playback requests from PlaybackController
     playbackController.on(PLAYBACK_REQUESTED, ({ filePath, startOffset = 0 }) => {
         playFile(filePath, startOffset).catch(err => {
             logger.error('Failed to play file:', err);
             playbackController.emit(PLAYBACK_ERROR, { filePath, error: err });
         });
+    });
+
+    // Listen for effects changes (for ffplay backend when currently playing)
+    // This is a global listener that will work even if the per-playback listeners aren't set up
+    playbackController.on(EFFECTS_CHANGED, () => {
+        if (audioBackend === 'ffplay' && ffplayProcess && !ffplayProcess.killed) {
+            logger.info('Effects changed while ffplay is running - restarting with new filters');
+            // Kill current ffplay process - it will restart automatically if in playback loop
+            stopFfplay();
+        }
     });
 }
 
