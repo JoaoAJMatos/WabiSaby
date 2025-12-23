@@ -453,10 +453,10 @@ function updateQueueUI(data) {
             }
             
             li.innerHTML = `
-                <div class="drag-handle">
+                <div class="drag-handle" draggable="false">
                     <i class="fas fa-grip-vertical"></i>
                 </div>
-                ${item.thumbnailUrl ? `<div class="queue-thumbnail"><img src="${item.thumbnailUrl}" alt=""></div>` : ''}
+                ${item.thumbnailUrl ? `<div class="queue-thumbnail"><img src="${item.thumbnailUrl}" alt="" draggable="false"></div>` : ''}
                 <div class="song-info">
                     <span class="song-title">
                         ${title}
@@ -470,18 +470,39 @@ function updateQueueUI(data) {
                 </div>
                 <div class="queue-position">${index + 1}</div>
                 ${statusHTML}
-                <button onclick="removeSong(${index})" class="queue-remove-btn" title="${window.i18n?.tSync('ui.dashboard.queue.removeFromQueue') || 'Remove from queue'}">
+                <button onclick="removeSong(${index})" class="queue-remove-btn" draggable="false" title="${window.i18n?.tSync('ui.dashboard.queue.removeFromQueue') || 'Remove from queue'}">
                     <i class="fas fa-times"></i>
                 </button>
             `;
             
-            // Add drag event listeners
-            li.addEventListener('dragstart', handleDragStart);
-            li.addEventListener('dragend', handleDragEnd);
-            li.addEventListener('dragover', handleDragOver);
-            li.addEventListener('drop', handleDrop);
-            li.addEventListener('dragenter', handleDragEnter);
-            li.addEventListener('dragleave', handleDragLeave);
+            // Set all child elements to not be draggable
+            const childElements = li.querySelectorAll('*');
+            childElements.forEach(child => {
+                child.setAttribute('draggable', 'false');
+            });
+            
+            // Special handling for remove button - don't start drag when clicking it
+            const removeBtn = li.querySelector('.queue-remove-btn');
+            if (removeBtn) {
+                removeBtn.addEventListener('mousedown', (e) => {
+                    e.stopPropagation();
+                });
+                removeBtn.addEventListener('click', (e) => {
+                    e.stopPropagation();
+                });
+            }
+            
+            // Add drag event listeners - use bind to ensure 'this' context is correct
+            if (window.handleDragStart) {
+                li.addEventListener('dragstart', window.handleDragStart);
+                li.addEventListener('dragend', window.handleDragEnd);
+                li.addEventListener('dragover', window.handleDragOver);
+                li.addEventListener('drop', window.handleDrop);
+                li.addEventListener('dragenter', window.handleDragEnter);
+                li.addEventListener('dragleave', window.handleDragLeave);
+            } else {
+                console.error('Drag handlers not found! Make sure queue.js is loaded before dashboard.js');
+            }
             
             queueList.appendChild(li);
         });

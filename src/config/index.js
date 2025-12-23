@@ -58,6 +58,7 @@ class Config {
         this.logging = { ...defaults.logging };
         this.performance = { ...defaults.performance };
         this.notifications = { ...defaults.notifications };
+        this.privacy = { ...defaults.privacy };
         
         this.initializeStorage();
         // Don't load settings in constructor to avoid circular dependency
@@ -128,6 +129,9 @@ class Config {
                 enabled: true,
                 notifyAtPosition: 1,
             },
+            privacy: {
+                demoMode: false,
+            },
         };
     }
     
@@ -154,6 +158,7 @@ class Config {
             if (dbSettings.logging) loadedSettings.logging = dbSettings.logging;
             if (dbSettings.performance) loadedSettings.performance = dbSettings.performance;
             if (dbSettings.notifications) loadedSettings.notifications = dbSettings.notifications;
+            if (dbSettings.privacy) loadedSettings.privacy = dbSettings.privacy;
         } catch (err) {
             // Database not initialized yet or no settings - try JSON file as fallback
             const settingsFile = this.files.settings;
@@ -190,6 +195,7 @@ class Config {
         this.logging = { ...defaults.logging, ...loadedSettings.logging };
         this.performance = { ...defaults.performance, ...loadedSettings.performance };
         this.notifications = { ...defaults.notifications, ...loadedSettings.notifications };
+        this.privacy = { ...defaults.privacy, ...(loadedSettings.privacy || {}) };
         
         this._settingsLoaded = true;
     }
@@ -232,6 +238,7 @@ class Config {
                 logging: this.logging,
                 performance: this.performance,
                 notifications: this.notifications,
+                privacy: this.privacy,
             };
             
             // Save each section as a separate setting

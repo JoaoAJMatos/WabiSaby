@@ -137,48 +137,59 @@ window.removeSong = async function(index) {
 let draggedElement = null;
 let draggedIndex = null;
 
-function handleDragStart(e) {
+// Attach drag handlers to window for global access
+window.handleDragStart = function(e) {
+    // Don't start drag if clicking on remove button
+    if (e.target.closest('.queue-remove-btn')) {
+        e.preventDefault();
+        return false;
+    }
+    
+    console.log('Drag started on queue item', this.dataset.index);
     draggedElement = this;
     draggedIndex = parseInt(this.dataset.index);
     this.classList.add('dragging');
     e.dataTransfer.effectAllowed = 'move';
     e.dataTransfer.setData('text/html', this.innerHTML);
-}
+    return true;
+};
 
-function handleDragEnd(e) {
+window.handleDragEnd = function(e) {
     this.classList.remove('dragging');
     // Remove all drag-over indicators
     document.querySelectorAll('.queue-item').forEach(item => {
         item.classList.remove('drag-over');
     });
-}
+};
 
-function handleDragOver(e) {
+window.handleDragOver = function(e) {
     if (e.preventDefault) {
         e.preventDefault();
     }
     e.dataTransfer.dropEffect = 'move';
     return false;
-}
+};
 
-function handleDragEnter(e) {
+window.handleDragEnter = function(e) {
     if (this !== draggedElement) {
         this.classList.add('drag-over');
     }
-}
+};
 
-function handleDragLeave(e) {
+window.handleDragLeave = function(e) {
     this.classList.remove('drag-over');
-}
+};
 
-function handleDrop(e) {
+window.handleDrop = function(e) {
     if (e.stopPropagation) {
         e.stopPropagation();
     }
+    e.preventDefault();
     this.classList.remove('drag-over');
     
     if (draggedElement !== this) {
         const dropIndex = parseInt(this.dataset.index);
+        console.log('Dropped item from index', draggedIndex, 'to index', dropIndex);
         
         // Get song title from dragged element for notification
         const songTitleElement = draggedElement.querySelector('.song-title');
@@ -212,7 +223,7 @@ function handleDrop(e) {
     }
     
     return false;
-}
+};
 
 async function prefetchAll() {
     const btn = document.getElementById('prefetch-btn');

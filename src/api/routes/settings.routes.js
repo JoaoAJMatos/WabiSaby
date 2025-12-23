@@ -13,7 +13,8 @@ const EDITABLE_SETTINGS = {
     download: ['audioFormat', 'audioQuality', 'downloadThumbnails', 'playerClient'],
     playback: ['cleanupAfterPlay', 'songTransitionDelay', 'confirmSkip', 'showRequesterName'],
     performance: ['prefetchNext', 'prefetchCount'],
-    notifications: ['enabled', 'notifyAtPosition']
+    notifications: ['enabled', 'notifyAtPosition'],
+    privacy: ['demoMode']
 };
 
 /**
@@ -30,6 +31,8 @@ const VALID_OPTIONS = {
  * Get current configuration (only editable settings)
  */
 router.get('/settings', (req, res) => {
+    config._ensureSettingsLoaded();
+    
     const settings = {
         server: {
             port: config.server.port,
@@ -57,6 +60,9 @@ router.get('/settings', (req, res) => {
         notifications: {
             enabled: config.notifications.enabled,
             notifyAtPosition: config.notifications.notifyAtPosition
+        },
+        privacy: {
+            demoMode: config.privacy?.demoMode || false
         }
     };
 
@@ -72,6 +78,8 @@ router.get('/settings', (req, res) => {
  * Update configuration settings
  */
 router.post('/settings', (req, res) => {
+    config._ensureSettingsLoaded();
+    
     const { category, key, value } = req.body;
 
     // Validate category
@@ -102,7 +110,7 @@ router.post('/settings', (req, res) => {
     let parsedValue = value;
     
     // Boolean fields
-    if (['downloadThumbnails', 'cleanupAfterPlay', 'prefetchNext', 'enabled', 'confirmSkip', 'showRequesterName'].includes(key)) {
+    if (['downloadThumbnails', 'cleanupAfterPlay', 'prefetchNext', 'enabled', 'confirmSkip', 'showRequesterName', 'demoMode'].includes(key)) {
         if (typeof value !== 'boolean') {
             return res.status(400).json({
                 success: false,
@@ -132,9 +140,14 @@ router.post('/settings', (req, res) => {
 
     // Update the config
     try {
+        // Ensure the category exists
+        if (!config[category]) {
+            logger.warn(`Category ${category} does not exist in config, initializing...`);
+            config[category] = {};
+        }
+        
         config[category][key] = parsedValue;
         
-        // Persist settings to disk
         const saved = config.saveSettings();
         if (!saved) {
             logger.warn('Setting updated in memory but failed to persist to disk');

@@ -57,6 +57,14 @@ async function loadSettings() {
             languageSelect.value = currentLang;
         }
         
+        // Populate privacy settings
+        const demoModeEl = document.getElementById('setting-demoMode');
+        if (demoModeEl) {
+            const demoMode = settings.privacy?.demoMode || false;
+            demoModeEl.checked = demoMode;
+            applyDemoMode(demoMode);
+        }
+        
     } catch (err) {
         console.error('Failed to load settings:', err);
     }
@@ -83,7 +91,16 @@ function syncClientSelector(client) {
     });
 }
 
-async function updateSetting(category, key, value) {
+function applyDemoMode(enabled) {
+    const body = document.body;
+    if (enabled) {
+        body.classList.add('demo-mode');
+    } else {
+        body.classList.remove('demo-mode');
+    }
+}
+
+async function updateSettingsValue(category, key, value) {
     const settingRow = document.querySelector(`[data-category="${category}"][data-key="${key}"]`)?.closest('.setting-row');
     
     if (settingRow) {
@@ -97,6 +114,11 @@ async function updateSetting(category, key, value) {
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({ category, key, value })
         });
+        
+        if (!res.ok) {
+            const errorText = await res.text();
+            throw new Error(`HTTP ${res.status}: ${errorText}`);
+        }
         
         const data = await res.json();
         
@@ -131,6 +153,17 @@ async function updateSetting(category, key, value) {
             }
         }
         
+        // Handle privacy demo mode changes
+        if (category === 'privacy' && key === 'demoMode') {
+            applyDemoMode(value);
+            // Refresh UI elements to ensure blur is applied to dynamically loaded content
+            setTimeout(() => {
+                if (typeof fetchPriorityUsers === 'function') fetchPriorityUsers();
+                if (typeof loadGroups === 'function') loadGroups();
+                if (typeof fetchData === 'function') fetchData();
+            }, 100);
+        }
+        
         if (settingRow) {
             settingRow.classList.remove('saving');
             settingRow.classList.add('saved');
@@ -139,8 +172,6 @@ async function updateSetting(category, key, value) {
         
         // Show save indicator
         showSaveIndicator();
-        
-        console.log(`Setting updated: ${category}.${key} = ${value}`);
         
     } catch (err) {
         console.error('Failed to update setting:', err);
@@ -543,7 +574,7 @@ function rebindSettingRowListeners(container) {
             const category = e.target.dataset.category;
             const key = e.target.dataset.key;
             if (category && key) {
-                updateSetting(category, key, e.target.checked);
+                updateSettingsValue(category, key, e.target.checked);
                 // Also update the original
                 const original = document.querySelector(`.settings-panel:not([data-panel="search-results"]) [data-category="${category}"][data-key="${key}"]`);
                 if (original && original.type === 'checkbox') {
@@ -559,7 +590,7 @@ function rebindSettingRowListeners(container) {
             const category = e.target.dataset.category;
             const key = e.target.dataset.key;
             if (category && key) {
-                updateSetting(category, key, e.target.value);
+                updateSettingsValue(category, key, e.target.value);
             }
         });
     });
@@ -574,7 +605,7 @@ function rebindSettingRowListeners(container) {
                 const key = e.target.dataset.key;
                 const value = parseInt(e.target.value, 10);
                 if (category && key && !isNaN(value)) {
-                    updateSetting(category, key, value);
+                    updateSettingsValue(category, key, value);
                 }
             }, 500);
         });
@@ -672,21 +703,30 @@ function initSettingsListeners() {
             }
             
             if (category && key) {
-                updateSetting(category, key, e.target.value);
+                updateSettingsValue(category, key, e.target.value);
             }
         });
     });
     
-    // Handle all checkbox changes (toggle switches)
-    document.querySelectorAll('#settings-modal input[type="checkbox"]').forEach(checkbox => {
-        checkbox.addEventListener('change', (e) => {
-            const category = e.target.dataset.category;
-            const key = e.target.dataset.key;
-            if (category && key) {
-                updateSetting(category, key, e.target.checked);
+    // Handle all checkbox changes (toggle switches) - use event delegation
+    const settingsModalEl = document.getElementById('settings-modal');
+    if (settingsModalEl) {
+        settingsModalEl.addEventListener('change', async (e) => {
+            if (e.target.type === 'checkbox' && e.target.closest('#settings-modal')) {
+                const category = e.target.dataset.category;
+                const key = e.target.dataset.key;
+                const checked = e.target.checked;
+                
+                if (category && key) {
+                    try {
+                        await updateSettingsValue(category, key, checked);
+                    } catch (error) {
+                        console.error('Error updating setting:', error);
+                    }
+                }
             }
         });
-    });
+    }
     
     // Handle all number inputs with debounce
     document.querySelectorAll('#settings-modal input[type="number"]').forEach(input => {
@@ -698,7 +738,7 @@ function initSettingsListeners() {
                 const key = e.target.dataset.key;
                 const value = parseInt(e.target.value, 10);
                 if (category && key && !isNaN(value)) {
-                    updateSetting(category, key, value);
+                    updateSettingsValue(category, key, value);
                 }
             }, 500);
         });
@@ -711,7 +751,7 @@ function initSettingsListeners() {
             const value = qualityValues[parseInt(e.target.value)];
             document.getElementById('setting-audioQuality').value = value;
             syncQualitySlider(value);
-            updateSetting('download', 'audioQuality', value);
+            updateSettingsValue('download', 'audioQuality', value);
         });
     }
     
@@ -720,7 +760,7 @@ function initSettingsListeners() {
         radio.addEventListener('change', (e) => {
             if (e.target.checked) {
                 document.getElementById('setting-playerClient').value = e.target.value;
-                updateSetting('download', 'playerClient', e.target.value);
+                updateSettingsValue('download', 'playerClient', e.target.value);
             }
         });
     });
