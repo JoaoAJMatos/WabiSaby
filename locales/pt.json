@@ -369,6 +369,11 @@
           "showRequesterNameDesc": "Mostrar o nome do solicitante na música que está a tocar",
           "shuffleEnabled": "Modo Aleatório",
           "shuffleEnabledDesc": "Selecionar músicas aleatoriamente da fila. Músicas VIP têm probabilidade 3x maior.",
+          "repeatMode": "Modo de Repetição",
+          "repeatModeDesc": "Controlar como as músicas se repetem quando terminam.",
+          "repeatOff": "Desligado",
+          "repeatAll": "Todas",
+          "repeatOne": "Uma",
           "songTransitionDelay": "Atraso de Transição",
           "songTransitionDelayDesc": "Pausa entre músicas em milissegundos (0 - 10000)"
         },

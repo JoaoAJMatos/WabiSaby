@@ -361,6 +361,11 @@
           "showRequesterNameDesc": "Display the requester's name on the currently playing song",
           "shuffleEnabled": "Shuffle Mode",
           "shuffleEnabledDesc": "Randomly select songs from queue. VIP songs have 3x higher probability.",
+          "repeatMode": "Repeat Mode",
+          "repeatModeDesc": "Control how songs repeat when finished.",
+          "repeatOff": "Off",
+          "repeatAll": "All",
+          "repeatOne": "One",
           "songTransitionDelay": "Transition Delay",
           "songTransitionDelayDesc": "Pause between songs in milliseconds (0 - 10000)"
         },

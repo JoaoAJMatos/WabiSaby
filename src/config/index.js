@@ -134,6 +134,7 @@ class Config {
                 confirmSkip: true,
                 showRequesterName: true,
                 shuffleEnabled: false,
+                repeatMode: 'off',
             },
             logging: loggingDefaults,
             performance: {

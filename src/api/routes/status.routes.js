@@ -131,7 +131,8 @@ router.get('/status', async (req, res) => {
             songsPlayed: detailedStats.songsPlayed,
             queueLength: queue.length
         },
-        shuffleEnabled: config.playback.shuffleEnabled
+        shuffleEnabled: config.playback.shuffleEnabled,
+        repeatMode: config.playback.repeatMode
     });
 });
 

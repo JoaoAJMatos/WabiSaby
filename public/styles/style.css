@@ -1541,6 +1541,92 @@ h2 {
     }
 }
 
+/* Repeat Button */
+#repeat-btn.np-control-btn {
+    position: relative;
+    transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+/* Inactive state - subtle styling */
+#repeat-btn.np-control-btn:not(.active) {
+    opacity: 0.6;
+    color: var(--text-secondary, rgba(255, 255, 255, 0.6));
+}
+
+#repeat-btn.np-control-btn:not(.active):hover {
+    opacity: 0.9;
+    background: rgba(255, 255, 255, 0.1);
+    color: var(--text-main);
+}
+
+/* Active state - repeat all (default active styling) */
+#repeat-btn.np-control-btn.active.repeat-all {
+    background: linear-gradient(135deg, var(--accent-color, #a855f7) 0%, rgba(168, 85, 247, 0.8) 100%);
+    color: white;
+    border-color: var(--accent-color, #a855f7);
+    box-shadow: 0 0 20px rgba(168, 85, 247, 0.4),
+                0 4px 12px rgba(168, 85, 247, 0.2);
+    opacity: 1;
+}
+
+#repeat-btn.np-control-btn.active.repeat-all:hover {
+    background: linear-gradient(135deg, var(--accent-color, #a855f7) 0%, rgba(168, 85, 247, 0.9) 100%);
+    box-shadow: 0 0 25px rgba(168, 85, 247, 0.5),
+                0 6px 16px rgba(168, 85, 247, 0.3);
+    transform: scale(1.08);
+}
+
+/* Active state - repeat one (different color to distinguish) */
+#repeat-btn.np-control-btn.active.repeat-one {
+    background: linear-gradient(135deg, #10b981 0%, rgba(16, 185, 129, 0.8) 100%);
+    color: white;
+    border-color: #10b981;
+    box-shadow: 0 0 20px rgba(16, 185, 129, 0.4),
+                0 4px 12px rgba(16, 185, 129, 0.2);
+    opacity: 1;
+}
+
+#repeat-btn.np-control-btn.active.repeat-one:hover {
+    background: linear-gradient(135deg, #10b981 0%, rgba(16, 185, 129, 0.9) 100%);
+    box-shadow: 0 0 25px rgba(16, 185, 129, 0.5),
+                0 6px 16px rgba(16, 185, 129, 0.3);
+    transform: scale(1.08);
+}
+
+#repeat-btn.np-control-btn.active:active {
+    transform: scale(0.95);
+}
+
+/* Subtle pulse animation when active */
+#repeat-btn.np-control-btn.active::before {
+    content: '';
+    position: absolute;
+    inset: -2px;
+    border-radius: 50%;
+    opacity: 0.3;
+    animation: repeatPulse 2s ease-in-out infinite;
+    z-index: -1;
+}
+
+#repeat-btn.np-control-btn.active.repeat-all::before {
+    background: var(--accent-color, #a855f7);
+}
+
+#repeat-btn.np-control-btn.active.repeat-one::before {
+    background: #10b981;
+}
+
+@keyframes repeatPulse {
+    0%, 100% {
+        transform: scale(1);
+        opacity: 0.3;
+    }
+    50% {
+        transform: scale(1.1);
+        opacity: 0.1;
+    }
+}
+
 /* Fullscreen Button */
 .np-fullscreen-btn {
     width: 38px !important;

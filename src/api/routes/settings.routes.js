@@ -11,7 +11,7 @@ const router = express.Router();
  */
 const EDITABLE_SETTINGS = {
     download: ['audioFormat', 'audioQuality', 'downloadThumbnails', 'playerClient'],
-    playback: ['cleanupAfterPlay', 'songTransitionDelay', 'confirmSkip', 'showRequesterName', 'shuffleEnabled'],
+    playback: ['cleanupAfterPlay', 'songTransitionDelay', 'confirmSkip', 'showRequesterName', 'shuffleEnabled', 'repeatMode'],
     performance: ['prefetchNext', 'prefetchCount'],
     notifications: ['enabled', 'notifyAtPosition'],
     privacy: ['demoMode']
@@ -52,7 +52,8 @@ router.get('/settings', (req, res) => {
             songTransitionDelay: config.playback.songTransitionDelay,
             confirmSkip: config.playback.confirmSkip,
             showRequesterName: config.playback.showRequesterName,
-            shuffleEnabled: config.playback.shuffleEnabled
+            shuffleEnabled: config.playback.shuffleEnabled,
+            repeatMode: config.playback.repeatMode
         },
         performance: {
             prefetchNext: config.performance.prefetchNext,
@@ -249,7 +250,8 @@ const DEFAULT_SETTINGS = {
         songTransitionDelay: 100,
         confirmSkip: true,
         showRequesterName: true,
-        shuffleEnabled: false
+        shuffleEnabled: false,
+        repeatMode: 'off'
     },
     performance: {
         prefetchNext: true,

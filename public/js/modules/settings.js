@@ -44,6 +44,10 @@ async function loadSettings() {
         if (shuffleEnabledEl) {
             shuffleEnabledEl.checked = settings.playback.shuffleEnabled || false;
         }
+        const repeatModeEl = document.getElementById('setting-repeatMode');
+        if (repeatModeEl) {
+            repeatModeEl.value = settings.playback.repeatMode || 'off';
+        }
         document.getElementById('setting-songTransitionDelay').value = settings.playback.songTransitionDelay;
         
         // Populate performance settings
@@ -154,6 +158,22 @@ async function updateSettingsValue(category, key, value) {
                     type: 'SETTINGS_UPDATE',
                     settings: { playback: { showRequesterName: value } }
                 });
+            }
+        }
+        
+        // Update local state for shuffle enabled (managed in dashboard.js)
+        if (category === 'playback' && key === 'shuffleEnabled') {
+            // Update the shuffleEnabled variable in dashboard.js
+            if (typeof shuffleEnabled !== 'undefined') {
+                shuffleEnabled = value;
+            }
+            // Update the shuffle button state
+            if (typeof updateShuffleButtonState === 'function') {
+                updateShuffleButtonState();
+            }
+            // Refresh queue to update position display
+            if (typeof fetchData === 'function') {
+                fetchData();
             }
         }
         

@@ -54,6 +54,9 @@ class PlaybackController extends EventEmitter {
         this.isHandlingPlaybackFinished = false;
         this.processNextTimeout = null;
         
+        // Repeat mode state
+        this.playedQueue = []; // Track played songs for repeat all mode
+        
         // Load state from database
         this.loadState();
         
@@ -460,11 +463,61 @@ class PlaybackController extends EventEmitter {
             this.processNextTimeout = null;
         }
         
+        const config = require('../config');
+        config._ensureSettingsLoaded();
+        const repeatMode = config.playback.repeatMode;
+        
+        // Handle repeat one mode - restart current song
+        if (repeatMode === 'one' && this.currentSong && success) {
+            const filePath = this.currentSong.content;
+            if (filePath && fs.existsSync(filePath)) {
+                // Don't clear currentSong, don't increment songsPlayed, don't cleanup
+                // Just restart playback
+                logger.info(`Repeat one: restarting current song "${this.currentSong.title || 'Unknown'}"`);
+                this.isPlaying = false;
+                this.isPaused = false;
+                this.currentSong.startTime = Date.now();
+                this.currentSong.pausedAt = null;
+                this.emitStateChanged();
+                this.emit(PLAYBACK_ENDED, { success });
+                
+                // Restart playback after transition delay
+                this.processNextTimeout = setTimeout(() => {
+                    this.processNextTimeout = null;
+                    this.isHandlingPlaybackFinished = false;
+                    this.emit(PLAYBACK_REQUESTED, { filePath, startOffset: 0 });
+                }, config.playback.songTransitionDelay);
+                return;
+            }
+        }
+        
+        // For repeat all mode, track the finished song before clearing
+        if (repeatMode === 'all' && this.currentSong && success) {
+            // Create a copy of the song data for repeat all
+            const songCopy = {
+                content: this.currentSong.sourceUrl || this.currentSong.content,
+                sourceUrl: this.currentSong.sourceUrl || this.currentSong.content,
+                type: this.currentSong.sourceUrl ? 'url' : (this.currentSong.type || 'file'),
+                title: this.currentSong.title,
+                artist: this.currentSong.artist,
+                channel: this.currentSong.channel,
+                requester: this.currentSong.requester,
+                sender: this.currentSong.sender,
+                remoteJid: this.currentSong.remoteJid,
+                isPriority: this.currentSong.isPriority,
+                thumbnail: this.currentSong.thumbnail,
+                thumbnailUrl: this.currentSong.thumbnailUrl,
+                duration: this.currentSong.duration,
+                songId: this.currentSong.songId
+            };
+            this.playedQueue.push(songCopy);
+        }
+        
         this.isPlaying = false;
         this.isPaused = false;
         
-        // Cleanup after playback if configured
-        if (this.currentSong && config.playback.cleanupAfterPlay) {
+        // Cleanup after playback if configured (but not for repeat one, which returns early)
+        if (this.currentSong && config.playback.cleanupAfterPlay && repeatMode !== 'one') {
             if (this.currentSong.content && fs.existsSync(this.currentSong.content)) {
                 fs.unlinkSync(this.currentSong.content);
             }
@@ -482,8 +535,49 @@ class PlaybackController extends EventEmitter {
         // Emit playback ended event
         this.emit(PLAYBACK_ENDED, { success });
         
+        // Check if we need to handle repeat all mode when queue is empty
+        const queue = queueManager.getQueue();
+        if (queue.length === 0 && repeatMode === 'all' && this.playedQueue.length > 0) {
+            logger.info(`Repeat all: re-adding ${this.playedQueue.length} played songs to queue`);
+            
+            // Check if shuffle is enabled
+            const shuffleEnabled = config.playback.shuffleEnabled;
+            let songsToAdd = [...this.playedQueue];
+            
+            // Shuffle if enabled
+            if (shuffleEnabled) {
+                // Shuffle using weighted selection (VIP songs have 3x weight)
+                const shuffled = [];
+                const remaining = [...songsToAdd];
+                
+                while (remaining.length > 0) {
+                    const weights = remaining.map(item => item.isPriority ? 3 : 1);
+                    const totalWeight = weights.reduce((sum, weight) => sum + weight, 0);
+                    let random = Math.random() * totalWeight;
+                    
+                    for (let i = 0; i < remaining.length; i++) {
+                        random -= weights[i];
+                        if (random <= 0) {
+                            shuffled.push(remaining.splice(i, 1)[0]);
+                            break;
+                        }
+                    }
+                }
+                songsToAdd = shuffled;
+            }
+            
+            // Re-add all songs to queue
+            songsToAdd.forEach(song => {
+                queueManager.add(song);
+            });
+            
+            // Clear playedQueue for next cycle
+            this.playedQueue = [];
+        }
+        
         // Process next item if available
-        if (queueManager.getQueue().length > 0) {
+        const updatedQueue = queueManager.getQueue();
+        if (updatedQueue.length > 0) {
             this.processNextTimeout = setTimeout(() => {
                 this.processNextTimeout = null;
                 this.isHandlingPlaybackFinished = false;
@@ -816,4 +910,5 @@ class PlaybackController extends EventEmitter {
 }
 
 module.exports = new PlaybackController();
+
 

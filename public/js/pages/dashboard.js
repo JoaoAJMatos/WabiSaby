@@ -111,6 +111,12 @@ async function fetchData() {
             updateShuffleButtonState();
         }
         
+        // Update repeat mode state
+        if (typeof data.repeatMode !== 'undefined') {
+            repeatMode = data.repeatMode;
+            updateRepeatButtonState();
+        }
+        
         // Update other UI components
         updateQueueUI(data.queue, data.shuffleEnabled);
         updateStatsUI(data.stats);
@@ -922,6 +928,9 @@ initBurgerMenu();
 // Shuffle button toggle
 let shuffleEnabled = false;
 
+// Repeat mode toggle
+let repeatMode = 'off';
+
 async function toggleShuffle() {
     const newValue = !shuffleEnabled;
     try {
@@ -939,6 +948,11 @@ async function toggleShuffle() {
         if (data.success) {
             shuffleEnabled = newValue;
             updateShuffleButtonState();
+            // Update settings toggle switch to keep in sync
+            const settingsToggle = document.getElementById('setting-shuffleEnabled');
+            if (settingsToggle) {
+                settingsToggle.checked = newValue;
+            }
             // Refresh queue to update position display
             fetchData();
         }
@@ -962,11 +976,74 @@ function updateShuffleButtonState() {
     }
 }
 
+// Repeat button toggle
+async function toggleRepeat() {
+    // Cycle through: off → all → one → off
+    const modes = ['off', 'all', 'one'];
+    const currentIndex = modes.indexOf(repeatMode);
+    const nextIndex = (currentIndex + 1) % modes.length;
+    const newValue = modes[nextIndex];
+    
+    try {
+        const res = await fetch('/api/settings', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ category: 'playback', key: 'repeatMode', value: newValue })
+        });
+        
+        if (!res.ok) {
+            throw new Error('Failed to update repeat mode setting');
+        }
+        
+        const data = await res.json();
+        if (data.success) {
+            repeatMode = newValue;
+            updateRepeatButtonState();
+            // Update settings dropdown to keep in sync
+            const settingsSelect = document.getElementById('setting-repeatMode');
+            if (settingsSelect) {
+                settingsSelect.value = newValue;
+            }
+        }
+    } catch (error) {
+        console.error('Error toggling repeat:', error);
+    }
+}
+
+function updateRepeatButtonState() {
+    const repeatBtn = document.getElementById('repeat-btn');
+    if (repeatBtn) {
+        const icon = repeatBtn.querySelector('i');
+        const baseTitle = window.i18n?.tSync('ui.dashboard.settings.playback.repeatMode') || 'Repeat Mode';
+        
+        // Remove all state classes
+        repeatBtn.classList.remove('active', 'repeat-all', 'repeat-one');
+        
+        if (repeatMode === 'off') {
+            repeatBtn.classList.remove('active');
+            if (icon) icon.className = 'fas fa-repeat';
+            repeatBtn.setAttribute('title', `${baseTitle}: OFF`);
+            repeatBtn.setAttribute('aria-label', 'Repeat Mode: OFF');
+        } else if (repeatMode === 'all') {
+            repeatBtn.classList.add('active', 'repeat-all');
+            if (icon) icon.className = 'fas fa-repeat';
+            repeatBtn.setAttribute('title', `${baseTitle}: ALL`);
+            repeatBtn.setAttribute('aria-label', 'Repeat Mode: ALL');
+        } else if (repeatMode === 'one') {
+            repeatBtn.classList.add('active', 'repeat-one');
+            if (icon) icon.className = 'fas fa-redo';
+            repeatBtn.setAttribute('title', `${baseTitle}: ONE`);
+            repeatBtn.setAttribute('aria-label', 'Repeat Mode: ONE');
+        }
+    }
+}
+
 // Listeners
 document.getElementById('add-song-form').addEventListener('submit', addSong);
 document.getElementById('skip-btn').addEventListener('click', skipSong);
 document.getElementById('play-pause-btn').addEventListener('click', togglePause);
 document.getElementById('shuffle-btn').addEventListener('click', toggleShuffle);
+document.getElementById('repeat-btn').addEventListener('click', toggleRepeat);
 document.getElementById('add-vip-form').addEventListener('submit', addVip);
 document.getElementById('fullscreen-btn').addEventListener('click', openFullscreenWindow);
 document.getElementById('new-session-btn').addEventListener('click', startNewSession);
