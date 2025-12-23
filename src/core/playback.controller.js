@@ -50,6 +50,10 @@ class PlaybackController extends EventEmitter {
         this.MAX_CONCURRENT_PREFETCHES = 2;
         this.activePrefetchCount = 0;
         
+        // Prevent duplicate playback finished handling
+        this.isHandlingPlaybackFinished = false;
+        this.processNextTimeout = null;
+        
         // Load state from database
         this.loadState();
         
@@ -226,6 +230,12 @@ class PlaybackController extends EventEmitter {
             return;
         }
         
+        // Clear any pending processNext timeout since we're processing now
+        if (this.processNextTimeout) {
+            clearTimeout(this.processNextTimeout);
+            this.processNextTimeout = null;
+        }
+        
         this.isPlaying = true;
         this.isPaused = false;
         
@@ -327,6 +337,9 @@ class PlaybackController extends EventEmitter {
             }
             
             if (filePath && fs.existsSync(filePath)) {
+                // Reset playback finished flag since we're starting a new song
+                this.isHandlingPlaybackFinished = false;
+                
                 // Set as current song
                 this.currentSong = {
                     ...item,
@@ -433,6 +446,20 @@ class PlaybackController extends EventEmitter {
      * Handle playback finished (called by Player via event)
      */
     handlePlaybackFinished(success = true) {
+        // Prevent duplicate calls
+        if (this.isHandlingPlaybackFinished) {
+            logger.debug('handlePlaybackFinished already in progress, ignoring duplicate call');
+            return;
+        }
+        
+        this.isHandlingPlaybackFinished = true;
+        
+        // Clear any pending processNext timeout
+        if (this.processNextTimeout) {
+            clearTimeout(this.processNextTimeout);
+            this.processNextTimeout = null;
+        }
+        
         this.isPlaying = false;
         this.isPaused = false;
         
@@ -457,7 +484,14 @@ class PlaybackController extends EventEmitter {
         
         // Process next item if available
         if (queueManager.getQueue().length > 0) {
-            setTimeout(() => this.processNext(), config.playback.songTransitionDelay);
+            this.processNextTimeout = setTimeout(() => {
+                this.processNextTimeout = null;
+                this.isHandlingPlaybackFinished = false;
+                this.processNext();
+            }, config.playback.songTransitionDelay);
+        } else {
+            // No more songs, reset flag immediately
+            this.isHandlingPlaybackFinished = false;
         }
     }
     
