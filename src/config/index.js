@@ -103,18 +103,19 @@ class Config {
      * Get default settings (used when no persisted settings exist)
      */
     getDefaultSettings() {
-        // In dev mode, use debug logging
         const loggingDefaults = this.isDevMode 
             ? { level: 'debug', pretty: true }
             : { level: 'info', pretty: true };
         
+        const wppBrowserName = this.isDevMode ? 'WabiSaby-Dev' : 'WabiSaby';
+
         return {
             server: {
                 port: 3000,
                 host: 'localhost',
             },
             whatsapp: {
-                browserName: 'WppMusicBot',
+                browserName: wppBrowserName,
                 browserVersion: '1.0.0',
             },
             download: {
