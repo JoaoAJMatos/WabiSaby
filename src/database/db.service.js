@@ -967,6 +967,47 @@ function getAllSettings() {
 }
 
 // ============================================
+// Admin Settings Operations
+// ============================================
+
+/**
+ * Check if VIP password is set
+ * @returns {boolean} True if password is configured
+ */
+function hasVipPassword() {
+    const db = getDatabase();
+    const result = db.prepare('SELECT value FROM admin_settings WHERE key = ?').get('vip_password_hash');
+    return !!result;
+}
+
+/**
+ * Get VIP password hash
+ * @returns {string|null} Password hash or null
+ */
+function getVipPasswordHash() {
+    const db = getDatabase();
+    const result = db.prepare('SELECT value FROM admin_settings WHERE key = ?').get('vip_password_hash');
+    return result ? result.value : null;
+}
+
+/**
+ * Set VIP password hash
+ * @param {string} passwordHash - Bcrypt hash of the password
+ * @returns {boolean} True if successful
+ */
+function setVipPasswordHash(passwordHash) {
+    if (!passwordHash) return false;
+    const db = getDatabase();
+    const now = Math.floor(Date.now() / 1000);
+    db.prepare(`
+        INSERT INTO admin_settings (key, value, updated_at)
+        VALUES (?, ?, ?)
+        ON CONFLICT(key) DO UPDATE SET value = ?, updated_at = ?
+    `).run('vip_password_hash', passwordHash, now, passwordHash, now);
+    return true;
+}
+
+// ============================================
 // User Notification Preferences Operations
 // ============================================
 
@@ -1235,6 +1276,11 @@ module.exports = {
     getSetting,
     setSetting,
     getAllSettings,
+    
+    // Admin Settings
+    hasVipPassword,
+    getVipPasswordHash,
+    setVipPasswordHash,
     
     // User Notification Preferences
     getUserNotificationPreference,

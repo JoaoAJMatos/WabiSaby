@@ -20,28 +20,47 @@ function initializeVipArea() {
 }
 
 // Handle VIP password unlock form submission
-function unlockVipArea(event) {
+async function unlockVipArea(event) {
     event.preventDefault();
     
     const passwordInput = document.getElementById('vip-password');
     const errorEl = document.getElementById('vip-password-error');
     const password = passwordInput.value;
     
-    if (password === VIP_ADMIN_PASSWORD) {
-        // Correct password
-        sessionStorage.setItem(VIP_UNLOCK_KEY, 'true');
-        unlockVipAreaUI();
+    if (!password) {
+        errorEl.textContent = 'Please enter a password';
+        return;
+    }
+    
+    try {
+        const response = await fetch('/api/vip-auth/verify', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ password })
+        });
         
-        // Clear the password field
+        const data = await response.json();
+        
+        if (response.ok && data.success) {
+            // Correct password
+            sessionStorage.setItem(VIP_UNLOCK_KEY, 'true');
+            unlockVipAreaUI();
+            
+            // Clear the password field
+            passwordInput.value = '';
+            errorEl.textContent = '';
+        } else {
+            // Incorrect password or error
+            errorEl.textContent = data.error || 'Incorrect password. Please try again.';
+            passwordInput.classList.add('shake');
+            setTimeout(() => passwordInput.classList.remove('shake'), 500);
+            passwordInput.value = '';
+            passwordInput.focus();
+        }
+    } catch (error) {
+        console.error('Error verifying password:', error);
+        errorEl.textContent = 'Error verifying password. Please try again.';
         passwordInput.value = '';
-        errorEl.textContent = '';
-    } else {
-        // Incorrect password
-        errorEl.textContent = 'Incorrect password. Please try again.';
-        passwordInput.classList.add('shake');
-        setTimeout(() => passwordInput.classList.remove('shake'), 500);
-        passwordInput.value = '';
-        passwordInput.focus();
     }
 }
 

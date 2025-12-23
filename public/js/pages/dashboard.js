@@ -1116,7 +1116,125 @@ window.addEventListener('languageChanged', async (event) => {
     fetchData();
 });
 
+// VIP Password Setup Functions
+async function checkVipPasswordSetup() {
+    try {
+        const response = await fetch('/api/vip-auth/status');
+        const data = await response.json();
+        
+        if (!data.configured) {
+            // Show onboarding modal
+            showVipPasswordSetupModal();
+        }
+    } catch (error) {
+        console.error('Error checking VIP password status:', error);
+    }
+}
+
+// VIP Password Setup Modal
+function showVipPasswordSetupModal() {
+    const modal = document.createElement('div');
+    modal.className = 'vip-setup-modal';
+    modal.innerHTML = `
+        <div class="vip-setup-card">
+            <div class="vip-setup-header">
+                <div class="vip-setup-icon">
+                    <i class="fas fa-shield-alt"></i>
+                </div>
+                <div class="vip-setup-text">
+                    <h3>VIP Management Setup</h3>
+                    <p>Set up a password to secure VIP management access</p>
+                </div>
+            </div>
+            <form id="vip-setup-form" class="vip-setup-form">
+                <div class="vip-password-input-wrapper">
+                    <i class="fas fa-key"></i>
+                    <input type="password" id="vip-setup-password" 
+                           placeholder="Enter password (min 6 characters)" 
+                           required minlength="6" autocomplete="new-password">
+                    <button type="button" class="vip-password-toggle"
+                            onclick="toggleVipSetupPasswordVisibility()">
+                        <i class="fas fa-eye" id="vip-setup-password-eye"></i>
+                    </button>
+                </div>
+                <div class="vip-password-input-wrapper">
+                    <i class="fas fa-key"></i>
+                    <input type="password" id="vip-setup-password-confirm" 
+                           placeholder="Confirm password" 
+                           required minlength="6" autocomplete="new-password">
+                </div>
+                <p class="vip-password-error" id="vip-setup-error"></p>
+                <button type="submit" class="vip-setup-btn">
+                    <i class="fas fa-check"></i>
+                    <span>Set Password</span>
+                </button>
+            </form>
+        </div>
+    `;
+    
+    document.body.appendChild(modal);
+    
+    // Handle form submission
+    document.getElementById('vip-setup-form').addEventListener('submit', async (e) => {
+        e.preventDefault();
+        
+        const password = document.getElementById('vip-setup-password').value;
+        const confirmPassword = document.getElementById('vip-setup-password-confirm').value;
+        const errorEl = document.getElementById('vip-setup-error');
+        
+        if (password !== confirmPassword) {
+            errorEl.textContent = 'Passwords do not match';
+            return;
+        }
+        
+        if (password.length < 6) {
+            errorEl.textContent = 'Password must be at least 6 characters';
+            return;
+        }
+        
+        try {
+            const response = await fetch('/api/vip-auth/setup', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ password })
+            });
+            
+            const data = await response.json();
+            
+            if (response.ok && data.success) {
+                modal.remove();
+                showNotification('VIP password configured successfully', 'success');
+            } else {
+                errorEl.textContent = data.error || 'Failed to set password';
+            }
+        } catch (error) {
+            console.error('Error setting VIP password:', error);
+            errorEl.textContent = 'Error setting password. Please try again.';
+        }
+    });
+}
+
+function toggleVipSetupPasswordVisibility() {
+    const passwordInput = document.getElementById('vip-setup-password');
+    const eyeIcon = document.getElementById('vip-setup-password-eye');
+    
+    if (passwordInput.type === 'password') {
+        passwordInput.type = 'text';
+        eyeIcon.classList.remove('fa-eye');
+        eyeIcon.classList.add('fa-eye-slash');
+    } else {
+        passwordInput.type = 'password';
+        eyeIcon.classList.remove('fa-eye-slash');
+        eyeIcon.classList.add('fa-eye');
+    }
+}
+
+// Make function globally accessible
+window.toggleVipSetupPasswordVisibility = toggleVipSetupPasswordVisibility;
+
 initializeVipArea();
+// Check VIP password setup after initialization
+checkVipPasswordSetup();
 
 // Polling interval handles both queue updates and auth checks
 setInterval(fetchData, 2000);

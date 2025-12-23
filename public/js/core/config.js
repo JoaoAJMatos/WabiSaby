@@ -5,8 +5,7 @@
 
 const API_URL = '/api/queue';
 
-// VIP Admin Password (change this to your desired password)
-const VIP_ADMIN_PASSWORD = 'wabisaby2025';
+// VIP Management
 const VIP_UNLOCK_KEY = 'vip_area_unlocked';
 const VIP_INACTIVITY_TIMEOUT = 120000; // 2 minutes of inactivity
 

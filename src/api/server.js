@@ -17,6 +17,7 @@ const { router: groupsRouter, setWhatsAppSocket: setGroupsSocket } = require('./
 const { router: mobileRouter } = require('./routes/mobile.routes');
 const { router: authRouter } = require('./routes/auth.routes');
 const { router: userRouter } = require('./routes/user.routes');
+const { router: vipAuthRouter } = require('./routes/vip-auth.routes');
 const { updateVipName, setWhatsAppSocket: setPriorityServiceSocket } = require('../services/priority.service');
 
 const app = express();
@@ -83,6 +84,7 @@ app.use('/api', groupsRouter);
 app.use('/api', mobileRouter);
 app.use('/api', authRouter);
 app.use('/api', userRouter);
+app.use('/api', vipAuthRouter);
 
 // Serve mobile VIP page
 app.get('/mobile/vip', (req, res) => {
