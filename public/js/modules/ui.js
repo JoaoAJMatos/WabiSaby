@@ -44,15 +44,15 @@ function updateAuthUI(authData) {
     if (authData.actionRequired) {
         statusBadge.className = 'status-badge action-required';
         const actionRequiredText = window.i18n?.tSync('ui.dashboard.nav.actionRequired') || 'ACTION REQUIRED';
-        statusBadge.innerHTML = `<span class="dot"></span> ${actionRequiredText}`;
+        statusBadge.innerHTML = `<span class="dot"></span> <span data-i18n="ui.dashboard.nav.actionRequired">${actionRequiredText}</span>`;
     } else if (authData.isConnected) {
         statusBadge.className = 'status-badge online';
         const liveText = window.i18n?.tSync('ui.dashboard.nav.live') || 'LIVE';
-        statusBadge.innerHTML = `<span class="dot"></span> ${liveText}`;
+        statusBadge.innerHTML = `<span class="dot"></span> <span data-i18n="ui.dashboard.nav.live">${liveText}</span>`;
     } else {
         statusBadge.className = 'status-badge offline';
         const offlineText = window.i18n?.tSync('ui.dashboard.nav.offline') || 'OFFLINE';
-        statusBadge.innerHTML = `<span class="dot"></span> ${offlineText}`;
+        statusBadge.innerHTML = `<span class="dot"></span> <span data-i18n="ui.dashboard.nav.offline">${offlineText}</span>`;
     }
 }
 

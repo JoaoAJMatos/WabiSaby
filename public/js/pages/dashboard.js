@@ -309,20 +309,29 @@ function updateQueueUI(data) {
 
             // SHOW LOADING INDICATOR IN UI
             let loadingText = '';
+            let loadingI18nKey = '';
+            let loadingI18nParams = null;
             if (currentSong.downloadStatus) {
                 if (currentSong.downloadStatus === 'downloading') {
                     const progress = Math.round(currentSong.downloadProgress || 0);
-                    loadingText = window.i18n?.tSync('ui.dashboard.queue.downloading', { progress }) || `Downloading ${progress}%`;
+                    loadingI18nKey = 'ui.dashboard.queue.downloading';
+                    loadingI18nParams = { progress };
+                    loadingText = window.i18n?.tSync(loadingI18nKey, loadingI18nParams) || `Downloading ${progress}%`;
                 } else {
-                    const statusKey = `ui.dashboard.queue.status.${currentSong.downloadStatus}`;
-                    loadingText = window.i18n?.tSync(statusKey) || 
+                    loadingI18nKey = `ui.dashboard.queue.status.${currentSong.downloadStatus}`;
+                    loadingText = window.i18n?.tSync(loadingI18nKey) || 
                         (currentSong.downloadStatus.charAt(0).toUpperCase() + currentSong.downloadStatus.slice(1) + '...');
                 }
             } else {
-                loadingText = window.i18n?.tSync('ui.dashboard.queue.preparingAudio') || "Preparing audio...";
+                loadingI18nKey = 'ui.dashboard.queue.preparingAudio';
+                loadingText = window.i18n?.tSync(loadingI18nKey) || "Preparing audio...";
             }
             
             const progress = currentSong.downloadProgress || 0;
+            
+            // Build data attributes for i18n
+            const loadingDataAttrs = loadingI18nKey ? `data-i18n="${loadingI18nKey}"` : '';
+            const loadingDataParams = loadingI18nParams ? `data-i18n-params='${JSON.stringify(loadingI18nParams)}'` : '';
             
             currentSongContainer.innerHTML = `
                 <div class="np-title">${title}</div>
@@ -333,7 +342,7 @@ function updateQueueUI(data) {
                 </div>` : ''}
                 <div class="np-loading-state">
                     <i class="fas fa-circle-notch np-loading-spinner"></i>
-                    <span>${loadingText}</span>
+                    <span ${loadingDataAttrs} ${loadingDataParams}>${loadingText}</span>
                 </div>
                 ${(progress > 0 && currentSong.downloadStatus === 'downloading') ? `
                 <div class="np-loading-progress-container">
@@ -428,7 +437,7 @@ function updateQueueUI(data) {
             if (item.downloadStatus === 'error') {
                 // Show error status
                 const failedText = window.i18n?.tSync('ui.dashboard.queue.status.failed') || 'FAILED';
-                statusHTML = `<div class="status-badge-small error"><i class="fas fa-exclamation-triangle"></i> ${failedText}</div>`;
+                statusHTML = `<div class="status-badge-small error"><i class="fas fa-exclamation-triangle"></i> <span data-i18n="ui.dashboard.queue.status.failed">${failedText}</span></div>`;
             } else if (item.type === 'url' && item.downloading) {
                 const progress = item.downloadProgress || 0;
                 const status = item.downloadStatus || 'waiting';
@@ -437,7 +446,7 @@ function updateQueueUI(data) {
                 
                 statusHTML = `
                     <div class="download-status">
-                        <div class="status-text">${statusText}</div>
+                        <div class="status-text" data-i18n="${statusKey}">${statusText}</div>
                         <div class="progress-bar-small">
                             <div class="progress-fill" style="width: ${progress}%"></div>
                         </div>
@@ -446,14 +455,14 @@ function updateQueueUI(data) {
                 `;
             } else if (item.type === 'file' || item.downloadStatus === 'ready') {
                 const readyText = window.i18n?.tSync('ui.dashboard.queue.status.ready') || 'READY';
-                statusHTML = `<div class="status-badge-small ready"><i class="fas fa-check-circle"></i> ${readyText}</div>`;
+                statusHTML = `<div class="status-badge-small ready"><i class="fas fa-check-circle"></i> <span data-i18n="ui.dashboard.queue.status.ready">${readyText}</span></div>`;
             } else if (item.type === 'url') {
                 const queuedText = window.i18n?.tSync('ui.dashboard.queue.status.queued') || 'QUEUED';
-                statusHTML = `<div class="status-badge-small queued"><i class="fas fa-circle"></i> ${queuedText}</div>`;
+                statusHTML = `<div class="status-badge-small queued"><i class="fas fa-circle"></i> <span data-i18n="ui.dashboard.queue.status.queued">${queuedText}</span></div>`;
             }
             
             li.innerHTML = `
-                <div class="drag-handle" draggable="false">
+                <div class="drag-handle">
                     <i class="fas fa-grip-vertical"></i>
                 </div>
                 ${item.thumbnailUrl ? `<div class="queue-thumbnail"><img src="${item.thumbnailUrl}" alt="" draggable="false"></div>` : ''}
@@ -475,34 +484,45 @@ function updateQueueUI(data) {
                 </button>
             `;
             
-            // Set all child elements to not be draggable
-            const childElements = li.querySelectorAll('*');
-            childElements.forEach(child => {
-                child.setAttribute('draggable', 'false');
+            // Prevent images from being draggable (they interfere with drag and drop)
+            const images = li.querySelectorAll('img');
+            images.forEach(img => {
+                img.setAttribute('draggable', 'false');
             });
-            
+
             // Special handling for remove button - don't start drag when clicking it
             const removeBtn = li.querySelector('.queue-remove-btn');
             if (removeBtn) {
-                removeBtn.addEventListener('mousedown', (e) => {
-                    e.stopPropagation();
-                });
-                removeBtn.addEventListener('click', (e) => {
-                    e.stopPropagation();
-                });
+                removeBtn.setAttribute('draggable', 'false');
             }
             
-            // Add drag event listeners - use bind to ensure 'this' context is correct
-            if (window.handleDragStart) {
-                li.addEventListener('dragstart', window.handleDragStart);
-                li.addEventListener('dragend', window.handleDragEnd);
-                li.addEventListener('dragover', window.handleDragOver);
-                li.addEventListener('drop', window.handleDrop);
-                li.addEventListener('dragenter', window.handleDragEnter);
-                li.addEventListener('dragleave', window.handleDragLeave);
-            } else {
-                console.error('Drag handlers not found! Make sure queue.js is loaded before dashboard.js');
+            // Ensure drag handle has proper cursor style
+            const dragHandle = li.querySelector('.drag-handle');
+            if (dragHandle) {
+                dragHandle.style.cursor = 'grab';
             }
+            
+            // Make sure the entire queue item is draggable, not just specific parts
+            // Set cursor on the entire item
+            li.style.cursor = 'grab';
+
+            // Add mousedown handler for mouse-based drag
+            li.addEventListener('mousedown', (e) => {
+                // Don't start drag if clicking on remove button
+                if (e.target.closest('.queue-remove-btn')) {
+                    return;
+                }
+
+                // Start mouse-based drag
+                startMouseDrag(e, li);
+            });
+
+            // Prevent HTML5 drag/drop from interfering
+            li.setAttribute('draggable', 'false');
+            li.addEventListener('dragstart', (e) => {
+                e.preventDefault();
+                return false;
+            });
             
             queueList.appendChild(li);
         });
@@ -954,7 +974,18 @@ function updateDashboardTranslations() {
         const key = element.getAttribute('data-i18n');
         if (!key) return;
         
-        const translation = window.i18n.tSync(key);
+        // Check for parameters
+        const paramsAttr = element.getAttribute('data-i18n-params');
+        let params = null;
+        if (paramsAttr) {
+            try {
+                params = JSON.parse(paramsAttr);
+            } catch (e) {
+                console.warn('Failed to parse data-i18n-params:', paramsAttr);
+            }
+        }
+        
+        const translation = params ? window.i18n.tSync(key, params) : window.i18n.tSync(key);
         if (translation && translation !== key) {
             // Skip input/textarea elements (they use placeholders, handled separately)
             if (element.tagName === 'INPUT' || element.tagName === 'TEXTAREA') {
@@ -1044,10 +1075,17 @@ function updateDashboardTranslations() {
     // Update effects mode label
     const effectsModeLabel = document.getElementById('effects-mode-label');
     if (effectsModeLabel) {
-        const isAdvanced = effectsModeLabel.textContent.trim().toLowerCase() === 'advanced' || 
-                          effectsModeLabel.textContent.trim().toLowerCase() === 'avançado';
-        const modeKey = isAdvanced ? 'ui.dashboard.effects.advanced' : 'ui.dashboard.effects.simple';
-        effectsModeLabel.textContent = window.i18n.tSync(modeKey);
+        // Use data-i18n attribute if available, otherwise check text content
+        const i18nKey = effectsModeLabel.getAttribute('data-i18n');
+        if (i18nKey) {
+            effectsModeLabel.textContent = window.i18n.tSync(i18nKey);
+        } else {
+            // Fallback: check text content
+            const isAdvanced = effectsModeLabel.textContent.trim().toLowerCase() === 'advanced' || 
+                              effectsModeLabel.textContent.trim().toLowerCase() === 'avançado';
+            const modeKey = isAdvanced ? 'ui.dashboard.effects.advanced' : 'ui.dashboard.effects.simple';
+            effectsModeLabel.textContent = window.i18n.tSync(modeKey);
+        }
     }
     
     // Update effects expand/collapse button title

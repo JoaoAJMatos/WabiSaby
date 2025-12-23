@@ -478,17 +478,41 @@ function toggleEffectsMode() {
         simpleMode.style.display = 'block';
         advancedMode.style.display = 'none';
         if (quickAdjustments) quickAdjustments.style.display = 'block';
-        if (modeLabel) modeLabel.textContent = 'Simple';
+        if (modeLabel) {
+            modeLabel.setAttribute('data-i18n', 'ui.dashboard.effects.simple');
+            if (window.i18n && window.i18n.tSync) {
+                modeLabel.textContent = window.i18n.tSync('ui.dashboard.effects.simple');
+            } else {
+                modeLabel.textContent = 'Simple';
+            }
+        }
         if (modeToggle) modeToggle.classList.remove('active');
     } else {
         simpleMode.style.display = 'none';
         advancedMode.style.display = 'block';
         if (quickAdjustments) quickAdjustments.style.display = 'none';
-        if (modeLabel) modeLabel.textContent = 'Advanced';
+        if (modeLabel) {
+            modeLabel.setAttribute('data-i18n', 'ui.dashboard.effects.advanced');
+            if (window.i18n && window.i18n.tSync) {
+                modeLabel.textContent = window.i18n.tSync('ui.dashboard.effects.advanced');
+            } else {
+                modeLabel.textContent = 'Advanced';
+            }
+        }
         if (modeToggle) modeToggle.classList.add('active');
         setTimeout(() => initGraphicalEQ(), 100);
     }
     syncModeValues();
+    
+    // Trigger translation update if available
+    if (window.updateDashboardTranslations && typeof window.updateDashboardTranslations === 'function') {
+        setTimeout(() => {
+            if (modeLabel && window.i18n && window.i18n.tSync) {
+                const modeKey = effectsMode === 'simple' ? 'ui.dashboard.effects.simple' : 'ui.dashboard.effects.advanced';
+                modeLabel.textContent = window.i18n.tSync(modeKey);
+            }
+        }, 100);
+    }
 }
 
 /**
@@ -508,15 +532,40 @@ function restoreEffectsMode() {
         if (simpleMode) simpleMode.style.display = 'block';
         if (advancedMode) advancedMode.style.display = 'none';
         if (quickAdjustments) quickAdjustments.style.display = 'block';
-        if (modeLabel) modeLabel.textContent = 'Simple';
+        if (modeLabel) {
+            modeLabel.setAttribute('data-i18n', 'ui.dashboard.effects.simple');
+            if (window.i18n && window.i18n.tSync) {
+                modeLabel.textContent = window.i18n.tSync('ui.dashboard.effects.simple');
+            } else {
+                modeLabel.textContent = 'Simple';
+            }
+        }
         if (modeToggle) modeToggle.classList.remove('active');
     } else {
         if (simpleMode) simpleMode.style.display = 'none';
         if (advancedMode) advancedMode.style.display = 'block';
         if (quickAdjustments) quickAdjustments.style.display = 'none';
-        if (modeLabel) modeLabel.textContent = 'Advanced';
+        if (modeLabel) {
+            modeLabel.setAttribute('data-i18n', 'ui.dashboard.effects.advanced');
+            if (window.i18n && window.i18n.tSync) {
+                modeLabel.textContent = window.i18n.tSync('ui.dashboard.effects.advanced');
+            } else {
+                modeLabel.textContent = 'Advanced';
+            }
+        }
         if (modeToggle) modeToggle.classList.add('active');
         setTimeout(() => initGraphicalEQ(), 100);
+    }
+    
+    // Trigger translation update if available (for when i18n loads after this function)
+    if (window.updateDashboardTranslations && typeof window.updateDashboardTranslations === 'function') {
+        // Use a small delay to ensure i18n is ready
+        setTimeout(() => {
+            if (modeLabel && window.i18n && window.i18n.tSync) {
+                const modeKey = effectsMode === 'simple' ? 'ui.dashboard.effects.simple' : 'ui.dashboard.effects.advanced';
+                modeLabel.textContent = window.i18n.tSync(modeKey);
+            }
+        }, 100);
     }
 }
 

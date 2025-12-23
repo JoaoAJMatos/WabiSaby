@@ -133,85 +133,110 @@ window.removeSong = async function(index) {
     });
 };
 
-// Drag and Drop State
+// Mouse-based Drag and Drop State (more reliable than HTML5 drag/drop)
 let draggedElement = null;
 let draggedIndex = null;
+let isDragging = false;
+let dragOffset = { x: 0, y: 0 };
+let dropTarget = null;
 
-// Attach drag handlers to window for global access
-window.handleDragStart = function(e) {
-    // Don't start drag if clicking on remove button
-    if (e.target.closest('.queue-remove-btn')) {
-        e.preventDefault();
-        return false;
+// Mouse-based drag handlers
+function startMouseDrag(e, element) {
+    console.log('Starting mouse drag on element:', element.dataset.index);
+
+    draggedElement = element;
+    draggedIndex = parseInt(element.dataset.index);
+    isDragging = true;
+
+    // Calculate offset from mouse to element
+    const rect = element.getBoundingClientRect();
+    dragOffset.x = e.clientX - rect.left;
+    dragOffset.y = e.clientY - rect.top;
+
+    element.classList.add('dragging');
+    element.style.opacity = '0.5';
+    element.style.transform = 'rotate(2deg)';
+
+    // Add global mouse event listeners
+    document.addEventListener('mousemove', handleMouseMove);
+    document.addEventListener('mouseup', handleMouseUp);
+
+    // Prevent text selection
+    document.body.style.userSelect = 'none';
+    document.body.style.webkitUserSelect = 'none';
+    document.body.style.mozUserSelect = 'none';
+}
+
+function handleMouseMove(e) {
+    if (!isDragging || !draggedElement) return;
+
+    // Update drop target based on mouse position
+    const elements = document.querySelectorAll('.queue-item');
+    let newDropTarget = null;
+
+    for (const element of elements) {
+        if (element === draggedElement) continue;
+
+        const rect = element.getBoundingClientRect();
+        if (e.clientX >= rect.left && e.clientX <= rect.right &&
+            e.clientY >= rect.top && e.clientY <= rect.bottom) {
+            newDropTarget = element;
+            break;
+        }
     }
-    
-    console.log('Drag started on queue item', this.dataset.index);
-    draggedElement = this;
-    draggedIndex = parseInt(this.dataset.index);
-    this.classList.add('dragging');
-    e.dataTransfer.effectAllowed = 'move';
-    e.dataTransfer.setData('text/html', this.innerHTML);
-    return true;
-};
 
-window.handleDragEnd = function(e) {
-    this.classList.remove('dragging');
-    // Remove all drag-over indicators
+    // Update visual feedback
     document.querySelectorAll('.queue-item').forEach(item => {
-        item.classList.remove('drag-over');
+        if (item !== draggedElement) {
+            item.classList.remove('drag-over');
+        }
     });
-};
 
-window.handleDragOver = function(e) {
-    if (e.preventDefault) {
-        e.preventDefault();
+    if (newDropTarget && newDropTarget !== draggedElement) {
+        newDropTarget.classList.add('drag-over');
     }
-    e.dataTransfer.dropEffect = 'move';
-    return false;
-};
 
-window.handleDragEnter = function(e) {
-    if (this !== draggedElement) {
-        this.classList.add('drag-over');
-    }
-};
+    dropTarget = newDropTarget;
+}
 
-window.handleDragLeave = function(e) {
-    this.classList.remove('drag-over');
-};
+function handleMouseUp(e) {
+    if (!isDragging || !draggedElement) return;
 
-window.handleDrop = function(e) {
-    if (e.stopPropagation) {
-        e.stopPropagation();
-    }
-    e.preventDefault();
-    this.classList.remove('drag-over');
-    
-    if (draggedElement !== this) {
-        const dropIndex = parseInt(this.dataset.index);
-        console.log('Dropped item from index', draggedIndex, 'to index', dropIndex);
-        
+    console.log('Mouse drag ended', {
+        draggedIndex: draggedIndex,
+        dropTarget: dropTarget ? dropTarget.dataset.index : 'none'
+    });
+
+    // Perform reorder if we have a valid drop target
+    if (dropTarget && dropTarget !== draggedElement) {
+        const dropIndex = parseInt(dropTarget.dataset.index);
+
+        console.log('Reordering from index', draggedIndex, 'to index', dropIndex);
+
         // Get song title from dragged element for notification
         const songTitleElement = draggedElement.querySelector('.song-title');
         const songTitle = songTitleElement ? songTitleElement.textContent.trim().replace(/\s+/g, ' ') : 'TRACK';
-        // Remove priority icon if present
         const cleanTitle = songTitle.replace(/\s*👑\s*/g, '').trim() || 'TRACK';
-        
+
         // Reorder queue on backend
         fetch('/api/queue/reorder', {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({
-                fromIndex: draggedIndex, 
+                fromIndex: draggedIndex,
                 toIndex: dropIndex
             })
         }).then(response => {
+            console.log('Reorder API response:', response.status, response.statusText);
+            return response.json().then(data => ({ response, data }));
+        }).then(({ response, data }) => {
             if (response.ok) {
-                const newPosition = dropIndex + 1; // Position is 1-based for display
+                const newPosition = dropIndex + 1;
                 const movedText = window.i18n?.tSync('ui.dashboard.queue.notifications.movedToPosition', { position: newPosition }) || `MOVED TO POSITION ${newPosition}`;
                 showNotification(movedText, 'success');
                 fetchData();
             } else {
+                console.error('Reorder failed:', data);
                 const failedText = window.i18n?.tSync('ui.dashboard.queue.notifications.reorderFailed') || 'REORDER FAILED';
                 showNotification(failedText, 'error');
             }
@@ -221,7 +246,59 @@ window.handleDrop = function(e) {
             showNotification(failedText, 'error');
         });
     }
-    
+
+    // Clean up
+    draggedElement.classList.remove('dragging');
+    draggedElement.style.opacity = '';
+    draggedElement.style.transform = '';
+
+    document.querySelectorAll('.queue-item').forEach(item => {
+        item.classList.remove('drag-over');
+    });
+
+    document.body.style.userSelect = '';
+    document.body.style.webkitUserSelect = '';
+    document.body.style.mozUserSelect = '';
+
+    document.removeEventListener('mousemove', handleMouseMove);
+    document.removeEventListener('mouseup', handleMouseUp);
+
+    draggedElement = null;
+    draggedIndex = null;
+    isDragging = false;
+    dropTarget = null;
+}
+
+// HTML5 drag/drop handlers (fallback - not used for main functionality)
+window.handleDragStart = function(e) {
+    // Prevent HTML5 drag/drop from interfering
+    e.preventDefault();
+    return false;
+};
+
+window.handleDragEnd = function(e) {
+    // Clean up any HTML5 drag state
+    this.classList.remove('dragging');
+    document.querySelectorAll('.queue-item').forEach(item => {
+        item.classList.remove('drag-over');
+    });
+};
+
+window.handleDragOver = function(e) {
+    e.preventDefault();
+    return false;
+};
+
+window.handleDragEnter = function(e) {
+    // No-op for HTML5
+};
+
+window.handleDragLeave = function(e) {
+    // No-op for HTML5
+};
+
+window.handleDrop = function(e) {
+    e.preventDefault();
     return false;
 };
 
