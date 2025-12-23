@@ -1,7 +1,7 @@
 #!/usr/bin/env bun
 /**
  * Setup Dependencies Script
- * Automatically installs yt-dlp and FFmpeg via package managers or downloads binaries
+ * Automatically installs yt-dlp, FFmpeg, and MPV (optional but recommended) via package managers or downloads binaries
  */
 
 const { execSync, exec } = require('child_process');
@@ -523,6 +523,101 @@ async function installFFmpeg() {
 }
 
 /**
+ * Install MPV (optional but recommended for seamless audio effects)
+ */
+async function installMPV() {
+    log('\n📦 Checking MPV (recommended for seamless effects)...', 'cyan');
+    
+    // Check if already available
+    if (isCommandAvailable('mpv')) {
+        try {
+            const version = execSync('mpv --version', { encoding: 'utf-8' }).split('\n')[0];
+            log(`✓ MPV is already installed (${version})`, 'green');
+            log('  🎵 You\'ll have seamless audio effect changes!', 'green');
+            return true;
+        } catch {
+            // Continue with installation
+        }
+    }
+    
+    log('  ℹ MPV enables seamless audio effect changes (no interruptions)', 'blue');
+    log('  ℹ Without MPV, effect changes may cause brief audio gaps', 'blue');
+    
+    const answer = await askUser('  Do you want to install MPV? [Y/n]: ');
+    if (answer === 'n' || answer === 'no') {
+        log('  ⏭ Skipping MPV installation (ffplay will be used as fallback)', 'yellow');
+        return false;
+    }
+    
+    log('Installing MPV...', 'yellow');
+    
+    // Try package managers
+    if (IS_WINDOWS && isCommandAvailable('choco')) {
+        if (!isRunningAsAdmin()) {
+            log('  ⚠ Chocolatey requires admin rights', 'yellow');
+            log('  ⏭ Skipping MPV (you can install manually: choco install mpv)', 'yellow');
+            return false;
+        }
+        try {
+            log('  📦 Installing via Chocolatey...', 'blue');
+            execSync('choco install mpv -y', { stdio: 'inherit' });
+            log('  ✓ MPV installed via Chocolatey', 'green');
+            log('  🎵 You\'ll have seamless audio effect changes!', 'green');
+            return true;
+        } catch (error) {
+            log('  ✗ Chocolatey installation failed', 'red');
+        }
+    }
+    
+    if (IS_MACOS && isCommandAvailable('brew')) {
+        try {
+            log('  Trying Homebrew...', 'blue');
+            execSync('brew install mpv', { stdio: 'inherit' });
+            log('✓ MPV installed via Homebrew', 'green');
+            log('  🎵 You\'ll have seamless audio effect changes!', 'green');
+            return true;
+        } catch (error) {
+            log('  Homebrew installation failed', 'yellow');
+        }
+    }
+    
+    if (IS_LINUX) {
+        const packageManagers = [
+            { cmd: 'apt-get', install: 'sudo apt-get update && sudo apt-get install -y mpv' },
+            { cmd: 'yum', install: 'sudo yum install -y mpv' },
+            { cmd: 'dnf', install: 'sudo dnf install -y mpv' },
+            { cmd: 'pacman', install: 'sudo pacman -S --noconfirm mpv' }
+        ];
+        
+        for (const pm of packageManagers) {
+            if (isCommandAvailable(pm.cmd)) {
+                try {
+                    log(`  Trying ${pm.cmd}...`, 'blue');
+                    execSync(pm.install, { stdio: 'inherit' });
+                    log(`✓ MPV installed via ${pm.cmd}`, 'green');
+                    log('  🎵 You\'ll have seamless audio effect changes!', 'green');
+                    return true;
+                } catch (error) {
+                    log(`  ${pm.cmd} installation failed, trying next...`, 'yellow');
+                }
+            }
+        }
+    }
+    
+    log('  ⚠ MPV installation failed or not available', 'yellow');
+    log('  ℹ ffplay (from FFmpeg) will be used as fallback', 'blue');
+    log('  ℹ You can install MPV manually later for better experience', 'blue');
+    if (IS_MACOS) {
+        log('    Run: brew install mpv', 'yellow');
+    } else if (IS_LINUX) {
+        log('    Run: sudo apt-get install mpv (or equivalent)', 'yellow');
+    } else if (IS_WINDOWS) {
+        log('    Run: choco install mpv (requires admin)', 'yellow');
+    }
+    return false;
+}
+
+/**
  * Main setup function
  */
 async function main() {
@@ -538,16 +633,24 @@ async function main() {
     
     const results = {
         ytDlp: false,
-        ffmpeg: false
+        ffmpeg: false,
+        mpv: false  // Optional but recommended
     };
     
     try {
         results.ytDlp = await installYtDlp();
         results.ffmpeg = await installFFmpeg();
+        results.mpv = await installMPV();  // Optional, won't fail setup
         
         log('\n============================', 'cyan');
         if (results.ytDlp && results.ffmpeg) {
-            log('✓ All dependencies installed successfully!', 'green');
+            log('✓ All required dependencies installed successfully!', 'green');
+            if (results.mpv) {
+                log('✓ MPV installed - seamless audio effects enabled!', 'green');
+            } else {
+                log('ℹ MPV not installed - using ffplay (effect changes may have brief gaps)', 'yellow');
+                log('  Install MPV later for seamless effects: see docs/adr/001-audio-player-backend.md', 'yellow');
+            }
             process.exit(0);
         } else {
             log('⚠ Some dependencies may need manual installation', 'yellow');
@@ -583,5 +686,5 @@ if (require.main === module) {
     main();
 }
 
-module.exports = { installYtDlp, installFFmpeg };
+module.exports = { installYtDlp, installFFmpeg, installMPV };
 

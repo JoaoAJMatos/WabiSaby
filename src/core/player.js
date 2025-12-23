@@ -3,6 +3,7 @@ const { spawn, execSync } = require('child_process');
 const fs = require('fs');
 const net = require('net');
 const path = require('path');
+const os = require('os');
 const config = require('../config');
 const { logger } = require('../utils/logger.util');
 const effectsService = require('../services/effects.service');
@@ -88,9 +89,19 @@ function detectBackend() {
 
 /**
  * Generate unique IPC socket path for MPV
+ * On Windows, MPV uses named pipes, so we use a simple name
+ * On Unix, we use a file path
  */
 function getSocketPath() {
-    return path.join(config.paths.temp, `mpv-socket-${process.pid}`);
+    const IS_WINDOWS = os.platform() === 'win32';
+    if (IS_WINDOWS) {
+        // On Windows, MPV creates a named pipe, so we use a simple name
+        // The pipe will be created as \\.\pipe\mpv-socket-<pid>
+        return `mpv-socket-${process.pid}`;
+    } else {
+        // On Unix, use a file path
+        return path.join(config.paths.temp, `mpv-socket-${process.pid}`);
+    }
 }
 
 /**
@@ -129,12 +140,25 @@ function connectToMpv() {
             return;
         }
 
+        const IS_WINDOWS = os.platform() === 'win32';
         let retries = 0;
-        const maxRetries = 20;
-        const retryDelay = 100;
+        // Windows named pipes may take longer to be ready
+        const maxRetries = IS_WINDOWS ? 50 : 20;
+        const retryDelay = IS_WINDOWS ? 150 : 100;
 
         const tryConnect = () => {
-            ipcSocket = net.createConnection(ipcSocketPath);
+            // Check if MPV process is still running
+            if (!mpvProcess || mpvProcess.killed) {
+                reject(new Error('MPV process is not running'));
+                return;
+            }
+
+            // On Windows, named pipes use \\.\pipe\<name> format
+            const connectionPath = IS_WINDOWS 
+                ? `\\\\.\\pipe\\${ipcSocketPath}`
+                : ipcSocketPath;
+
+            ipcSocket = net.createConnection(connectionPath);
 
             ipcSocket.on('connect', () => {
                 logger.info('Connected to MPV IPC socket');
@@ -176,14 +200,19 @@ function connectToMpv() {
             ipcSocket.on('error', (err) => {
                 if (retries < maxRetries) {
                     retries++;
+                    if (retries % 10 === 0) {
+                        logger.debug(`Retrying MPV connection (attempt ${retries}/${maxRetries})...`);
+                    }
                     setTimeout(tryConnect, retryDelay);
                 } else {
-                    reject(new Error(`Failed to connect to MPV socket: ${err.message}`));
+                    reject(new Error(`Failed to connect to MPV socket after ${maxRetries} attempts: ${err.message}`));
                 }
             });
         };
 
-        tryConnect();
+        // On Windows, give MPV a bit more time to create the named pipe
+        const initialDelay = IS_WINDOWS ? 200 : 50;
+        setTimeout(tryConnect, initialDelay);
     });
 }
 
@@ -191,9 +220,17 @@ function connectToMpv() {
  * Start MPV process with IPC
  */
 async function startMpv(filePath, startTimeOffset = 0) {
+    const IS_WINDOWS = os.platform() === 'win32';
     ipcSocketPath = getSocketPath();
-    if (fs.existsSync(ipcSocketPath)) {
-        fs.unlinkSync(ipcSocketPath);
+    
+    // On Unix, clean up old socket file if it exists
+    // On Windows, named pipes don't exist as files, so skip this
+    if (!IS_WINDOWS && fs.existsSync(ipcSocketPath)) {
+        try {
+            fs.unlinkSync(ipcSocketPath);
+        } catch (err) {
+            logger.debug(`Could not remove old socket file: ${err.message}`);
+        }
     }
 
     const args = [
