@@ -217,10 +217,15 @@
           "initializing": "A INICIALIZAR",
           "fetching": "A PROCURAR",
           "searching": "A PESQUISAR",
+          "resolving": "A RESOLVER",
+          "preparing": "A PREPARAR",
           "downloading": "A CARREGAR",
           "converting": "A PROCESSAR",
           "ready": "PRONTO",
-          "queued": "NA FILA"
+          "queued": "NA FILA",
+          "waiting": "A AGUARDAR",
+          "pending": "PENDENTE",
+          "complete": "COMPLETO"
         },
         "downloading": "A descarregar {progress}%",
         "preparingAudio": "A preparar áudio...",

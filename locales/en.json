@@ -209,10 +209,15 @@
           "initializing": "INITIALIZING",
           "fetching": "FETCHING",
           "searching": "SEARCHING",
+          "resolving": "RESOLVING",
+          "preparing": "PREPARING",
           "downloading": "LOADING",
           "converting": "PROCESSING",
           "ready": "READY",
-          "queued": "QUEUED"
+          "queued": "QUEUED",
+          "waiting": "WAITING",
+          "pending": "PENDING",
+          "complete": "COMPLETE"
         },
         "downloading": "Downloading {progress}%",
         "preparingAudio": "Preparing audio...",
