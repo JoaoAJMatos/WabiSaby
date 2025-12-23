@@ -1,4 +1,5 @@
 const { deps: defaultDeps } = require('../dependencies');
+const rateLimitService = require('../../services/rate-limit.service');
 
 /**
  * !play command - Add a track to the queue
@@ -27,6 +28,19 @@ async function playCommand(sock, msg, args, deps = defaultDeps) {
     
     if (!input) {
         await sendMessageWithMention(sock, remoteJid, i18n('commands.play.usage', userLang), sender);
+        return;
+    }
+
+    // Check rate limit before processing request
+    const rateLimitCheck = rateLimitService.checkRateLimit(sender, 'play');
+    if (!rateLimitCheck.allowed) {
+        const waitSeconds = rateLimitCheck.waitSeconds || 0;
+        await sendMessageWithMention(
+            sock, 
+            remoteJid, 
+            i18n('commands.rateLimit.exceeded', userLang, { seconds: waitSeconds }), 
+            sender
+        );
         return;
     }
 
@@ -103,6 +117,8 @@ async function playCommand(sock, msg, args, deps = defaultDeps) {
     if (result === null) {
         await sendMessageWithMention(sock, remoteJid, i18n('commands.play.alreadyInQueue', userLang, { title }), sender);
     } else {
+        // Record successful request for rate limiting
+        rateLimitService.recordRequest(sender, 'play');
         await sendMessageWithMention(sock, remoteJid, i18n('commands.play.added', userLang, { title }), sender);
     }
 }

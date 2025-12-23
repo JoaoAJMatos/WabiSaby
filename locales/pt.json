@@ -117,6 +117,9 @@
       "pending": "Um pedido para adicionar este grupo já está pendente. Por favor, verifica o painel web para confirmar.",
       "requestSent": "Pedido para adicionar este grupo foi enviado. Por favor, verifica o painel web para confirmar."
     },
+    "rateLimit": {
+      "exceeded": "⏱️ *Limite de Pedidos Excedido*\n\nFizeste demasiados pedidos. Por favor, espera *{seconds}* segundos antes de tentares novamente.\n\n💡 Os utilizadores VIP têm pedidos ilimitados."
+    },
     "unknown": "Comando desconhecido: {command}. Escreve !help para ver os comandos.",
     "error": "Erro ao processar comando."
   },
@@ -463,6 +466,18 @@
         "privacy": {
           "demoMode": "Modo Demo",
           "demoModeDesc": "Desfocar IDs do WhatsApp e IDs de grupos para capturas de ecrã e demos seguras"
+        },
+        "rateLimit": {
+          "title": "Limitação de Taxa",
+          "description": "Controlar limites de pedidos para prevenir spam e abuso",
+          "enabled": "Ativar Limitação de Taxa",
+          "enabledDesc": "Limitar quantos pedidos de música os utilizadores não-VIP podem fazer dentro de uma janela de tempo",
+          "maxRequests": "Pedidos Máximos",
+          "maxRequestsDesc": "Número máximo de pedidos permitidos por janela de tempo",
+          "windowSeconds": "Janela de Tempo (segundos)",
+          "windowSecondsDesc": "Janela de tempo em segundos para contar pedidos (mínimo 10 segundos)",
+          "info": "Sobre a Limitação de Taxa",
+          "infoText": "A limitação de taxa aplica-se apenas a utilizadores não-VIP. Os utilizadores VIP podem fazer pedidos ilimitados. O padrão é 3 pedidos por 60 segundos. Quando um utilizador excede o limite, deve esperar até que a janela de tempo seja reiniciada."
         },
         "system": {
           "title": "Controlos do Sistema",

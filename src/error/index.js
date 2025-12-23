@@ -11,7 +11,6 @@ const { isRateLimitError } = require('../utils/rate-limit.util');
  * This should be called once at application startup
  */
 function initializeErrorHandlers() {
-    // Handle unhandled promise rejections (prevent crashes from async errors)
     process.on('unhandledRejection', (reason, promise) => {
         if (isRateLimitError(reason)) {
             const errorMsg = reason?.message || String(reason);
@@ -25,7 +24,6 @@ function initializeErrorHandlers() {
         logger.error('Promise:', promise);
     });
 
-    // Handle uncaught exceptions (prevent crashes from sync errors)
     process.on('uncaughtException', (error) => {
         if (isRateLimitError(error)) {
             const errorMsg = error?.message || String(error);

@@ -1213,6 +1213,54 @@ function updateEffects(effects) {
     );
 }
 
+// ============================================
+// Rate Limiting Operations
+// ============================================
+
+/**
+ * Add a rate limit request record
+ * @param {string} userId - User ID (WhatsApp ID)
+ * @param {string} command - Command type ('play' or 'playlist')
+ */
+function addRateLimitRequest(userId, command) {
+    const db = getDatabase();
+    db.prepare(`
+        INSERT INTO rate_limit_requests (user_id, command, requested_at)
+        VALUES (?, ?, strftime('%s', 'now'))
+    `).run(userId, command);
+}
+
+/**
+ * Get recent rate limit requests for a user and command within a time window
+ * @param {string} userId - User ID (WhatsApp ID)
+ * @param {string} command - Command type ('play' or 'playlist')
+ * @param {number} windowStart - Unix timestamp for start of time window
+ * @returns {Array} Array of request records
+ */
+function getRecentRateLimitRequests(userId, command, windowStart) {
+    const db = getDatabase();
+    return db.prepare(`
+        SELECT id, user_id, command, requested_at
+        FROM rate_limit_requests
+        WHERE user_id = ? AND command = ? AND requested_at >= ?
+        ORDER BY requested_at ASC
+    `).all(userId, command, windowStart);
+}
+
+/**
+ * Clean up old rate limit request records
+ * @param {number} beforeTimestamp - Unix timestamp - delete records older than this
+ * @returns {number} Number of records deleted
+ */
+function cleanupOldRateLimitRequests(beforeTimestamp) {
+    const db = getDatabase();
+    const result = db.prepare(`
+        DELETE FROM rate_limit_requests
+        WHERE requested_at < ?
+    `).run(beforeTimestamp);
+    return result.changes;
+}
+
 module.exports = {
     // Songs
     getOrCreateSong,
@@ -1292,6 +1340,11 @@ module.exports = {
     
     // Effects
     getEffects,
-    updateEffects
+    updateEffects,
+    
+    // Rate Limiting
+    addRateLimitRequest,
+    getRecentRateLimitRequests,
+    cleanupOldRateLimitRequests
 };
 

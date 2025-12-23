@@ -5604,19 +5604,40 @@ input:focus {
 /* Navigation List */
 .settings-nav {
     list-style: none;
-    padding: 12px 10px;
+    padding: 12px 10px 20px 10px;
     margin: 0;
     flex: 1;
     display: flex;
     flex-direction: column;
     gap: 4px;
+    overflow-y: auto;
+    overflow-x: hidden;
+    scrollbar-width: thin;
+    scrollbar-color: rgba(255, 255, 255, 0.1) transparent;
+}
+
+.settings-nav::-webkit-scrollbar {
+    width: 6px;
+}
+
+.settings-nav::-webkit-scrollbar-track {
+    background: transparent;
+}
+
+.settings-nav::-webkit-scrollbar-thumb {
+    background: rgba(255, 255, 255, 0.1);
+    border-radius: 3px;
+}
+
+.settings-nav::-webkit-scrollbar-thumb:hover {
+    background: rgba(255, 255, 255, 0.15);
 }
 
 .settings-nav-item {
     display: flex;
     align-items: center;
     gap: 12px;
-    padding: 13px 16px;
+    padding: 12px 16px;
     border-radius: 10px;
     cursor: pointer;
     color: var(--text-secondary);
@@ -5625,6 +5646,7 @@ input:focus {
     transition: all 0.2s ease;
     position: relative;
     overflow: hidden;
+    flex-shrink: 0;
 }
 
 .settings-nav-item i {
@@ -5769,29 +5791,29 @@ input:focus {
 }
 
 .settings-nav-item[data-category="performance"].active {
-    background: linear-gradient(135deg, rgba(245, 158, 11, 0.12), rgba(245, 158, 11, 0.04));
-    color: #f59e0b;
+    background: linear-gradient(135deg, rgba(34, 197, 94, 0.12), rgba(34, 197, 94, 0.04));
+    color: #22c55e;
 }
 
 .settings-nav-item[data-category="performance"].active i {
-    color: #f59e0b;
+    color: #22c55e;
 }
 
 .settings-nav-item[data-category="performance"] .nav-indicator {
-    background: #f59e0b;
+    background: #22c55e;
 }
 
 .settings-nav-item[data-category="notifications"].active {
-    background: linear-gradient(135deg, rgba(236, 72, 153, 0.12), rgba(236, 72, 153, 0.04));
-    color: #ec4899;
+    background: linear-gradient(135deg, rgba(249, 115, 22, 0.12), rgba(249, 115, 22, 0.04));
+    color: #f97316;
 }
 
 .settings-nav-item[data-category="notifications"].active i {
-    color: #ec4899;
+    color: #f97316;
 }
 
 .settings-nav-item[data-category="notifications"] .nav-indicator {
-    background: #ec4899;
+    background: #f97316;
 }
 
 .settings-nav-item[data-category="system"].active {
@@ -5808,16 +5830,16 @@ input:focus {
 }
 
 .settings-nav-item[data-category="groups"].active {
-    background: linear-gradient(135deg, rgba(52, 211, 153, 0.12), rgba(52, 211, 153, 0.04));
-    color: #34d399;
+    background: linear-gradient(135deg, rgba(20, 184, 166, 0.12), rgba(20, 184, 166, 0.04));
+    color: #14b8a6;
 }
 
 .settings-nav-item[data-category="groups"].active i {
-    color: #34d399;
+    color: #14b8a6;
 }
 
 .settings-nav-item[data-category="groups"] .nav-indicator {
-    background: #34d399;
+    background: #14b8a6;
 }
 
 .settings-nav-item[data-category="audio"].active {
@@ -5831,6 +5853,19 @@ input:focus {
 
 .settings-nav-item[data-category="audio"] .nav-indicator {
     background: #0ea5e9;
+}
+
+.settings-nav-item[data-category="rateLimit"].active {
+    background: linear-gradient(135deg, rgba(234, 179, 8, 0.12), rgba(234, 179, 8, 0.04));
+    color: #eab308;
+}
+
+.settings-nav-item[data-category="rateLimit"].active i {
+    color: #eab308;
+}
+
+.settings-nav-item[data-category="rateLimit"] .nav-indicator {
+    background: #eab308;
 }
 
 /* Reset Button Icon (in sidebar header) */
@@ -5965,15 +6000,15 @@ input:focus {
 }
 
 .panel-icon.performance {
-    background: linear-gradient(135deg, rgba(245, 158, 11, 0.2), rgba(245, 158, 11, 0.05));
-    border: 1px solid rgba(245, 158, 11, 0.25);
-    color: #f59e0b;
+    background: linear-gradient(135deg, rgba(34, 197, 94, 0.2), rgba(34, 197, 94, 0.05));
+    border: 1px solid rgba(34, 197, 94, 0.25);
+    color: #22c55e;
 }
 
 .panel-icon.notifications {
-    background: linear-gradient(135deg, rgba(236, 72, 153, 0.2), rgba(236, 72, 153, 0.05));
-    border: 1px solid rgba(236, 72, 153, 0.25);
-    color: #ec4899;
+    background: linear-gradient(135deg, rgba(249, 115, 22, 0.2), rgba(249, 115, 22, 0.05));
+    border: 1px solid rgba(249, 115, 22, 0.25);
+    color: #f97316;
 }
 
 .panel-icon.system {
@@ -5983,15 +6018,21 @@ input:focus {
 }
 
 .panel-icon.groups {
-    background: linear-gradient(135deg, rgba(52, 211, 153, 0.2), rgba(52, 211, 153, 0.05));
-    border: 1px solid rgba(52, 211, 153, 0.25);
-    color: #34d399;
+    background: linear-gradient(135deg, rgba(20, 184, 166, 0.2), rgba(20, 184, 166, 0.05));
+    border: 1px solid rgba(20, 184, 166, 0.25);
+    color: #14b8a6;
 }
 
 .panel-icon.audio {
     background: linear-gradient(135deg, rgba(14, 165, 233, 0.2), rgba(14, 165, 233, 0.05));
     border: 1px solid rgba(14, 165, 233, 0.25);
     color: #0ea5e9;
+}
+
+.panel-icon.rateLimit {
+    background: linear-gradient(135deg, rgba(234, 179, 8, 0.2), rgba(234, 179, 8, 0.05));
+    border: 1px solid rgba(234, 179, 8, 0.25);
+    color: #eab308;
 }
 
 .panel-icon.search {
@@ -6613,30 +6654,30 @@ input:focus {
 }
 
 .settings-info-card.performance {
-    background: linear-gradient(135deg, rgba(245, 158, 11, 0.08), rgba(245, 158, 11, 0.02));
-    border-color: rgba(245, 158, 11, 0.15);
+    background: linear-gradient(135deg, rgba(34, 197, 94, 0.08), rgba(34, 197, 94, 0.02));
+    border-color: rgba(34, 197, 94, 0.15);
 }
 
 .settings-info-card.performance>i {
-    color: #f59e0b;
+    color: #22c55e;
 }
 
 .settings-info-card.notifications {
-    background: linear-gradient(135deg, rgba(236, 72, 153, 0.08), rgba(236, 72, 153, 0.02));
-    border-color: rgba(236, 72, 153, 0.15);
+    background: linear-gradient(135deg, rgba(249, 115, 22, 0.08), rgba(249, 115, 22, 0.02));
+    border-color: rgba(249, 115, 22, 0.15);
 }
 
 .settings-info-card.notifications>i {
-    color: #ec4899;
+    color: #f97316;
 }
 
 .settings-info-card.groups {
-    background: linear-gradient(135deg, rgba(52, 211, 153, 0.08), rgba(52, 211, 153, 0.02));
-    border-color: rgba(52, 211, 153, 0.15);
+    background: linear-gradient(135deg, rgba(20, 184, 166, 0.08), rgba(20, 184, 166, 0.02));
+    border-color: rgba(20, 184, 166, 0.15);
 }
 
 .settings-info-card.groups>i {
-    color: #34d399;
+    color: #14b8a6;
 }
 
 .settings-info-card.audio {
@@ -6646,6 +6687,15 @@ input:focus {
 
 .settings-info-card.audio>i {
     color: #0ea5e9;
+}
+
+.settings-info-card.rateLimit {
+    background: linear-gradient(135deg, rgba(234, 179, 8, 0.08), rgba(234, 179, 8, 0.02));
+    border-color: rgba(234, 179, 8, 0.15);
+}
+
+.settings-info-card.rateLimit>i {
+    color: #eab308;
 }
 
 .settings-info-card.system,

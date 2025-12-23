@@ -1,5 +1,6 @@
 const { deps: defaultDeps } = require('../dependencies');
 const { getLanguageConfig } = require('../../config/languages');
+const rateLimitService = require('../../services/rate-limit.service');
 
 /**
  * !playlist command - Add all tracks from a playlist to the queue (VIP only)
@@ -28,6 +29,18 @@ async function playlistCommand(sock, msg, args, deps = defaultDeps) {
     // Check if user is VIP
     if (!checkPriority(sender)) {
         await sendMessageWithMention(sock, remoteJid, i18n('commands.playlist.vipOnly', userLang), sender);
+        return;
+    }
+    
+    const rateLimitCheck = rateLimitService.checkRateLimit(sender, 'playlist');
+    if (!rateLimitCheck.allowed) {
+        const waitSeconds = rateLimitCheck.waitSeconds || 0;
+        await sendMessageWithMention(
+            sock, 
+            remoteJid, 
+            i18n('commands.rateLimit.exceeded', userLang, { seconds: waitSeconds }), 
+            sender
+        );
         return;
     }
     
@@ -130,6 +143,11 @@ async function playlistCommand(sock, msg, args, deps = defaultDeps) {
         }
         if (failCount > 0) {
             responseText += i18n('commands.playlist.failed', userLang, { count: failCount });
+        }
+        
+        // Record successful request for rate limiting (only if at least one track was added)
+        if (successCount > 0) {
+            rateLimitService.recordRequest(sender, 'playlist');
         }
         
         await sendMessageWithMention(sock, remoteJid, responseText, sender);

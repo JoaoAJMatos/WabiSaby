@@ -2,6 +2,7 @@ const express = require('express');
 const config = require('../../config');
 const { logger } = require('../../utils/logger.util');
 const { getDiskUsage } = require('../../utils/helpers.util');
+const rateLimitService = require('../../services/rate-limit.service');
 
 const router = express.Router();
 
@@ -14,7 +15,8 @@ const EDITABLE_SETTINGS = {
     playback: ['cleanupAfterPlay', 'songTransitionDelay', 'confirmSkip', 'showRequesterName', 'shuffleEnabled', 'repeatMode'],
     performance: ['prefetchNext', 'prefetchCount'],
     notifications: ['enabled', 'notifyAtPosition'],
-    privacy: ['demoMode']
+    privacy: ['demoMode'],
+    rateLimit: ['enabled', 'maxRequests', 'windowSeconds']
 };
 
 /**
@@ -65,7 +67,8 @@ router.get('/settings', (req, res) => {
         },
         privacy: {
             demoMode: config.privacy?.demoMode || false
-        }
+        },
+        rateLimit: rateLimitService.getRateLimitConfig()
     };
 
     res.json({
@@ -122,7 +125,7 @@ router.post('/settings', (req, res) => {
     }
     
     // Integer fields
-    if (['songTransitionDelay', 'prefetchCount', 'notifyAtPosition'].includes(key)) {
+    if (['songTransitionDelay', 'prefetchCount', 'notifyAtPosition', 'maxRequests', 'windowSeconds'].includes(key)) {
         parsedValue = parseInt(value, 10);
         if (isNaN(parsedValue) || parsedValue < 0) {
             return res.status(400).json({
@@ -138,10 +141,37 @@ router.post('/settings', (req, res) => {
         if (key === 'songTransitionDelay' && parsedValue > 10000) {
             parsedValue = 10000; // Max 10 seconds
         }
+        if (key === 'maxRequests' && parsedValue < 1) {
+            return res.status(400).json({
+                success: false,
+                error: 'maxRequests must be at least 1'
+            });
+        }
+        if (key === 'windowSeconds' && parsedValue < 10) {
+            return res.status(400).json({
+                success: false,
+                error: 'windowSeconds must be at least 10'
+            });
+        }
     }
 
     // Update the config
     try {
+        // Handle rate limit settings specially (they use dbService directly)
+        if (category === 'rateLimit') {
+            const currentConfig = rateLimitService.getRateLimitConfig();
+            const newConfig = { ...currentConfig, [key]: parsedValue };
+            rateLimitService.setRateLimitConfig(newConfig);
+            
+            logger.info(`Rate limit setting updated: ${category}.${key} = ${parsedValue}`);
+            
+            return res.json({
+                success: true,
+                message: `Updated ${category}.${key}`,
+                newValue: parsedValue
+            });
+        }
+        
         // Ensure the category exists
         if (!config[category]) {
             logger.warn(`Category ${category} does not exist in config, initializing...`);
@@ -207,16 +237,32 @@ router.post('/settings/bulk', (req, res) => {
 
             // Parse and set value
             let parsedValue = value;
-            if (['songTransitionDelay', 'prefetchCount', 'notifyAtPosition'].includes(key)) {
+            if (['songTransitionDelay', 'prefetchCount', 'notifyAtPosition', 'maxRequests', 'windowSeconds'].includes(key)) {
                 parsedValue = parseInt(value, 10);
                 if (isNaN(parsedValue)) {
                     errors.push(`${key} must be a number`);
                     continue;
                 }
+                if (key === 'maxRequests' && parsedValue < 1) {
+                    errors.push('maxRequests must be at least 1');
+                    continue;
+                }
+                if (key === 'windowSeconds' && parsedValue < 10) {
+                    errors.push('windowSeconds must be at least 10');
+                    continue;
+                }
             }
 
-            config[category][key] = parsedValue;
-            updated.push(`${category}.${key}`);
+            // Handle rate limit settings specially
+            if (category === 'rateLimit') {
+                const currentConfig = rateLimitService.getRateLimitConfig();
+                const newConfig = { ...currentConfig, [key]: parsedValue };
+                rateLimitService.setRateLimitConfig(newConfig);
+                updated.push(`${category}.${key}`);
+            } else {
+                config[category][key] = parsedValue;
+                updated.push(`${category}.${key}`);
+            }
         }
     }
 
@@ -260,6 +306,11 @@ const DEFAULT_SETTINGS = {
     notifications: {
         enabled: true,
         notifyAtPosition: 1
+    },
+    rateLimit: {
+        enabled: true,
+        maxRequests: 3,
+        windowSeconds: 60
     }
 };
 

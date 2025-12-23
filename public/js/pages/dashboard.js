@@ -622,7 +622,7 @@ function updateProgressBarAndStats() {
 // Seek functionality - handle clicks on progress bar
 let seekHandlerAttached = false;
 function setupSeekFunctionality() {
-    const progressBarContainer = document.querySelector('.progress-bar-container');
+    const progressBarContainer = document.querySelector('.np-progress-bar-container');
     if (!progressBarContainer) return;
     
     // Only attach handler once
@@ -674,7 +674,7 @@ if (document.readyState === 'loading') {
 
 // Also try to setup when progress section becomes visible
 const progressSectionObserver = new MutationObserver(() => {
-    if (document.querySelector('.progress-bar-container') && !seekHandlerAttached) {
+    if (document.querySelector('.np-progress-bar-container') && !seekHandlerAttached) {
         setupSeekFunctionality();
     }
 });

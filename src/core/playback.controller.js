@@ -911,4 +911,3 @@ class PlaybackController extends EventEmitter {
 
 module.exports = new PlaybackController();
 
-

@@ -73,6 +73,22 @@ async function loadSettings() {
             applyDemoMode(demoMode);
         }
         
+        // Populate rate limit settings
+        if (settings.rateLimit) {
+            const rateLimitEnabledEl = document.getElementById('setting-rateLimitEnabled');
+            if (rateLimitEnabledEl) {
+                rateLimitEnabledEl.checked = settings.rateLimit.enabled !== false;
+            }
+            const rateLimitMaxRequestsEl = document.getElementById('setting-rateLimitMaxRequests');
+            if (rateLimitMaxRequestsEl) {
+                rateLimitMaxRequestsEl.value = settings.rateLimit.maxRequests || 3;
+            }
+            const rateLimitWindowSecondsEl = document.getElementById('setting-rateLimitWindowSeconds');
+            if (rateLimitWindowSecondsEl) {
+                rateLimitWindowSecondsEl.value = settings.rateLimit.windowSeconds || 60;
+            }
+        }
+        
     } catch (err) {
         console.error('Failed to load settings:', err);
     }

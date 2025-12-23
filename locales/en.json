@@ -109,6 +109,9 @@
       "pending": "A request to add this group is already pending. Please check the web dashboard to confirm.",
       "requestSent": "Request to add this group has been sent. Please check the web dashboard to confirm."
     },
+    "rateLimit": {
+      "exceeded": "⏱️ *Rate Limit Exceeded*\n\nYou've made too many requests. Please wait *{seconds}* seconds before trying again.\n\n💡 VIP users have unlimited requests."
+    },
     "unknown": "Unknown command: {command}. Type !help for commands.",
     "error": "Error processing command."
   },
@@ -455,6 +458,18 @@
         "privacy": {
           "demoMode": "Demo Mode",
           "demoModeDesc": "Blur WhatsApp IDs and group IDs for safe screen recording and demos"
+        },
+        "rateLimit": {
+          "title": "Rate Limiting",
+          "description": "Control request limits to prevent spam and abuse",
+          "enabled": "Enable Rate Limiting",
+          "enabledDesc": "Limit how many song requests non-VIP users can make within a time window",
+          "maxRequests": "Max Requests",
+          "maxRequestsDesc": "Maximum number of requests allowed per time window",
+          "windowSeconds": "Time Window (seconds)",
+          "windowSecondsDesc": "Time window in seconds for counting requests (minimum 10 seconds)",
+          "info": "About Rate Limiting",
+          "infoText": "Rate limiting applies only to non-VIP users. VIP users can make unlimited requests. The default is 3 requests per 60 seconds. When a user exceeds the limit, they must wait until the time window resets."
         },
         "system": {
           "title": "System Control",
