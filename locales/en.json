@@ -440,6 +440,10 @@
           "failedToConfirm": "Failed to confirm group",
           "failedToConfirmRetry": "Failed to confirm group. Please try again."
         },
+        "privacy": {
+          "demoMode": "Demo Mode",
+          "demoModeDesc": "Blur WhatsApp IDs and group IDs for safe screen recording and demos"
+        },
         "system": {
           "title": "System Control",
           "description": "Manage session state and system maintenance",

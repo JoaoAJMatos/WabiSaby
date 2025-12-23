@@ -448,6 +448,10 @@
           "failedToConfirm": "Falha ao confirmar grupo",
           "failedToConfirmRetry": "Falha ao confirmar grupo. Por favor, tenta novamente."
         },
+        "privacy": {
+          "demoMode": "Modo Demo",
+          "demoModeDesc": "Desfocar IDs do WhatsApp e IDs de grupos para capturas de ecrã e demos seguras"
+        },
         "system": {
           "title": "Controlos do Sistema",
           "description": "Gerir estado da sessão e manutenção do sistema",
