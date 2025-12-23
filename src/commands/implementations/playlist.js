@@ -1,4 +1,5 @@
 const { deps: defaultDeps } = require('../dependencies');
+const { getLanguageConfig } = require('../../config/languages');
 
 /**
  * !playlist command - Add all tracks from a playlist to the queue (VIP only)
@@ -107,8 +108,11 @@ async function playlistCommand(sock, msg, args, deps = defaultDeps) {
         
         // Build final response message
         // Handle pluralization based on language
+        const langConfig = getLanguageConfig(userLang);
+        const isPortuguese = langConfig && langConfig.code === 'pt';
+        
         let trackText, duplicateText, plural, dupPlural;
-        if (userLang === 'pt') {
+        if (isPortuguese) {
             trackText = successCount !== 1 ? 'faixas' : 'faixa';
             duplicateText = duplicateCount > 1 ? 'duplicatas' : 'duplicata';
             plural = successCount !== 1 ? 's' : '';

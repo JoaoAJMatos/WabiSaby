@@ -1,5 +1,12 @@
 const { deps: defaultDeps } = require('../dependencies');
 const dbService = require('../../database/db.service');
+const {
+    normalizeLanguageCode,
+    getLanguageName,
+    getLanguageEmoji,
+    getLanguagesForDisplay,
+    DEFAULT_LANGUAGE
+} = require('../../config/languages');
 
 /**
  * !language command - Set user's language preference
@@ -9,39 +16,37 @@ const dbService = require('../../database/db.service');
  * @param {Object} deps - Dependencies (injected, defaults to production dependencies)
  */
 async function languageCommand(sock, msg, args, deps = defaultDeps) {
-    const { sendMessageWithMention, i18n, userLang = 'en' } = deps;
+    const { sendMessageWithMention, i18n, userLang = DEFAULT_LANGUAGE } = deps;
     const remoteJid = msg.key.remoteJid;
     const sender = msg.key.participant || msg.key.remoteJid;
     const requestedLang = args[0]?.toLowerCase();
     
-    // Valid languages
-    const validLanguages = {
-        'en': 'English',
-        'pt': 'Português',
-        'english': 'English',
-        'portuguese': 'Português',
-        'português': 'Português'
-    };
-    
     // If no language specified, show current preference
     if (!requestedLang) {
-        const currentLang = dbService.getUserLanguage(sender);
-        const langName = currentLang === 'pt' ? 'Português' : 'English';
-        const emoji = currentLang === 'pt' ? '🇵🇹' : '🇺🇸';
+        const currentLang = dbService.getUserLanguage(sender) || DEFAULT_LANGUAGE;
+        const langName = getLanguageName(currentLang);
+        const emoji = getLanguageEmoji(currentLang);
         
-        const message = `🌐 *Language*\n\n${emoji} Your language is set to *${langName}*\n\n💡 Use \`!language en\` or \`!language pt\` to change it.`;
+        // Build available languages list
+        const languagesList = getLanguagesForDisplay()
+            .map(lang => `• \`!language ${lang.code}\` - ${lang.name}`)
+            .join('\n');
+        
+        const message = `🌐 *Language*\n\n${emoji} Your language is set to *${langName}*\n\n💡 *Available languages:*\n${languagesList}`;
         await sendMessageWithMention(sock, remoteJid, message, sender);
         return;
     }
     
-    // Normalize language code
-    let langCode = requestedLang;
-    if (requestedLang === 'english') langCode = 'en';
-    if (requestedLang === 'portuguese' || requestedLang === 'português') langCode = 'pt';
+    // Normalize and validate language code
+    const langCode = normalizeLanguageCode(requestedLang);
     
-    // Validate language
-    if (langCode !== 'en' && langCode !== 'pt') {
-        const message = `❌ *Invalid Language*\n\n💡 *Available languages:*\n• \`!language en\` - English\n• \`!language pt\` - Português`;
+    if (!langCode) {
+        // Build available languages list for error message
+        const languagesList = getLanguagesForDisplay()
+            .map(lang => `• \`!language ${lang.code}\` - ${lang.name}`)
+            .join('\n');
+        
+        const message = `❌ *Invalid Language*\n\n💡 *Available languages:*\n${languagesList}`;
         await sendMessageWithMention(sock, remoteJid, message, sender);
         return;
     }
@@ -49,8 +54,8 @@ async function languageCommand(sock, msg, args, deps = defaultDeps) {
     // Set language preference
     dbService.setUserLanguage(sender, langCode);
     
-    const langName = langCode === 'pt' ? 'Português' : 'English';
-    const emoji = langCode === 'pt' ? '🇵🇹' : '🇺🇸';
+    const langName = getLanguageName(langCode);
+    const emoji = getLanguageEmoji(langCode);
     
     const message = `✅ *Language Changed*\n\n${emoji} Your language is now set to *${langName}*\n\nAll bot messages will now be in this language!`;
     await sendMessageWithMention(sock, remoteJid, message, sender);

@@ -1,6 +1,11 @@
 const express = require('express');
 const dbService = require('../../database/db.service');
 const { logger } = require('../../utils/logger.util');
+const {
+    normalizeLanguageCode,
+    getSupportedLanguageCodes,
+    DEFAULT_LANGUAGE
+} = require('../../config/languages');
 
 const router = express.Router();
 
@@ -26,7 +31,7 @@ router.get('/user/language', (req, res) => {
     }
     
     // No user context - return default
-    res.json({ success: true, language: 'en' });
+    res.json({ success: true, language: DEFAULT_LANGUAGE });
 });
 
 /**
@@ -44,14 +49,13 @@ router.post('/user/language', (req, res) => {
         });
     }
     
-    // Validate language code
-    const validLanguages = ['en', 'pt'];
-    const normalizedLang = language.split('-')[0].toLowerCase();
+    // Normalize and validate language code
+    const normalizedLang = normalizeLanguageCode(language);
     
-    if (!validLanguages.includes(normalizedLang)) {
+    if (!normalizedLang) {
         return res.status(400).json({ 
             success: false, 
-            error: `Invalid language code. Valid options: ${validLanguages.join(', ')}` 
+            error: `Invalid language code. Valid options: ${getSupportedLanguageCodes().join(', ')}` 
         });
     }
     

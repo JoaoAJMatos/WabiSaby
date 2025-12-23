@@ -1,5 +1,6 @@
 const path = require('path');
 const fs = require('fs');
+const { DEFAULT_LANGUAGE } = require('../config/languages');
 
 /**
  * Internationalization Utility
@@ -32,8 +33,8 @@ function loadTranslations(lang) {
         console.error(`Error loading translation file for ${lang}:`, error);
     }
     
-    if (lang !== 'en') {
-        return loadTranslations('en');
+    if (lang !== DEFAULT_LANGUAGE) {
+        return loadTranslations(DEFAULT_LANGUAGE);
     }
     
     return {};
@@ -83,11 +84,11 @@ function replaceParams(text, params = {}) {
 /**
  * Translate a key to the specified language
  * @param {string} key - Translation key (supports dot notation, e.g., 'commands.play.added')
- * @param {string} lang - Language code (default: 'en')
+ * @param {string} lang - Language code (default: configured default)
  * @param {Object} params - Parameters to replace in translation (e.g., {title: 'Song Name'})
  * @returns {string} Translated string
  */
-function t(key, lang = 'en', params = {}) {
+function t(key, lang = DEFAULT_LANGUAGE, params = {}) {
     if (!key) {
         return '';
     }
@@ -98,9 +99,9 @@ function t(key, lang = 'en', params = {}) {
     
     let translation = getNestedValue(translations, key);
     
-    if (translation === undefined && normalizedLang !== 'en') {
-        const enTranslations = loadTranslations('en');
-        translation = getNestedValue(enTranslations, key);
+    if (translation === undefined && normalizedLang !== DEFAULT_LANGUAGE) {
+        const defaultTranslations = loadTranslations(DEFAULT_LANGUAGE);
+        translation = getNestedValue(defaultTranslations, key);
     }
     
     if (translation === undefined) {

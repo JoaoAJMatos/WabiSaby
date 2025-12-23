@@ -1,5 +1,9 @@
 const { getDatabase } = require('./index');
 const { logger } = require('../utils/logger.util');
+const {
+    normalizeLanguageCode,
+    DEFAULT_LANGUAGE
+} = require('../config/languages');
 
 /**
  * Database Service Layer
@@ -1003,15 +1007,15 @@ function setUserNotificationPreference(whatsappId, enabled) {
 /**
  * Get user language preference
  * @param {string} whatsappId - WhatsApp user ID
- * @returns {string} Language code (defaults to 'en' if not set)
+ * @returns {string} Language code (defaults to configured default if not set)
  */
 function getUserLanguage(whatsappId) {
-    if (!whatsappId) return 'en'; // Default to English
+    if (!whatsappId) return DEFAULT_LANGUAGE;
     const db = getDatabase();
     const result = db.prepare('SELECT language FROM user_notification_preferences WHERE whatsapp_id = ?').get(whatsappId);
     
     if (!result || !result.language) {
-        return 'en'; // Default to English if no preference set
+        return DEFAULT_LANGUAGE;
     }
     
     return result.language;
@@ -1025,12 +1029,11 @@ function getUserLanguage(whatsappId) {
 function setUserLanguage(whatsappId, language) {
     if (!whatsappId || !language) return;
     
-    // Validate language code
-    const validLanguages = ['en', 'pt'];
-    const normalizedLang = language.split('-')[0].toLowerCase();
+    // Normalize and validate language code
+    const normalizedLang = normalizeLanguageCode(language);
     
-    if (!validLanguages.includes(normalizedLang)) {
-        logger.warn(`Invalid language code: ${language}, defaulting to 'en'`);
+    if (!normalizedLang) {
+        logger.warn(`Invalid language code: ${language}, ignoring`);
         return;
     }
     

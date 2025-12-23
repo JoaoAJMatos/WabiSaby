@@ -244,6 +244,8 @@ WabiSaby supports multiple languages. Users can set their preferred language, an
 
 Currently supported languages: 🇬🇧 English and 🇵🇹 Portuguese
 
+> **Note:** Language support is centrally configured in `src/config/languages.js` (backend) and `public/js/config/languages.js` (frontend). To add a new language, update these configuration files and create the corresponding translation file in `locales/{code}.json`.
+
 ---
 
 ## ⚙️ Configuration

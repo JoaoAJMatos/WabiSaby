@@ -5,7 +5,7 @@
 
 // Cache for loaded translations
 let translationsCache = {};
-let currentLanguage = 'en';
+let currentLanguage = window.LanguageConfig?.DEFAULT_LANGUAGE || 'en';
 
 /**
  * Load translation file for a language
@@ -28,12 +28,13 @@ async function loadTranslations(lang) {
     } catch (error) {
         console.error(`Error loading translation file for ${lang}:`, error);
         
-        // Fallback to English if translation file doesn't exist
-        if (lang !== 'en') {
-            return loadTranslations('en');
+        // Fallback to default language if translation file doesn't exist
+        const defaultLang = window.LanguageConfig.DEFAULT_LANGUAGE;
+        if (lang !== defaultLang) {
+            return loadTranslations(defaultLang);
         }
         
-        // If even English doesn't exist, return empty object
+        // If even default language doesn't exist, return empty object
         return {};
     }
 }
@@ -96,10 +97,11 @@ async function t(key, params = {}) {
     // Get translation value
     let translation = getNestedValue(translations, key);
     
-    // If translation not found, try English fallback
-    if (translation === undefined && currentLanguage !== 'en') {
-        const enTranslations = await loadTranslations('en');
-        translation = getNestedValue(enTranslations, key);
+    // If translation not found, try default language fallback
+    const defaultLang = window.LanguageConfig.DEFAULT_LANGUAGE;
+    if (translation === undefined && currentLanguage !== defaultLang) {
+        const defaultTranslations = await loadTranslations(defaultLang);
+        translation = getNestedValue(defaultTranslations, key);
     }
     
     // If still not found, return the key itself
@@ -123,7 +125,8 @@ function tSync(key, params = {}) {
         return '';
     }
     
-    const translations = translationsCache[currentLanguage] || translationsCache['en'] || {};
+    const defaultLang = window.LanguageConfig.DEFAULT_LANGUAGE;
+    const translations = translationsCache[currentLanguage] || translationsCache[defaultLang] || {};
     let translation = getNestedValue(translations, key);
     
     if (translation === undefined) {
@@ -138,13 +141,11 @@ function tSync(key, params = {}) {
  * @param {string} lang - Language code (e.g., 'en', 'pt')
  */
 async function setLanguage(lang) {
-    const normalizedLang = lang.split('-')[0].toLowerCase();
+    const normalizedLang = window.LanguageConfig.normalizeLanguageCode(lang);
     
-    // Validate language
-    const validLanguages = ['en', 'pt'];
-    if (!validLanguages.includes(normalizedLang)) {
-        console.warn(`Invalid language code: ${lang}, defaulting to 'en'`);
-        currentLanguage = 'en';
+    if (!normalizedLang) {
+        console.warn(`Invalid language code: ${lang}, defaulting to '${window.LanguageConfig.DEFAULT_LANGUAGE}'`);
+        currentLanguage = window.LanguageConfig.DEFAULT_LANGUAGE;
         return;
     }
     
@@ -176,21 +177,22 @@ function detectLanguage() {
     // Check localStorage first
     const stored = localStorage.getItem('wabisaby_language');
     if (stored) {
-        return stored;
+        const normalized = window.LanguageConfig.normalizeLanguageCode(stored);
+        if (normalized) {
+            return normalized;
+        }
     }
     
     // Check browser language
-    const browserLang = navigator.language || navigator.userLanguage || 'en';
-    const normalized = browserLang.split('-')[0].toLowerCase();
+    const browserLang = navigator.language || navigator.userLanguage || window.LanguageConfig.DEFAULT_LANGUAGE;
+    const normalized = window.LanguageConfig.normalizeLanguageCode(browserLang);
     
-    // Only use if it's a supported language
-    const validLanguages = ['en', 'pt'];
-    if (validLanguages.includes(normalized)) {
+    if (normalized) {
         return normalized;
     }
     
-    // Default to English
-    return 'en';
+    // Default to configured default language
+    return window.LanguageConfig.DEFAULT_LANGUAGE;
 }
 
 /**
@@ -201,8 +203,8 @@ async function init() {
     const detectedLang = detectLanguage();
     await setLanguage(detectedLang);
     
-    // Preload English as fallback
-    await loadTranslations('en');
+    // Preload default language as fallback
+    await loadTranslations(window.LanguageConfig.DEFAULT_LANGUAGE);
 }
 
 // Initialize on load
