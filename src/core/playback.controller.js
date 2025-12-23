@@ -184,6 +184,40 @@ class PlaybackController extends EventEmitter {
     }
     
     /**
+     * Select a random item from queue using weighted selection
+     * VIP songs have 3x higher probability than regular songs
+     * @param {Array} queue - Queue array
+     * @returns {number} Index of selected item
+     */
+    selectShuffledItem(queue) {
+        if (queue.length === 0) {
+            return -1;
+        }
+        
+        if (queue.length === 1) {
+            return 0;
+        }
+        
+        // Calculate weights: VIP = 3, regular = 1
+        const weights = queue.map(item => item.isPriority ? 3 : 1);
+        const totalWeight = weights.reduce((sum, weight) => sum + weight, 0);
+        
+        // Generate random number between 0 and totalWeight
+        let random = Math.random() * totalWeight;
+        
+        // Select item based on weighted probability
+        for (let i = 0; i < queue.length; i++) {
+            random -= weights[i];
+            if (random <= 0) {
+                return i;
+            }
+        }
+        
+        // Fallback to last item (shouldn't happen, but safety)
+        return queue.length - 1;
+    }
+    
+    /**
      * Process next item in queue
      */
     async processNext() {
@@ -195,22 +229,37 @@ class PlaybackController extends EventEmitter {
         this.isPlaying = true;
         this.isPaused = false;
         
-        // Get first item from queue (don't remove yet - playItem will remove it after download)
-        const queueItem = queue[0];
+        const config = require('../config');
+        config._ensureSettingsLoaded();
+        const shuffleEnabled = config.playback.shuffleEnabled;
+        
+        let selectedIndex;
+        if (shuffleEnabled) {
+            selectedIndex = this.selectShuffledItem(queue);
+            logger.info(`Shuffle mode: selected item at index ${selectedIndex} from queue of ${queue.length} items`);
+        } else {
+            selectedIndex = 0;
+        }
+        
+        const queueItem = queue[selectedIndex];
         
         if (!queueItem) {
+            logger.warn(`No queue item found at index ${selectedIndex} (queue length: ${queue.length})`);
             this.isPlaying = false;
             return;
         }
         
-        // Play the item (it will be removed from queue after successful download)
-        await this.playItem(queueItem);
+        logger.info(`Processing queue item: "${queueItem.title || queueItem.content}" at index ${selectedIndex} (shuffle: ${shuffleEnabled})`);
+        
+        await this.playItem(queueItem, selectedIndex);
     }
     
     /**
      * Play a queue item (download if needed, then emit playback_requested)
+     * @param {Object} item - Queue item to play
+     * @param {number} [itemIndex] - Optional index of item in queue (for shuffle mode)
      */
-    async playItem(item) {
+    async playItem(item, itemIndex = null) {
         try {
             let filePath;
             let title = 'Audio';
@@ -302,30 +351,52 @@ class PlaybackController extends EventEmitter {
                 logger.info(`Playing locally: ${filePath}`);
                 
                 // Remove item from queue (it's now playing)
-                // Since processNext() always plays queue[0], remove the first item
                 const queue = queueManager.getQueue();
                 if (queue.length > 0) {
-                    const firstItem = queue[0];
-                    // Verify that the first item matches what we're playing (by ID if available)
-                    const matches = (item.id && firstItem.id) 
-                        ? (firstItem.id === item.id)
-                        : (firstItem === item);
-                    
-                    if (matches) {
-                        queueManager.remove(0);
-                    } else if (item.id) {
-                        // Fallback: try to find by ID if first item doesn't match
-                        const index = queue.findIndex(q => q.id === item.id);
-                        if (index !== -1) {
-                            logger.warn(`Queue item mismatch: expected first item but found at index ${index} (id: ${item.id})`);
-                            queueManager.remove(index);
+                    // If itemIndex is provided (shuffle mode), use it directly
+                    if (itemIndex !== null && itemIndex >= 0 && itemIndex < queue.length) {
+                        const itemAtIndex = queue[itemIndex];
+                        // Verify the item matches (by ID if available)
+                        const matches = (item.id && itemAtIndex.id) 
+                            ? (itemAtIndex.id === item.id)
+                            : (itemAtIndex === item);
+                        
+                        if (matches) {
+                            queueManager.remove(itemIndex);
                         } else {
-                            logger.error(`Failed to remove item from queue: item not found (id: ${item.id}, title: ${item.title || 'unknown'})`);
+                            // Item at index doesn't match, fall back to ID search
+                            const index = queue.findIndex(q => q.id === item.id);
+                            if (index !== -1) {
+                                logger.warn(`Queue item mismatch at provided index ${itemIndex}, found at ${index} (id: ${item.id})`);
+                                queueManager.remove(index);
+                            } else {
+                                logger.error(`Failed to remove item from queue: item not found (id: ${item.id}, title: ${item.title || 'unknown'})`);
+                            }
                         }
                     } else {
-                        // No ID available - this shouldn't happen, but try to remove first item anyway
-                        logger.warn(`Removing first queue item without ID verification (title: ${item.title || 'unknown'})`);
-                        queueManager.remove(0);
+                        // No index provided (normal FIFO mode) - remove first item
+                        const firstItem = queue[0];
+                        // Verify that the first item matches what we're playing (by ID if available)
+                        const matches = (item.id && firstItem.id) 
+                            ? (firstItem.id === item.id)
+                            : (firstItem === item);
+                        
+                        if (matches) {
+                            queueManager.remove(0);
+                        } else if (item.id) {
+                            // Fallback: try to find by ID if first item doesn't match
+                            const index = queue.findIndex(q => q.id === item.id);
+                            if (index !== -1) {
+                                logger.warn(`Queue item mismatch: expected first item but found at index ${index} (id: ${item.id})`);
+                                queueManager.remove(index);
+                            } else {
+                                logger.error(`Failed to remove item from queue: item not found (id: ${item.id}, title: ${item.title || 'unknown'})`);
+                            }
+                        } else {
+                            // No ID available - this shouldn't happen, but try to remove first item anyway
+                            logger.warn(`Removing first queue item without ID verification (title: ${item.title || 'unknown'})`);
+                            queueManager.remove(0);
+                        }
                     }
                 }
                 

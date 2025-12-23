@@ -40,6 +40,10 @@ async function loadSettings() {
             showRequesterNameEl.checked = settings.playback.showRequesterName;
             // Note: showRequesterNameEnabled is managed in queue.js
         }
+        const shuffleEnabledEl = document.getElementById('setting-shuffleEnabled');
+        if (shuffleEnabledEl) {
+            shuffleEnabledEl.checked = settings.playback.shuffleEnabled || false;
+        }
         document.getElementById('setting-songTransitionDelay').value = settings.playback.songTransitionDelay;
         
         // Populate performance settings

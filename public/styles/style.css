@@ -1479,6 +1479,68 @@ h2 {
     transform: none !important;
 }
 
+/* Shuffle Button */
+#shuffle-btn.np-control-btn {
+    position: relative;
+    transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+/* Inactive state - subtle styling */
+#shuffle-btn.np-control-btn:not(.active) {
+    opacity: 0.6;
+    color: var(--text-secondary, rgba(255, 255, 255, 0.6));
+}
+
+#shuffle-btn.np-control-btn:not(.active):hover {
+    opacity: 0.9;
+    background: rgba(255, 255, 255, 0.1);
+    color: var(--text-main);
+}
+
+/* Active state - prominent styling */
+#shuffle-btn.np-control-btn.active {
+    background: linear-gradient(135deg, var(--accent-color, #a855f7) 0%, rgba(168, 85, 247, 0.8) 100%);
+    color: white;
+    border-color: var(--accent-color, #a855f7);
+    box-shadow: 0 0 20px rgba(168, 85, 247, 0.4),
+                0 4px 12px rgba(168, 85, 247, 0.2);
+    opacity: 1;
+}
+
+#shuffle-btn.np-control-btn.active:hover {
+    background: linear-gradient(135deg, var(--accent-color, #a855f7) 0%, rgba(168, 85, 247, 0.9) 100%);
+    box-shadow: 0 0 25px rgba(168, 85, 247, 0.5),
+                0 6px 16px rgba(168, 85, 247, 0.3);
+    transform: scale(1.08);
+}
+
+#shuffle-btn.np-control-btn.active:active {
+    transform: scale(0.95);
+}
+
+/* Subtle pulse animation when active */
+#shuffle-btn.np-control-btn.active::before {
+    content: '';
+    position: absolute;
+    inset: -2px;
+    border-radius: 50%;
+    background: var(--accent-color, #a855f7);
+    opacity: 0.3;
+    animation: shufflePulse 2s ease-in-out infinite;
+    z-index: -1;
+}
+
+@keyframes shufflePulse {
+    0%, 100% {
+        transform: scale(1);
+        opacity: 0.3;
+    }
+    50% {
+        transform: scale(1.1);
+        opacity: 0.1;
+    }
+}
+
 /* Fullscreen Button */
 .np-fullscreen-btn {
     width: 38px !important;
@@ -2239,6 +2301,11 @@ input:focus {
     margin-left: auto;
     margin-right: 8px;
     box-shadow: 0 2px 6px rgba(52, 211, 153, 0.1);
+}
+
+.queue-position i {
+    font-size: 0.875rem;
+    color: var(--accent-color);
 }
 
 .queue-item:hover .queue-position {

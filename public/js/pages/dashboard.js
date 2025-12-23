@@ -105,19 +105,20 @@ async function fetchData() {
         // Mark auth status as received
         authStatusReceived = true;
         
+        // Update shuffle state
+        if (typeof data.shuffleEnabled !== 'undefined') {
+            shuffleEnabled = data.shuffleEnabled;
+            updateShuffleButtonState();
+        }
+        
         // Update other UI components
-        updateQueueUI(data.queue);
+        updateQueueUI(data.queue, data.shuffleEnabled);
         updateStatsUI(data.stats);
     } catch (error) {
         console.error('Error fetching status:', error);
     }
 }
-
-// Note: formatTime and formatUptime are defined in utils.js
-
-// Note: updateAuthUI is defined in ui.js
-
-function updateQueueUI(data) {
+function updateQueueUI(data, shuffleEnabled = false) {
     const { queue, currentSong } = data;
     
     const currentSongContainer = document.getElementById('current-song-info');
@@ -477,7 +478,7 @@ function updateQueueUI(data) {
                         ${requester}
                     </span>
                 </div>
-                <div class="queue-position">${index + 1}</div>
+                <div class="queue-position">${shuffleEnabled ? '<i class="fas fa-random"></i>' : index + 1}</div>
                 ${statusHTML}
                 <button onclick="removeSong(${index})" class="queue-remove-btn" draggable="false" title="${window.i18n?.tSync('ui.dashboard.queue.removeFromQueue') || 'Remove from queue'}">
                     <i class="fas fa-times"></i>
@@ -918,10 +919,54 @@ initConfirmationModalListeners();
 // Initialize burger menu
 initBurgerMenu();
 
+// Shuffle button toggle
+let shuffleEnabled = false;
+
+async function toggleShuffle() {
+    const newValue = !shuffleEnabled;
+    try {
+        const res = await fetch('/api/settings', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ category: 'playback', key: 'shuffleEnabled', value: newValue })
+        });
+        
+        if (!res.ok) {
+            throw new Error('Failed to update shuffle setting');
+        }
+        
+        const data = await res.json();
+        if (data.success) {
+            shuffleEnabled = newValue;
+            updateShuffleButtonState();
+            // Refresh queue to update position display
+            fetchData();
+        }
+    } catch (error) {
+        console.error('Error toggling shuffle:', error);
+    }
+}
+
+function updateShuffleButtonState() {
+    const shuffleBtn = document.getElementById('shuffle-btn');
+    if (shuffleBtn) {
+        if (shuffleEnabled) {
+            shuffleBtn.classList.add('active');
+            shuffleBtn.setAttribute('title', window.i18n?.tSync('ui.dashboard.settings.playback.shuffleEnabled') || 'Shuffle Mode: ON');
+            shuffleBtn.setAttribute('aria-label', 'Shuffle Mode: ON');
+        } else {
+            shuffleBtn.classList.remove('active');
+            shuffleBtn.setAttribute('title', window.i18n?.tSync('ui.dashboard.settings.playback.shuffleEnabled') || 'Shuffle Mode: OFF');
+            shuffleBtn.setAttribute('aria-label', 'Shuffle Mode: OFF');
+        }
+    }
+}
+
 // Listeners
 document.getElementById('add-song-form').addEventListener('submit', addSong);
 document.getElementById('skip-btn').addEventListener('click', skipSong);
 document.getElementById('play-pause-btn').addEventListener('click', togglePause);
+document.getElementById('shuffle-btn').addEventListener('click', toggleShuffle);
 document.getElementById('add-vip-form').addEventListener('submit', addVip);
 document.getElementById('fullscreen-btn').addEventListener('click', openFullscreenWindow);
 document.getElementById('new-session-btn').addEventListener('click', startNewSession);

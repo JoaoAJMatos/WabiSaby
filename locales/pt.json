@@ -367,6 +367,8 @@
           "confirmSkipDesc": "Mostrar diálogo de confirmação antes de passar músicas",
           "showRequesterName": "Mostrar Nome do Solicitante",
           "showRequesterNameDesc": "Mostrar o nome do solicitante na música que está a tocar",
+          "shuffleEnabled": "Modo Aleatório",
+          "shuffleEnabledDesc": "Selecionar músicas aleatoriamente da fila. Músicas VIP têm probabilidade 3x maior.",
           "songTransitionDelay": "Atraso de Transição",
           "songTransitionDelayDesc": "Pausa entre músicas em milissegundos (0 - 10000)"
         },

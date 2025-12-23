@@ -98,6 +98,10 @@
                             data-i18n-title="ui.dashboard.nowPlaying.skip">
                             <i class="fas fa-forward"></i>
                         </button>
+                        <button id="shuffle-btn" class="np-control-btn" title="Shuffle Mode"
+                            data-i18n-title="ui.dashboard.settings.playback.shuffleEnabled">
+                            <i class="fas fa-random"></i>
+                        </button>
                         <!-- Volume Control -->
                         <div class="np-volume-control">
                             <button class="np-volume-btn" id="volume-toggle-btn" title="Volume" aria-label="Volume">
@@ -1062,6 +1066,25 @@
                                         <label class="toggle-switch-v2">
                                             <input type="checkbox" id="setting-showRequesterName"
                                                 data-category="playback" data-key="showRequesterName">
+                                            <span class="toggle-track">
+                                                <span class="toggle-thumb"></span>
+                                            </span>
+                                        </label>
+                                    </div>
+                                </div>
+
+                                <div class="setting-row"
+                                    data-searchable="shuffle random mode vip priority probability">
+                                    <div class="setting-info">
+                                        <label for="setting-shuffleEnabled"
+                                            data-i18n="ui.dashboard.settings.playback.shuffleEnabled">Shuffle Mode</label>
+                                        <p class="setting-description"
+                                            data-i18n="ui.dashboard.settings.playback.shuffleEnabledDesc">Randomly select songs from queue. VIP songs have 3x higher probability.</p>
+                                    </div>
+                                    <div class="setting-control">
+                                        <label class="toggle-switch-v2">
+                                            <input type="checkbox" id="setting-shuffleEnabled"
+                                                data-category="playback" data-key="shuffleEnabled">
                                             <span class="toggle-track">
                                                 <span class="toggle-thumb"></span>
                                             </span>

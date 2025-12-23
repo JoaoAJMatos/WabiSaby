@@ -110,6 +110,10 @@ router.get('/status', async (req, res) => {
     // Action required when connected but no groups configured
     const actionRequired = isConnected && groupsCount === 0;
     
+    // Get shuffle setting
+    const config = require('../../config');
+    config._ensureSettingsLoaded();
+    
     res.json({
         auth: {
             isConnected,
@@ -126,7 +130,8 @@ router.get('/status', async (req, res) => {
             uptime: statsService.getUptime(),
             songsPlayed: detailedStats.songsPlayed,
             queueLength: queue.length
-        }
+        },
+        shuffleEnabled: config.playback.shuffleEnabled
     });
 });
 

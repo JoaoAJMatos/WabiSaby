@@ -359,6 +359,8 @@
           "confirmSkipDesc": "Show confirmation dialog before skipping songs",
           "showRequesterName": "Show Requester Name",
           "showRequesterNameDesc": "Display the requester's name on the currently playing song",
+          "shuffleEnabled": "Shuffle Mode",
+          "shuffleEnabledDesc": "Randomly select songs from queue. VIP songs have 3x higher probability.",
           "songTransitionDelay": "Transition Delay",
           "songTransitionDelayDesc": "Pause between songs in milliseconds (0 - 10000)"
         },

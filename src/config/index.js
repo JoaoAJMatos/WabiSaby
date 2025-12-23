@@ -129,10 +129,11 @@ class Config {
             },
             playback: {
                 cleanupAfterPlay: true,
-                cleanupOnStartup: true,
+                cleanupOnStartup: false,
                 songTransitionDelay: 100,
                 confirmSkip: true,
                 showRequesterName: true,
+                shuffleEnabled: false,
             },
             logging: loggingDefaults,
             performance: {
@@ -342,35 +343,76 @@ class Config {
                 // Ensure queue is loaded by requiring the queue manager
                 const queueManager = require('../core/queue');
                 // Force load if not already loaded
-                if (queueManager.getQueue().length === 0) {
-                    queueManager.loadQueue();
-                }
+                queueManager.loadQueue();
                 const queue = queueManager.getQueue();
+                
                 queue.forEach(item => {
-                    if (item.content && (item.content.includes(path.sep) || item.content.startsWith('/'))) {
-                        // It's a file path - normalize it for comparison
-                        const normalizedPath = path.resolve(item.content);
-                        queueFilePaths.add(normalizedPath);
-                        // Also add the original path in case paths differ
-                        queueFilePaths.add(item.content);
+                    // Check if item has a file path (not a URL)
+                    if (item.content) {
+                        const isFilePath = item.content.includes(path.sep) || 
+                                          item.content.startsWith('/') ||
+                                          (!item.content.startsWith('http://') && !item.content.startsWith('https://'));
+                        
+                        if (isFilePath && item.type === 'file') {
+                            // It's a file path - normalize it for comparison
+                            try {
+                                const normalizedPath = path.resolve(item.content);
+                                queueFilePaths.add(normalizedPath.toLowerCase()); // Case-insensitive on Windows
+                                // Also add the original path in case paths differ
+                                queueFilePaths.add(item.content.toLowerCase());
+                                // Add just the filename in case of path differences
+                                const fileName = path.basename(item.content);
+                                if (fileName) {
+                                    queueFilePaths.add(fileName.toLowerCase());
+                                }
+                            } catch (e) {
+                                // Path resolution failed, just use original
+                                queueFilePaths.add(item.content.toLowerCase());
+                            }
+                        }
+                    }
+                    // Also check thumbnail paths
+                    if (item.thumbnail) {
+                        try {
+                            const normalizedThumb = path.resolve(item.thumbnail);
+                            queueFilePaths.add(normalizedThumb.toLowerCase());
+                            queueFilePaths.add(item.thumbnail.toLowerCase());
+                        } catch (e) {
+                            queueFilePaths.add(item.thumbnail.toLowerCase());
+                        }
                     }
                 });
+                
+                if (queueFilePaths.size > 0) {
+                    logger.info(`Protecting ${queueFilePaths.size} file paths from cleanup (queue items)`);
+                }
             } catch (e) {
                 // QueueManager might not be initialized yet, that's okay
-                console.warn('Could not load queue for cleanup check:', e.message);
+                logger.warn('Could not load queue for cleanup check:', e.message);
             }
             
             for (const file of files) {
                 const filePath = path.join(tempDir, file);
                 const normalizedFilePath = path.resolve(filePath);
+                const filePathLower = filePath.toLowerCase();
+                const normalizedFilePathLower = normalizedFilePath.toLowerCase();
+                const fileNameLower = file.toLowerCase();
                 
                 // Skip if this is the current song file
-                if (currentSongPath && (filePath === currentSongPath || normalizedFilePath === path.resolve(currentSongPath))) {
-                    continue;
+                if (currentSongPath) {
+                    const currentSongPathLower = currentSongPath.toLowerCase();
+                    const normalizedCurrentSongPath = path.resolve(currentSongPath).toLowerCase();
+                    if (filePathLower === currentSongPathLower || 
+                        normalizedFilePathLower === normalizedCurrentSongPath) {
+                        continue;
+                    }
                 }
                 
-                // Skip if this file is referenced in the queue
-                if (queueFilePaths.has(filePath) || queueFilePaths.has(normalizedFilePath)) {
+                // Skip if this file is referenced in the queue (case-insensitive comparison)
+                if (queueFilePaths.has(filePathLower) || 
+                    queueFilePaths.has(normalizedFilePathLower) ||
+                    queueFilePaths.has(fileNameLower)) {
+                    logger.debug(`Skipping cleanup of queue file: ${file}`);
                     continue;
                 }
                 
@@ -384,7 +426,12 @@ class Config {
             }
             
             if (cleanedCount > 0) {
-                console.log(`Cleaned up ${cleanedCount} temp files.`);
+                logger.info(`Cleaned up ${cleanedCount} temp files on startup.`);
+                if (deletedFiles.length > 0 && deletedFiles.length <= 10) {
+                    logger.debug(`Deleted files: ${deletedFiles.join(', ')}`);
+                }
+            } else {
+                logger.debug('No temp files to clean up on startup.');
             }
         } catch (err) {
             console.error('Failed to cleanup temp directory:', err);

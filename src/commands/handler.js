@@ -44,10 +44,8 @@ async function handleCommand(sock, msg, text) {
     const sender = msg.key.participant || msg.key.remoteJid;
     const [command, ...args] = text.trim().split(' ');
     
-    // Get user's language preference
     const userLang = dbService.getUserLanguage(sender);
     
-    // Create deps with language context
     const depsWithLang = {
         ...deps,
         userLang
