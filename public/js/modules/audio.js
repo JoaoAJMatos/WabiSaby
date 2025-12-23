@@ -3,12 +3,10 @@
  * Handles audio context, visualizer, idle animation, and audio playback
  */
 
-// Initialize global variable if not already defined (will be set by dashboard.js)
 if (typeof localCurrentSong === 'undefined') {
     var localCurrentSong = null;
 }
 
-// Visualizer Setup (exposed globally for dashboard.js)
 var audioContext = null;
 var analyser = null;
 var source = null;
@@ -17,25 +15,19 @@ var lastPlayedSong = null;
 var isVisualizerRunning = false;
 var playbackRetryCount = 0;
 
-// Idle Animation State
 var idleAnimationFrame = null;
 var isShowingIdle = true;
 
-// Smooth transition state for visualizer bars
 const barCurrentHeights = new Array(BAR_COUNT).fill(0);  // Current displayed heights
 const barTargetHeights = new Array(BAR_COUNT).fill(0);   // Target heights to lerp to
-// Note: LERP_SPEED_DOWN, INTENSITY_DECAY, and AUDIO_STALE_MS are defined in config.js
 
-// Canvas setup (run once)
 let idleCanvasCtx = null;
 let idleCanvasResized = false;
 
-// Initialize Idle Animation (can be called multiple times safely)
 function initIdleAnimation() {
     const canvas = document.getElementById('visualizer-canvas');
     if (!canvas) return;
     
-    // Only setup canvas context and resize handler once
     if (!idleCanvasCtx) {
         idleCanvasCtx = canvas.getContext('2d');
         
@@ -50,7 +42,6 @@ function initIdleAnimation() {
         idleCanvasResized = true;
     }
     
-    // If already running an animation, don't start another
     if (idleAnimationFrame) {
         return;
     }
@@ -72,7 +63,6 @@ function initIdleAnimation() {
         
         idleCanvasCtx.clearRect(0, 0, canvas.width, canvas.height);
         
-        // Gradient for idle bars - more subtle
         const gradient = idleCanvasCtx.createLinearGradient(0, 0, 0, canvas.height);
         gradient.addColorStop(0, 'rgba(52, 211, 153, 0.6)');
         gradient.addColorStop(0.6, 'rgba(52, 211, 153, 0.3)');
@@ -81,7 +71,6 @@ function initIdleAnimation() {
         idleCanvasCtx.fillStyle = gradient;
         
         for (let i = 0; i < BAR_COUNT; i++) {
-            // Smooth wave animation - calculate target height
             const wave1 = Math.sin(i * 0.15 + time * 1.5) * 0.3;
             const wave2 = Math.sin(i * 0.08 - time * 0.8) * 0.2;
             const wave3 = Math.sin(i * 0.25 + time * 2.2) * 0.15;
