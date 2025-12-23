@@ -11,10 +11,17 @@ require('dotenv').config();
 class Config {
     constructor() {
         this.rootDir = process.cwd();
-        const storagePath = process.env.STORAGE_DIR || process.env.STORAGE_PATH;
-        this.storageDir = storagePath 
-            ? (path.isAbsolute(storagePath) ? storagePath : path.join(this.rootDir, storagePath))
-            : this.getDefaultStorageDir();
+        this.isDevMode = process.env.NODE_ENV === 'development' || process.env.DEV_MODE === 'true';
+        
+        // In dev mode, use local dev-storage directory
+        if (this.isDevMode) {
+            this.storageDir = path.join(this.rootDir, 'dev-storage');
+        } else {
+            const storagePath = process.env.STORAGE_DIR || process.env.STORAGE_PATH;
+            this.storageDir = storagePath 
+                ? (path.isAbsolute(storagePath) ? storagePath : path.join(this.rootDir, storagePath))
+                : this.getDefaultStorageDir();
+        }
         
         this.paths = {
             storage: this.storageDir,
@@ -55,7 +62,10 @@ class Config {
         };
         this.download = { ...defaults.download };
         this.playback = { ...defaults.playback };
-        this.logging = { ...defaults.logging };
+        // In dev mode, ensure debug logging is enabled even if settings override it
+        this.logging = this.isDevMode 
+            ? { level: 'debug', pretty: true }
+            : { ...defaults.logging };
         this.performance = { ...defaults.performance };
         this.notifications = { ...defaults.notifications };
         this.privacy = { ...defaults.privacy };
@@ -93,6 +103,11 @@ class Config {
      * Get default settings (used when no persisted settings exist)
      */
     getDefaultSettings() {
+        // In dev mode, use debug logging
+        const loggingDefaults = this.isDevMode 
+            ? { level: 'debug', pretty: true }
+            : { level: 'info', pretty: true };
+        
         return {
             server: {
                 port: 3000,
@@ -117,10 +132,7 @@ class Config {
                 confirmSkip: true,
                 showRequesterName: true,
             },
-            logging: {
-                level: 'info',
-                pretty: true,
-            },
+            logging: loggingDefaults,
             performance: {
                 prefetchNext: true,
                 prefetchCount: 0,
@@ -192,7 +204,10 @@ class Config {
         };
         this.download = { ...defaults.download, ...loadedSettings.download };
         this.playback = { ...defaults.playback, ...loadedSettings.playback };
-        this.logging = { ...defaults.logging, ...loadedSettings.logging };
+        // In dev mode, always use debug logging regardless of saved settings
+        this.logging = this.isDevMode 
+            ? { level: 'debug', pretty: true }
+            : { ...defaults.logging, ...loadedSettings.logging };
         this.performance = { ...defaults.performance, ...loadedSettings.performance };
         this.notifications = { ...defaults.notifications, ...loadedSettings.notifications };
         this.privacy = { ...defaults.privacy, ...(loadedSettings.privacy || {}) };
@@ -473,6 +488,14 @@ class Config {
             valid: warnings.length === 0,
             warnings
         };
+    }
+    
+    /**
+     * Check if running in development mode
+     * @returns {boolean} True if in dev mode
+     */
+    isDevelopment() {
+        return this.isDevMode;
     }
     
     /**

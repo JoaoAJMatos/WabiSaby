@@ -472,18 +472,41 @@ wpp-music-bot/
 - **Download**: play-dl, yt-dlp
 - **Logging**: [Pino](https://getpino.io/)
 
-### Setup for Development
+### Development Mode
+
+WabiSaby includes a dedicated development mode with quality-of-life improvements for developers:
+
+**Features:**
+- **Local Storage**: Uses `./dev-storage` directory (isolated from production data)
+- **Auto-reload**: Automatically restarts on file changes (watch mode)
+- **Debug Logging**: Verbose debug-level logging enabled by default
+- **No Browser Auto-open**: Skips opening browser automatically for better workflow
+
+**Usage:**
 
 ```bash
 # Install dependencies
 bun install
 
-# Set DEBUG=true for detailed logs
-echo "DEBUG=true" >> .env
+# Start in development mode
+bun run dev
+```
 
-# Start in development
+The dev mode automatically:
+- Sets `NODE_ENV=development`
+- Uses `./dev-storage` for all data (database, auth, media, etc.)
+- Enables debug-level logging
+- Watches for file changes and auto-reloads
+- Skips browser auto-open
+
+**Production Mode:**
+
+```bash
+# Start normally (production mode)
 bun start
 ```
+
+Production mode uses platform-specific storage locations (see [Configuration](#-configuration) section).
 
 ---
 

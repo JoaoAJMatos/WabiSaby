@@ -28,6 +28,12 @@ const { initializeErrorHandlers } = require('../error');
         logger.info(`Server will run at http://${config.server.host}:${config.server.port}`);
 
         startServer(async (url) => {
+            // Skip auto-opening browser in dev mode
+            if (config.isDevelopment()) {
+                logger.info('Dev mode: Skipping browser auto-open');
+                return;
+            }
+            
             try {
                 const { default: open } = await import('open');
                 await open(url);

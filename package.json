@@ -5,6 +5,7 @@
   "main": "src/app/index.js",
   "scripts": {
     "start": "bun src/app/index.js",
+    "dev": "NODE_ENV=development bun --watch src/app/index.js",
     "test": "bun test",
     "test:watch": "bun test --watch",
     "test:coverage": "bun test --coverage",

@@ -7,6 +7,9 @@ node_modules/
 # Storage (new structure)
 storage/
 
+# Development storage
+dev-storage/
+
 # Legacy storage (kept for backward compatibility)
 auth/
 temp/
