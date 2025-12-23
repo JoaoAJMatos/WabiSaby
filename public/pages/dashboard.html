@@ -1,5 +1,6 @@
 <!DOCTYPE html>
 <html lang="en">
+
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
@@ -13,6 +14,7 @@
     <link rel="stylesheet" href="../styles/style.css">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
 </head>
+
 <body>
     <div class="bg-overlay"></div>
     <div class="container" id="main-container">
@@ -23,18 +25,22 @@
             </div>
             <div class="navbar-actions">
                 <div class="burger-menu-wrapper">
-                    <button class="burger-menu-btn navbar-icon-btn" title="Menu" id="burger-menu-btn" aria-label="Toggle menu" aria-expanded="false" data-i18n-title="ui.dashboard.nav.menu">
+                    <button class="burger-menu-btn navbar-icon-btn" title="Menu" id="burger-menu-btn"
+                        aria-label="Toggle menu" aria-expanded="false" data-i18n-title="ui.dashboard.nav.menu">
                         <span class="burger-line burger-line-top"></span>
                         <span class="burger-line burger-line-middle"></span>
                         <span class="burger-line burger-line-bottom"></span>
                     </button>
-                    <button id="settings-btn" class="navbar-icon-btn burger-menu-item" title="Settings" data-i18n-title="ui.dashboard.nav.settings">
+                    <button id="settings-btn" class="navbar-icon-btn burger-menu-item" title="Settings"
+                        data-i18n-title="ui.dashboard.nav.settings">
                         <i class="fas fa-cog"></i>
                     </button>
-                    <a href="/pages/logs.html" class="navbar-icon-btn burger-menu-item" title="System Logs" id="logs-btn" target="_blank" data-i18n-title="ui.dashboard.nav.systemLogs">
+                    <a href="/pages/logs.html" class="navbar-icon-btn burger-menu-item" title="System Logs"
+                        id="logs-btn" target="_blank" data-i18n-title="ui.dashboard.nav.systemLogs">
                         <i class="fas fa-terminal"></i>
                     </a>
-                    <button id="logout-btn" class="navbar-icon-btn burger-menu-item" title="Logout" data-i18n-title="ui.dashboard.nav.logout">
+                    <button id="logout-btn" class="navbar-icon-btn burger-menu-item" title="Logout"
+                        data-i18n-title="ui.dashboard.nav.logout">
                         <i class="fas fa-sign-out-alt"></i>
                     </button>
                 </div>
@@ -50,7 +56,7 @@
                 <div class="np-visualizer-bg">
                     <canvas id="visualizer-canvas"></canvas>
                 </div>
-                
+
                 <!-- Main Content -->
                 <div class="np-content">
                     <!-- Left: Album Art -->
@@ -59,16 +65,18 @@
                             <i class="fas fa-compact-disc np-artwork-placeholder"></i>
                         </div>
                     </div>
-                    
+
                     <!-- Center: Song Info & Progress -->
                     <div class="np-info">
                         <div id="current-song-info" class="np-song-details">
                             <div class="np-idle-state">
-                                <span class="np-idle-label" data-i18n="ui.dashboard.nowPlaying.readyToPlay">READY TO PLAY</span>
-                                <p class="np-idle-hint" data-i18n="ui.dashboard.nowPlaying.addTrackHint">Add a track to get started</p>
+                                <span class="np-idle-label" data-i18n="ui.dashboard.nowPlaying.readyToPlay">READY TO
+                                    PLAY</span>
+                                <p class="np-idle-hint" data-i18n="ui.dashboard.nowPlaying.addTrackHint">Add a track to
+                                    get started</p>
                             </div>
                         </div>
-                        
+
                         <div id="progress-section" class="np-progress hidden">
                             <div class="np-progress-bar-container">
                                 <div id="progress-bar" class="np-progress-bar"></div>
@@ -79,13 +87,15 @@
                             </div>
                         </div>
                     </div>
-                    
+
                     <!-- Right: Controls -->
                     <div class="np-controls">
-                        <button id="play-pause-btn" class="np-control-btn" title="Pause" data-i18n-title="ui.dashboard.nowPlaying.pause">
+                        <button id="play-pause-btn" class="np-control-btn" title="Pause"
+                            data-i18n-title="ui.dashboard.nowPlaying.pause">
                             <i class="fas fa-pause"></i>
                         </button>
-                        <button id="skip-btn" class="np-control-btn np-skip-btn" title="Skip" data-i18n-title="ui.dashboard.nowPlaying.skip">
+                        <button id="skip-btn" class="np-control-btn np-skip-btn" title="Skip"
+                            data-i18n-title="ui.dashboard.nowPlaying.skip">
                             <i class="fas fa-forward"></i>
                         </button>
                         <!-- Volume Control -->
@@ -94,19 +104,13 @@
                                 <i class="fas fa-volume-up" id="volume-icon"></i>
                             </button>
                             <div class="np-volume-slider-wrapper">
-                                <input 
-                                    type="range" 
-                                    id="volume-slider" 
-                                    min="0" 
-                                    max="100" 
-                                    value="100" 
-                                    step="1"
-                                    aria-label="Volume"
-                                />
+                                <input type="range" id="volume-slider" min="0" max="100" value="100" step="1"
+                                    aria-label="Volume" />
                                 <span class="np-volume-value" id="volume-value">100%</span>
                             </div>
                         </div>
-                        <button id="fullscreen-btn" class="np-control-btn np-fullscreen-btn" title="Fullscreen" data-i18n-title="ui.dashboard.nowPlaying.fullscreen">
+                        <button id="fullscreen-btn" class="np-control-btn np-fullscreen-btn" title="Fullscreen"
+                            data-i18n-title="ui.dashboard.nowPlaying.fullscreen">
                             <i class="fas fa-expand"></i>
                         </button>
                     </div>
@@ -121,10 +125,13 @@
                         <span class="badge" id="queue-count">0</span>
                     </div>
                     <div class="queue-header-actions">
-                        <button id="prefetch-btn" class="cyber-btn small queue-action-btn" title="Download all songs in queue" data-i18n-title="ui.dashboard.queue.prefetchAll">
-                            <i class="fas fa-download"></i> <span data-i18n="ui.dashboard.queue.prefetchAll">PREFETCH ALL</span>
+                        <button id="prefetch-btn" class="cyber-btn small queue-action-btn"
+                            title="Download all songs in queue" data-i18n-title="ui.dashboard.queue.prefetchAll">
+                            <i class="fas fa-download"></i> <span data-i18n="ui.dashboard.queue.prefetchAll">PREFETCH
+                                ALL</span>
                         </button>
-                        <button id="add-song-btn" class="cyber-btn primary small add-track-btn queue-action-btn" title="Add a track" data-i18n-title="ui.dashboard.queue.addTrack">
+                        <button id="add-song-btn" class="cyber-btn primary small add-track-btn queue-action-btn"
+                            title="Add a track" data-i18n-title="ui.dashboard.queue.addTrack">
                             <i class="fas fa-plus"></i> <span data-i18n="ui.dashboard.queue.addTrack">ADD TRACK</span>
                         </button>
                     </div>
@@ -147,11 +154,15 @@
                         </div>
                     </div>
                     <div style="display: flex; align-items: center; gap: 12px;">
-                        <button type="button" id="effects-mode-toggle" class="cyber-btn small" title="Toggle Simple/Advanced Mode" data-i18n-title="ui.dashboard.effects.toggleSimpleAdvanced">
+                        <button type="button" id="effects-mode-toggle" class="cyber-btn small"
+                            title="Toggle Simple/Advanced Mode"
+                            data-i18n-title="ui.dashboard.effects.toggleSimpleAdvanced">
                             <i class="fas fa-sliders-h"></i>
                             <span id="effects-mode-label" data-i18n="ui.dashboard.effects.simple">Simple</span>
                         </button>
-                        <button type="button" id="effects-reset-all" class="cyber-btn small danger effects-reset-all-btn" title="Reset All Effects" data-i18n-title="ui.dashboard.effects.resetAllEffects">
+                        <button type="button" id="effects-reset-all"
+                            class="cyber-btn small danger effects-reset-all-btn" title="Reset All Effects"
+                            data-i18n-title="ui.dashboard.effects.resetAllEffects">
                             <i class="fas fa-undo"></i>
                             <span data-i18n="ui.dashboard.effects.resetAll">RESET ALL</span>
                         </button>
@@ -161,325 +172,385 @@
                                 <span class="toggle-thumb"></span>
                             </span>
                         </label>
-                        <button id="effects-expand-btn" class="cyber-btn small" title="Expand Effects" style="width: auto; padding: 8px;" data-i18n-title="ui.dashboard.effects.expandEffects">
+                        <button id="effects-expand-btn" class="cyber-btn small" title="Expand Effects"
+                            style="width: auto; padding: 8px;" data-i18n-title="ui.dashboard.effects.expandEffects">
                             <i class="fas fa-chevron-down"></i>
                         </button>
                     </div>
                 </div>
-                
+
                 <!-- Presets Row (always visible) -->
                 <div class="effects-presets-row">
                     <div class="effects-presets-grid" id="effects-presets-grid">
                         <!-- Presets populated by JavaScript -->
                     </div>
                 </div>
-                
+
                 <!-- Quick Adjustments Row (Simple Mode) -->
                 <div class="effects-quick-adjustments-row" id="effects-quick-adjustments-row">
                     <div class="effects-quick-adjustments">
-                        <button class="quick-adjust-btn" data-action="bass-up" title="Increase Bass" data-i18n-title="ui.dashboard.effects.bassUp">
+                        <button class="quick-adjust-btn" data-action="bass-up" title="Increase Bass"
+                            data-i18n-title="ui.dashboard.effects.bassUp">
                             <i class="fas fa-volume-up"></i>
                             <span data-i18n="ui.dashboard.effects.bassUp">Bass+</span>
                         </button>
-                        <button class="quick-adjust-btn" data-action="bass-down" title="Decrease Bass" data-i18n-title="ui.dashboard.effects.bassDown">
+                        <button class="quick-adjust-btn" data-action="bass-down" title="Decrease Bass"
+                            data-i18n-title="ui.dashboard.effects.bassDown">
                             <i class="fas fa-volume-down"></i>
                             <span data-i18n="ui.dashboard.effects.bassDown">Bass-</span>
                         </button>
-                        <button class="quick-adjust-btn" data-action="reverb-up" title="Increase Reverb" data-i18n-title="ui.dashboard.effects.reverbUp">
+                        <button class="quick-adjust-btn" data-action="reverb-up" title="Increase Reverb"
+                            data-i18n-title="ui.dashboard.effects.reverbUp">
                             <i class="fas fa-water"></i>
                             <span data-i18n="ui.dashboard.effects.reverbUp">Reverb+</span>
                         </button>
-                        <button class="quick-adjust-btn" data-action="reverb-down" title="Decrease Reverb" data-i18n-title="ui.dashboard.effects.reverbDown">
+                        <button class="quick-adjust-btn" data-action="reverb-down" title="Decrease Reverb"
+                            data-i18n-title="ui.dashboard.effects.reverbDown">
                             <i class="fas fa-water"></i>
                             <span data-i18n="ui.dashboard.effects.reverbDown">Reverb-</span>
                         </button>
-                        <button class="quick-adjust-btn" data-action="faster" title="Speed Up" data-i18n-title="ui.dashboard.effects.faster">
+                        <button class="quick-adjust-btn" data-action="faster" title="Speed Up"
+                            data-i18n-title="ui.dashboard.effects.faster">
                             <i class="fas fa-forward"></i>
                             <span data-i18n="ui.dashboard.effects.faster">Faster</span>
                         </button>
-                        <button class="quick-adjust-btn" data-action="slower" title="Slow Down" data-i18n-title="ui.dashboard.effects.slower">
+                        <button class="quick-adjust-btn" data-action="slower" title="Slow Down"
+                            data-i18n-title="ui.dashboard.effects.slower">
                             <i class="fas fa-backward"></i>
                             <span data-i18n="ui.dashboard.effects.slower">Slower</span>
                         </button>
                     </div>
                 </div>
-                
+
                 <!-- Expandable Content -->
                 <div class="effects-expanded-content" id="effects-expanded-content">
                     <!-- Simple Mode - Just show a hint -->
                     <div class="effects-simple-mode" id="effects-simple-mode">
                         <div class="effects-simple-content">
-                            <p class="effects-simple-hint" data-i18n="ui.dashboard.effects.simpleModeHint">Use the quick adjustment buttons above to tweak effects, or switch to Advanced mode for full control.</p>
+                            <p class="effects-simple-hint" data-i18n="ui.dashboard.effects.simpleModeHint">Use the quick
+                                adjustment buttons above to tweak effects, or switch to Advanced mode for full control.
+                            </p>
                         </div>
                     </div>
-                    
+
                     <!-- Advanced Mode -->
                     <div class="effects-advanced-mode" id="effects-advanced-mode" style="display: none;">
-                    <div class="effects-columns">
-                        <!-- Left Column: Speed & EQ -->
-                        <div class="effects-column">
-                            <!-- Speed Control -->
-                            <div class="effects-section compact">
-                                <div class="effects-section-header">
-                                    <i class="fas fa-tachometer-alt"></i>
-                                    <span data-i18n="ui.dashboard.effects.speed">Speed</span>
-                                </div>
-                                <div class="effect-slider-row">
-                                    <div class="effect-slider-container">
-                                        <input type="range" id="effect-speed" class="effect-slider" min="0.5" max="2" step="0.05" value="1">
-                                        <span class="effect-value" id="effect-speed-value">1.0x</span>
+                        <div class="effects-columns">
+                            <!-- Left Column: Speed & EQ -->
+                            <div class="effects-column">
+                                <!-- Speed Control -->
+                                <div class="effects-section compact">
+                                    <div class="effects-section-header">
+                                        <i class="fas fa-tachometer-alt"></i>
+                                        <span data-i18n="ui.dashboard.effects.speed">Speed</span>
                                     </div>
-                                    <button class="effect-reset-btn" data-target="effect-speed" data-default="1" title="Reset">
-                                        <i class="fas fa-undo"></i>
-                                    </button>
+                                    <div class="effect-slider-row">
+                                        <div class="effect-slider-container">
+                                            <input type="range" id="effect-speed" class="effect-slider" min="0.5"
+                                                max="2" step="0.05" value="1">
+                                            <span class="effect-value" id="effect-speed-value">1.0x</span>
+                                        </div>
+                                        <button class="effect-reset-btn" data-target="effect-speed" data-default="1"
+                                            title="Reset">
+                                            <i class="fas fa-undo"></i>
+                                        </button>
+                                    </div>
+                                </div>
+
+                                <!-- EQ Controls (Visual) -->
+                                <div class="effects-section compact">
+                                    <div class="effects-section-header">
+                                        <i class="fas fa-sliders-h"></i>
+                                        <span data-i18n="ui.dashboard.effects.equalizer">Equalizer</span>
+                                    </div>
+                                    <div class="effects-eq-container">
+                                        <div class="eq-graphical" id="eq-graphical">
+                                            <div class="eq-header-controls">
+                                                <button id="eq-spectrum-toggle" class="eq-toggle-btn"
+                                                    title="Toggle spectrum visualization"
+                                                    data-i18n-title="ui.dashboard.effects.toggleSpectrum">
+                                                    <i class="fas fa-wave-square"></i>
+                                                </button>
+                                            </div>
+                                            <svg class="eq-curve-svg" viewBox="0 0 300 120" preserveAspectRatio="none">
+                                                <defs>
+                                                    <linearGradient id="eq-gradient" x1="0%" y1="0%" x2="0%" y2="100%">
+                                                        <stop offset="0%" style="stop-color:#a855f7;stop-opacity:0.3" />
+                                                        <stop offset="100%"
+                                                            style="stop-color:#a855f7;stop-opacity:0.1" />
+                                                    </linearGradient>
+                                                    <linearGradient id="spectrum-gradient" x1="0%" y1="0%" x2="0%"
+                                                        y2="100%">
+                                                        <stop offset="0%" style="stop-color:#3b82f6;stop-opacity:0.4" />
+                                                        <stop offset="100%"
+                                                            style="stop-color:#3b82f6;stop-opacity:0.1" />
+                                                    </linearGradient>
+                                                </defs>
+                                                <!-- Real-time frequency spectrum (background) -->
+                                                <g id="eq-spectrum-layer" class="eq-spectrum-layer" opacity="0">
+                                                    <path id="eq-spectrum-path" stroke="#3b82f6" stroke-width="1.5"
+                                                        fill="url(#spectrum-gradient)" opacity="0.6" />
+                                                    <path id="eq-spectrum-line" stroke="#60a5fa" stroke-width="1"
+                                                        fill="none" opacity="0.8" />
+                                                </g>
+                                                <!-- Frequency response curve (foreground) -->
+                                                <path id="eq-curve-path" d="M0,60 L75,60 L150,60 L225,60 L300,60"
+                                                    stroke="#a855f7" stroke-width="2" fill="none" />
+                                                <!-- Fill under curve -->
+                                                <path id="eq-curve-fill"
+                                                    d="M0,120 L0,60 L75,60 L150,60 L225,60 L300,60 L300,120 Z"
+                                                    fill="url(#eq-gradient)" />
+                                                <!-- Control points -->
+                                                <circle id="eq-point-bass" cx="75" cy="60" r="6" fill="#a855f7"
+                                                    class="eq-control-point" />
+                                                <circle id="eq-point-mid" cx="150" cy="60" r="6" fill="#a855f7"
+                                                    class="eq-control-point" />
+                                                <circle id="eq-point-treble" cx="225" cy="60" r="6" fill="#a855f7"
+                                                    class="eq-control-point" />
+                                            </svg>
+                                            <div class="eq-frequency-labels">
+                                                <span>100Hz</span>
+                                                <span>1kHz</span>
+                                                <span>10kHz</span>
+                                            </div>
+                                            <div class="eq-db-labels">
+                                                <span>+20</span>
+                                                <span>0</span>
+                                                <span>-20</span>
+                                            </div>
+                                        </div>
+                                        <!-- Fallback sliders for mobile -->
+                                        <div class="eq-fallback" id="eq-fallback" style="display: none;">
+                                            <div class="eq-band-h">
+                                                <label data-i18n="ui.dashboard.effects.bass">Bass</label>
+                                                <input type="range" id="effect-eq-bass" class="eq-slider-h" min="-20"
+                                                    max="20" step="1" value="0">
+                                                <span class="eq-value-h" id="effect-eq-bass-value">0</span>
+                                            </div>
+                                            <div class="eq-band-h">
+                                                <label data-i18n="ui.dashboard.effects.mid">Mid</label>
+                                                <input type="range" id="effect-eq-mid" class="eq-slider-h" min="-20"
+                                                    max="20" step="1" value="0">
+                                                <span class="eq-value-h" id="effect-eq-mid-value">0</span>
+                                            </div>
+                                            <div class="eq-band-h">
+                                                <label data-i18n="ui.dashboard.effects.treble">Treble</label>
+                                                <input type="range" id="effect-eq-treble" class="eq-slider-h" min="-20"
+                                                    max="20" step="1" value="0">
+                                                <span class="eq-value-h" id="effect-eq-treble-value">0</span>
+                                            </div>
+                                        </div>
+                                    </div>
                                 </div>
                             </div>
-                            
-                            <!-- EQ Controls (Visual) -->
-                            <div class="effects-section compact">
-                                <div class="effects-section-header">
-                                    <i class="fas fa-sliders-h"></i>
-                                    <span data-i18n="ui.dashboard.effects.equalizer">Equalizer</span>
-                                </div>
-                                <div class="effects-eq-container">
-                                    <div class="eq-graphical" id="eq-graphical">
-                                        <div class="eq-header-controls">
-                                            <button id="eq-spectrum-toggle" class="eq-toggle-btn" title="Toggle spectrum visualization" data-i18n-title="ui.dashboard.effects.toggleSpectrum">
-                                                <i class="fas fa-wave-square"></i>
-                                            </button>
-                                        </div>
-                                        <svg class="eq-curve-svg" viewBox="0 0 300 120" preserveAspectRatio="none">
-                                            <defs>
-                                                <linearGradient id="eq-gradient" x1="0%" y1="0%" x2="0%" y2="100%">
-                                                    <stop offset="0%" style="stop-color:#a855f7;stop-opacity:0.3" />
-                                                    <stop offset="100%" style="stop-color:#a855f7;stop-opacity:0.1" />
-                                                </linearGradient>
-                                                <linearGradient id="spectrum-gradient" x1="0%" y1="0%" x2="0%" y2="100%">
-                                                    <stop offset="0%" style="stop-color:#3b82f6;stop-opacity:0.4" />
-                                                    <stop offset="100%" style="stop-color:#3b82f6;stop-opacity:0.1" />
-                                                </linearGradient>
-                                            </defs>
-                                            <!-- Real-time frequency spectrum (background) -->
-                                            <g id="eq-spectrum-layer" class="eq-spectrum-layer" opacity="0">
-                                                <path id="eq-spectrum-path" stroke="#3b82f6" stroke-width="1.5" fill="url(#spectrum-gradient)" opacity="0.6"/>
-                                                <path id="eq-spectrum-line" stroke="#60a5fa" stroke-width="1" fill="none" opacity="0.8"/>
-                                            </g>
-                                            <!-- Frequency response curve (foreground) -->
-                                            <path id="eq-curve-path" d="M0,60 L75,60 L150,60 L225,60 L300,60"
-                                                  stroke="#a855f7" stroke-width="2" fill="none"/>
-                                            <!-- Fill under curve -->
-                                            <path id="eq-curve-fill" d="M0,120 L0,60 L75,60 L150,60 L225,60 L300,60 L300,120 Z"
-                                                  fill="url(#eq-gradient)"/>
-                                            <!-- Control points -->
-                                            <circle id="eq-point-bass" cx="75" cy="60" r="6" fill="#a855f7" class="eq-control-point"/>
-                                            <circle id="eq-point-mid" cx="150" cy="60" r="6" fill="#a855f7" class="eq-control-point"/>
-                                            <circle id="eq-point-treble" cx="225" cy="60" r="6" fill="#a855f7" class="eq-control-point"/>
-                                        </svg>
-                                        <div class="eq-frequency-labels">
-                                            <span>100Hz</span>
-                                            <span>1kHz</span>
-                                            <span>10kHz</span>
-                                        </div>
-                                        <div class="eq-db-labels">
-                                            <span>+20</span>
-                                            <span>0</span>
-                                            <span>-20</span>
-                                        </div>
+
+                            <!-- Right Column: Effects -->
+                            <div class="effects-column">
+                                <div class="effects-section compact">
+                                    <div class="effects-section-header">
+                                        <i class="fas fa-magic"></i>
+                                        <span data-i18n="ui.dashboard.effects.effects">Effects</span>
                                     </div>
-                                    <!-- Fallback sliders for mobile -->
-                                    <div class="eq-fallback" id="eq-fallback" style="display: none;">
-                                        <div class="eq-band-h">
-                                            <label data-i18n="ui.dashboard.effects.bass">Bass</label>
-                                            <input type="range" id="effect-eq-bass" class="eq-slider-h" min="-20" max="20" step="1" value="0">
-                                            <span class="eq-value-h" id="effect-eq-bass-value">0</span>
+                                    <div class="effects-toggles-grid">
+                                        <!-- Reverb -->
+                                        <div class="effect-toggle-card">
+                                            <div class="effect-toggle-header">
+                                                <i class="fas fa-water"></i>
+                                                <span data-i18n="ui.dashboard.effects.reverb">Reverb</span>
+                                                <div class="effect-header-controls">
+                                                    <button class="effect-advanced-btn" data-effect="reverb"
+                                                        title="Advanced Controls"
+                                                        data-i18n-title="ui.dashboard.effects.advancedControls">
+                                                        <i class="fas fa-cog"></i>
+                                                    </button>
+                                                    <label class="toggle-switch-v2 small">
+                                                        <input type="checkbox" id="effect-reverb-enabled">
+                                                        <span class="toggle-track"><span
+                                                                class="toggle-thumb"></span></span>
+                                                    </label>
+                                                </div>
+                                            </div>
+                                            <div class="effect-toggle-controls" id="effect-reverb-controls">
+                                                <div class="effect-intensity-control">
+                                                    <div class="mini-control-header">
+                                                        <span
+                                                            data-i18n="ui.dashboard.effects.intensity">Intensity</span>
+                                                        <span class="mini-value"
+                                                            id="effect-reverb-intensity-value-adv">0%</span>
+                                                    </div>
+                                                    <input type="range" id="effect-reverb-intensity-adv" min="0"
+                                                        max="100" step="5" value="0">
+                                                </div>
+                                                <div class="effect-advanced-controls" id="effect-reverb-advanced"
+                                                    style="display: none;">
+                                                    <div class="mini-control">
+                                                        <div class="mini-control-header">
+                                                            <span data-i18n="ui.dashboard.effects.size">Size</span>
+                                                            <span class="mini-value">0.5</span>
+                                                        </div>
+                                                        <input type="range" id="effect-reverb-roomSize" min="0.1"
+                                                            max="1" step="0.1" value="0.5">
+                                                    </div>
+                                                    <div class="mini-control">
+                                                        <div class="mini-control-header">
+                                                            <span data-i18n="ui.dashboard.effects.wet">Wet</span>
+                                                            <span class="mini-value">0.3</span>
+                                                        </div>
+                                                        <input type="range" id="effect-reverb-wetLevel" min="0.1"
+                                                            max="0.8" step="0.05" value="0.3">
+                                                    </div>
+                                                </div>
+                                            </div>
                                         </div>
-                                        <div class="eq-band-h">
-                                            <label data-i18n="ui.dashboard.effects.mid">Mid</label>
-                                            <input type="range" id="effect-eq-mid" class="eq-slider-h" min="-20" max="20" step="1" value="0">
-                                            <span class="eq-value-h" id="effect-eq-mid-value">0</span>
+
+                                        <!-- Echo -->
+                                        <div class="effect-toggle-card">
+                                            <div class="effect-toggle-header">
+                                                <i class="fas fa-broadcast-tower"></i>
+                                                <span data-i18n="ui.dashboard.effects.echo">Echo</span>
+                                                <div class="effect-header-controls">
+                                                    <button class="effect-advanced-btn" data-effect="echo"
+                                                        title="Advanced Controls"
+                                                        data-i18n-title="ui.dashboard.effects.advancedControls">
+                                                        <i class="fas fa-cog"></i>
+                                                    </button>
+                                                    <label class="toggle-switch-v2 small">
+                                                        <input type="checkbox" id="effect-echo-enabled">
+                                                        <span class="toggle-track"><span
+                                                                class="toggle-thumb"></span></span>
+                                                    </label>
+                                                </div>
+                                            </div>
+                                            <div class="effect-toggle-controls" id="effect-echo-controls">
+                                                <div class="effect-intensity-control">
+                                                    <div class="mini-control-header">
+                                                        <span
+                                                            data-i18n="ui.dashboard.effects.intensity">Intensity</span>
+                                                        <span class="mini-value"
+                                                            id="effect-echo-intensity-value-adv">0%</span>
+                                                    </div>
+                                                    <input type="range" id="effect-echo-intensity-adv" min="0" max="100"
+                                                        step="5" value="0">
+                                                </div>
+                                                <div class="effect-advanced-controls" id="effect-echo-advanced"
+                                                    style="display: none;">
+                                                    <div class="mini-control">
+                                                        <div class="mini-control-header">
+                                                            <span data-i18n="ui.dashboard.effects.delay">Delay</span>
+                                                            <span class="mini-value">300ms</span>
+                                                        </div>
+                                                        <input type="range" id="effect-echo-delay" min="50" max="1000"
+                                                            step="50" value="300">
+                                                    </div>
+                                                    <div class="mini-control">
+                                                        <div class="mini-control-header">
+                                                            <span data-i18n="ui.dashboard.effects.decay">Decay</span>
+                                                            <span class="mini-value">0.4</span>
+                                                        </div>
+                                                        <input type="range" id="effect-echo-decay" min="0.1" max="0.8"
+                                                            step="0.05" value="0.4">
+                                                    </div>
+                                                </div>
+                                            </div>
                                         </div>
-                                        <div class="eq-band-h">
-                                            <label data-i18n="ui.dashboard.effects.treble">Treble</label>
-                                            <input type="range" id="effect-eq-treble" class="eq-slider-h" min="-20" max="20" step="1" value="0">
-                                            <span class="eq-value-h" id="effect-eq-treble-value">0</span>
+
+                                        <!-- Distortion -->
+                                        <div class="effect-toggle-card">
+                                            <div class="effect-toggle-header">
+                                                <i class="fas fa-bolt"></i>
+                                                <span data-i18n="ui.dashboard.effects.distortion">Distortion</span>
+                                                <div class="effect-header-controls">
+                                                    <button class="effect-advanced-btn" data-effect="distortion"
+                                                        title="Advanced Controls"
+                                                        data-i18n-title="ui.dashboard.effects.advancedControls">
+                                                        <i class="fas fa-cog"></i>
+                                                    </button>
+                                                    <label class="toggle-switch-v2 small">
+                                                        <input type="checkbox" id="effect-distortion-enabled">
+                                                        <span class="toggle-track"><span
+                                                                class="toggle-thumb"></span></span>
+                                                    </label>
+                                                </div>
+                                            </div>
+                                            <div class="effect-toggle-controls" id="effect-distortion-controls">
+                                                <div class="effect-intensity-control">
+                                                    <div class="mini-control-header">
+                                                        <span
+                                                            data-i18n="ui.dashboard.effects.intensity">Intensity</span>
+                                                        <span class="mini-value"
+                                                            id="effect-distortion-intensity-value-adv">0%</span>
+                                                    </div>
+                                                    <input type="range" id="effect-distortion-intensity-adv" min="0"
+                                                        max="100" step="5" value="0">
+                                                </div>
+                                                <div class="effect-advanced-controls" id="effect-distortion-advanced"
+                                                    style="display: none;">
+                                                    <div class="mini-control">
+                                                        <div class="mini-control-header">
+                                                            <span data-i18n="ui.dashboard.effects.drive">Drive</span>
+                                                            <span class="mini-value">0.5</span>
+                                                        </div>
+                                                        <input type="range" id="effect-distortion-drive" min="0.1"
+                                                            max="1" step="0.05" value="0.5">
+                                                    </div>
+                                                </div>
+                                            </div>
+                                        </div>
+
+                                        <!-- Compressor -->
+                                        <div class="effect-toggle-card">
+                                            <div class="effect-toggle-header">
+                                                <i class="fas fa-compress-alt"></i>
+                                                <span data-i18n="ui.dashboard.effects.compressor">Compressor</span>
+                                                <div class="effect-header-controls">
+                                                    <button class="effect-advanced-btn" data-effect="compressor"
+                                                        title="Advanced Controls"
+                                                        data-i18n-title="ui.dashboard.effects.advancedControls">
+                                                        <i class="fas fa-cog"></i>
+                                                    </button>
+                                                    <label class="toggle-switch-v2 small">
+                                                        <input type="checkbox" id="effect-compressor-enabled">
+                                                        <span class="toggle-track"><span
+                                                                class="toggle-thumb"></span></span>
+                                                    </label>
+                                                </div>
+                                            </div>
+                                            <div class="effect-toggle-controls" id="effect-compressor-controls">
+                                                <div class="effect-intensity-control">
+                                                    <div class="mini-control-header">
+                                                        <span
+                                                            data-i18n="ui.dashboard.effects.intensity">Intensity</span>
+                                                        <span class="mini-value"
+                                                            id="effect-compressor-intensity-value-adv">0%</span>
+                                                    </div>
+                                                    <input type="range" id="effect-compressor-intensity-adv" min="0"
+                                                        max="100" step="5" value="0">
+                                                </div>
+                                                <div class="effect-advanced-controls" id="effect-compressor-advanced"
+                                                    style="display: none;">
+                                                    <div class="mini-control">
+                                                        <div class="mini-control-header">
+                                                            <span data-i18n="ui.dashboard.effects.thresh">Thresh</span>
+                                                            <span class="mini-value">-20dB</span>
+                                                        </div>
+                                                        <input type="range" id="effect-compressor-threshold" min="-40"
+                                                            max="0" step="1" value="-20">
+                                                    </div>
+                                                    <div class="mini-control">
+                                                        <div class="mini-control-header">
+                                                            <span data-i18n="ui.dashboard.effects.ratio">Ratio</span>
+                                                            <span class="mini-value">4:1</span>
+                                                        </div>
+                                                        <input type="range" id="effect-compressor-ratio" min="1"
+                                                            max="20" step="1" value="4">
+                                                    </div>
+                                                </div>
+                                            </div>
                                         </div>
                                     </div>
                                 </div>
                             </div>
                         </div>
-                        
-                        <!-- Right Column: Effects -->
-                        <div class="effects-column">
-                            <div class="effects-section compact">
-                                <div class="effects-section-header">
-                                    <i class="fas fa-magic"></i>
-                                    <span data-i18n="ui.dashboard.effects.effects">Effects</span>
-                                </div>
-                                <div class="effects-toggles-grid">
-                                    <!-- Reverb -->
-                                    <div class="effect-toggle-card">
-                                        <div class="effect-toggle-header">
-                                            <i class="fas fa-water"></i>
-                                            <span data-i18n="ui.dashboard.effects.reverb">Reverb</span>
-                                            <div class="effect-header-controls">
-                                                <button class="effect-advanced-btn" data-effect="reverb" title="Advanced Controls" data-i18n-title="ui.dashboard.effects.advancedControls">
-                                                    <i class="fas fa-cog"></i>
-                                                </button>
-                                                <label class="toggle-switch-v2 small">
-                                                    <input type="checkbox" id="effect-reverb-enabled">
-                                                    <span class="toggle-track"><span class="toggle-thumb"></span></span>
-                                                </label>
-                                            </div>
-                                        </div>
-                                        <div class="effect-toggle-controls" id="effect-reverb-controls">
-                                            <div class="effect-intensity-control">
-                                                <div class="mini-control-header">
-                                                    <span data-i18n="ui.dashboard.effects.intensity">Intensity</span>
-                                                    <span class="mini-value" id="effect-reverb-intensity-value-adv">0%</span>
-                                                </div>
-                                                <input type="range" id="effect-reverb-intensity-adv" min="0" max="100" step="5" value="0">
-                                            </div>
-                                            <div class="effect-advanced-controls" id="effect-reverb-advanced" style="display: none;">
-                                                <div class="mini-control">
-                                                    <div class="mini-control-header">
-                                                        <span data-i18n="ui.dashboard.effects.size">Size</span>
-                                                        <span class="mini-value">0.5</span>
-                                                    </div>
-                                                    <input type="range" id="effect-reverb-roomSize" min="0.1" max="1" step="0.1" value="0.5">
-                                                </div>
-                                                <div class="mini-control">
-                                                    <div class="mini-control-header">
-                                                        <span data-i18n="ui.dashboard.effects.wet">Wet</span>
-                                                        <span class="mini-value">0.3</span>
-                                                    </div>
-                                                    <input type="range" id="effect-reverb-wetLevel" min="0.1" max="0.8" step="0.05" value="0.3">
-                                                </div>
-                                            </div>
-                                        </div>
-                                    </div>
-                                    
-                                    <!-- Echo -->
-                                    <div class="effect-toggle-card">
-                                        <div class="effect-toggle-header">
-                                            <i class="fas fa-broadcast-tower"></i>
-                                            <span data-i18n="ui.dashboard.effects.echo">Echo</span>
-                                            <div class="effect-header-controls">
-                                                <button class="effect-advanced-btn" data-effect="echo" title="Advanced Controls" data-i18n-title="ui.dashboard.effects.advancedControls">
-                                                    <i class="fas fa-cog"></i>
-                                                </button>
-                                                <label class="toggle-switch-v2 small">
-                                                    <input type="checkbox" id="effect-echo-enabled">
-                                                    <span class="toggle-track"><span class="toggle-thumb"></span></span>
-                                                </label>
-                                            </div>
-                                        </div>
-                                        <div class="effect-toggle-controls" id="effect-echo-controls">
-                                            <div class="effect-intensity-control">
-                                                <div class="mini-control-header">
-                                                    <span data-i18n="ui.dashboard.effects.intensity">Intensity</span>
-                                                    <span class="mini-value" id="effect-echo-intensity-value-adv">0%</span>
-                                                </div>
-                                                <input type="range" id="effect-echo-intensity-adv" min="0" max="100" step="5" value="0">
-                                            </div>
-                                            <div class="effect-advanced-controls" id="effect-echo-advanced" style="display: none;">
-                                                <div class="mini-control">
-                                                    <div class="mini-control-header">
-                                                        <span data-i18n="ui.dashboard.effects.delay">Delay</span>
-                                                        <span class="mini-value">300ms</span>
-                                                    </div>
-                                                    <input type="range" id="effect-echo-delay" min="50" max="1000" step="50" value="300">
-                                                </div>
-                                                <div class="mini-control">
-                                                    <div class="mini-control-header">
-                                                        <span data-i18n="ui.dashboard.effects.decay">Decay</span>
-                                                        <span class="mini-value">0.4</span>
-                                                    </div>
-                                                    <input type="range" id="effect-echo-decay" min="0.1" max="0.8" step="0.05" value="0.4">
-                                                </div>
-                                            </div>
-                                        </div>
-                                    </div>
-                                    
-                                    <!-- Distortion -->
-                                    <div class="effect-toggle-card">
-                                        <div class="effect-toggle-header">
-                                            <i class="fas fa-bolt"></i>
-                                            <span data-i18n="ui.dashboard.effects.distortion">Distortion</span>
-                                            <div class="effect-header-controls">
-                                                <button class="effect-advanced-btn" data-effect="distortion" title="Advanced Controls" data-i18n-title="ui.dashboard.effects.advancedControls">
-                                                    <i class="fas fa-cog"></i>
-                                                </button>
-                                                <label class="toggle-switch-v2 small">
-                                                    <input type="checkbox" id="effect-distortion-enabled">
-                                                    <span class="toggle-track"><span class="toggle-thumb"></span></span>
-                                                </label>
-                                            </div>
-                                        </div>
-                                        <div class="effect-toggle-controls" id="effect-distortion-controls">
-                                            <div class="effect-intensity-control">
-                                                <div class="mini-control-header">
-                                                    <span data-i18n="ui.dashboard.effects.intensity">Intensity</span>
-                                                    <span class="mini-value" id="effect-distortion-intensity-value-adv">0%</span>
-                                                </div>
-                                                <input type="range" id="effect-distortion-intensity-adv" min="0" max="100" step="5" value="0">
-                                            </div>
-                                            <div class="effect-advanced-controls" id="effect-distortion-advanced" style="display: none;">
-                                                <div class="mini-control">
-                                                    <div class="mini-control-header">
-                                                        <span data-i18n="ui.dashboard.effects.drive">Drive</span>
-                                                        <span class="mini-value">0.5</span>
-                                                    </div>
-                                                    <input type="range" id="effect-distortion-drive" min="0.1" max="1" step="0.05" value="0.5">
-                                                </div>
-                                            </div>
-                                        </div>
-                                    </div>
-                                    
-                                    <!-- Compressor -->
-                                    <div class="effect-toggle-card">
-                                        <div class="effect-toggle-header">
-                                            <i class="fas fa-compress-alt"></i>
-                                            <span data-i18n="ui.dashboard.effects.compressor">Compressor</span>
-                                            <div class="effect-header-controls">
-                                                <button class="effect-advanced-btn" data-effect="compressor" title="Advanced Controls" data-i18n-title="ui.dashboard.effects.advancedControls">
-                                                    <i class="fas fa-cog"></i>
-                                                </button>
-                                                <label class="toggle-switch-v2 small">
-                                                    <input type="checkbox" id="effect-compressor-enabled">
-                                                    <span class="toggle-track"><span class="toggle-thumb"></span></span>
-                                                </label>
-                                            </div>
-                                        </div>
-                                        <div class="effect-toggle-controls" id="effect-compressor-controls">
-                                            <div class="effect-intensity-control">
-                                                <div class="mini-control-header">
-                                                    <span data-i18n="ui.dashboard.effects.intensity">Intensity</span>
-                                                    <span class="mini-value" id="effect-compressor-intensity-value-adv">0%</span>
-                                                </div>
-                                                <input type="range" id="effect-compressor-intensity-adv" min="0" max="100" step="5" value="0">
-                                            </div>
-                                            <div class="effect-advanced-controls" id="effect-compressor-advanced" style="display: none;">
-                                                <div class="mini-control">
-                                                    <div class="mini-control-header">
-                                                        <span data-i18n="ui.dashboard.effects.thresh">Thresh</span>
-                                                        <span class="mini-value">-20dB</span>
-                                                    </div>
-                                                    <input type="range" id="effect-compressor-threshold" min="-40" max="0" step="1" value="-20">
-                                                </div>
-                                                <div class="mini-control">
-                                                    <div class="mini-control-header">
-                                                        <span data-i18n="ui.dashboard.effects.ratio">Ratio</span>
-                                                        <span class="mini-value">4:1</span>
-                                                    </div>
-                                                    <input type="range" id="effect-compressor-ratio" min="1" max="20" step="1" value="4">
-                                                </div>
-                                            </div>
-                                        </div>
-                                    </div>
-                                </div>
-                            </div>
-                        </div>
-                    </div>
                     </div>
                 </div>
             </section>
@@ -495,21 +566,25 @@
                         <!-- Detailed Stats Tabs -->
                         <div class="stats-tabs">
                             <button class="stats-tab-btn active" data-tab="overview">
-                                <i class="fas fa-chart-pie"></i> <span data-i18n="ui.dashboard.analytics.overview">Overview</span>
+                                <i class="fas fa-chart-pie"></i> <span
+                                    data-i18n="ui.dashboard.analytics.overview">Overview</span>
                             </button>
                             <button class="stats-tab-btn" data-tab="requesters">
-                                <i class="fas fa-users"></i> <span data-i18n="ui.dashboard.analytics.topRequesters">Top Requesters</span>
+                                <i class="fas fa-users"></i> <span data-i18n="ui.dashboard.analytics.topRequesters">Top
+                                    Requesters</span>
                             </button>
                             <button class="stats-tab-btn" data-tab="history">
-                                <i class="fas fa-history"></i> <span data-i18n="ui.dashboard.analytics.recentHistory">Recent History</span>
+                                <i class="fas fa-history"></i> <span
+                                    data-i18n="ui.dashboard.analytics.recentHistory">Recent History</span>
                             </button>
                         </div>
-                        <button id="stats-collapse-btn" class="cyber-btn small" title="Expand Analytics" style="width: auto; padding: 8px;" data-i18n-title="ui.dashboard.analytics.expandAnalytics">
+                        <button id="stats-collapse-btn" class="cyber-btn small" title="Expand Analytics"
+                            style="width: auto; padding: 8px;" data-i18n-title="ui.dashboard.analytics.expandAnalytics">
                             <i class="fas fa-chevron-up"></i>
                         </button>
                     </div>
                 </div>
-                
+
                 <!-- Quick Stats Overview -->
                 <div class="stats-grid">
                     <div class="stat-item">
@@ -538,24 +613,27 @@
                 <!-- Tab Contents -->
                 <div class="stats-tab-content active" id="tab-overview">
                     <div class="stats-overview">
-                        <p class="stats-placeholder"><i class="fas fa-spinner fa-spin"></i> <span data-i18n="ui.dashboard.analytics.loadingAnalytics">Loading analytics...</span></p>
+                        <p class="stats-placeholder"><i class="fas fa-spinner fa-spin"></i> <span
+                                data-i18n="ui.dashboard.analytics.loadingAnalytics">Loading analytics...</span></p>
                     </div>
                 </div>
 
                 <div class="stats-tab-content" id="tab-requesters">
                     <div class="requesters-list">
-                        <p class="stats-placeholder" data-i18n="ui.dashboard.analytics.topRequestersPlaceholder">Top requesters will appear here</p>
+                        <p class="stats-placeholder" data-i18n="ui.dashboard.analytics.topRequestersPlaceholder">Top
+                            requesters will appear here</p>
                     </div>
                 </div>
 
                 <div class="stats-tab-content" id="tab-history">
                     <div class="history-list">
-                        <p class="stats-placeholder" data-i18n="ui.dashboard.analytics.historyPlaceholder">Playback history will appear here</p>
+                        <p class="stats-placeholder" data-i18n="ui.dashboard.analytics.historyPlaceholder">Playback
+                            history will appear here</p>
                     </div>
                 </div>
             </section>
 
-             <section id="settings" class="card full-width vip-section-new">
+            <section id="settings" class="card full-width vip-section-new">
                 <!-- Password Unlock Overlay -->
                 <div class="vip-unlock-overlay-new" id="vip-unlock-overlay">
                     <div class="vip-unlock-card">
@@ -565,14 +643,17 @@
                             </div>
                             <div class="vip-unlock-text">
                                 <h3 data-i18n="ui.dashboard.vip.management">VIP Management</h3>
-                                <p data-i18n="ui.dashboard.vip.enterPassword">Enter password to manage priority users</p>
+                                <p data-i18n="ui.dashboard.vip.enterPassword">Enter password to manage priority users
+                                </p>
                             </div>
                         </div>
                         <form id="vip-unlock-form" class="vip-unlock-form" onsubmit="unlockVipArea(event)">
                             <div class="vip-password-input-wrapper">
                                 <i class="fas fa-key"></i>
-                                <input type="password" id="vip-password" placeholder="Admin password..." autocomplete="off" data-i18n-placeholder="ui.dashboard.vip.passwordPlaceholder">
-                                <button type="button" class="vip-password-toggle" onclick="toggleVipPasswordVisibility()">
+                                <input type="password" id="vip-password" placeholder="Admin password..."
+                                    autocomplete="off" data-i18n-placeholder="ui.dashboard.vip.passwordPlaceholder">
+                                <button type="button" class="vip-password-toggle"
+                                    onclick="toggleVipPasswordVisibility()">
                                     <i class="fas fa-eye" id="vip-password-eye"></i>
                                 </button>
                             </div>
@@ -584,7 +665,7 @@
                         <p class="vip-password-error" id="vip-password-error"></p>
                     </div>
                 </div>
-                
+
                 <!-- Unlocked VIP Content -->
                 <div class="vip-content-new" id="vip-content-wrapper">
                     <!-- Header Row -->
@@ -595,26 +676,30 @@
                             </div>
                             <div class="vip-title-text">
                                 <h2 data-i18n="ui.dashboard.vip.access">VIP Access</h2>
-                                <span class="vip-subtitle" data-i18n="ui.dashboard.vip.subtitle">Priority queue for selected users</span>
+                                <span class="vip-subtitle" data-i18n="ui.dashboard.vip.subtitle">Priority queue for
+                                    selected users</span>
                             </div>
                         </div>
                         <div class="vip-actions">
                             <div class="vip-mode-toggle">
-                                <button type="button" class="vip-mode-btn active" id="toggle-group-select" onclick="showGroupSelector()">
+                                <button type="button" class="vip-mode-btn active" id="toggle-group-select"
+                                    onclick="showGroupSelector()">
                                     <i class="fas fa-users"></i>
                                     <span data-i18n="ui.dashboard.vip.group">Group</span>
                                 </button>
-                                <button type="button" class="vip-mode-btn" id="toggle-manual-input" onclick="showManualInput()">
+                                <button type="button" class="vip-mode-btn" id="toggle-manual-input"
+                                    onclick="showManualInput()">
                                     <i class="fas fa-keyboard"></i>
                                     <span data-i18n="ui.dashboard.vip.manual">Manual</span>
                                 </button>
                             </div>
-                            <button type="button" class="vip-lock-btn-new" id="vip-lock-btn" onclick="lockVipArea()" title="Lock VIP Area" data-i18n-title="ui.dashboard.vip.lockArea">
+                            <button type="button" class="vip-lock-btn-new" id="vip-lock-btn" onclick="lockVipArea()"
+                                title="Lock VIP Area" data-i18n-title="ui.dashboard.vip.lockArea">
                                 <i class="fas fa-lock"></i>
                             </button>
                         </div>
                     </div>
-                    
+
                     <!-- Main Content Grid -->
                     <div class="vip-grid">
                         <!-- Left: Add VIP -->
@@ -623,12 +708,14 @@
                                 <i class="fas fa-user-plus"></i>
                                 <span data-i18n="ui.dashboard.vip.addUser">Add VIP User</span>
                             </div>
-                            
+
                             <!-- Group member selector -->
                             <div id="group-selector-container" class="vip-selector-container">
                                 <div class="vip-search-box">
                                     <i class="fas fa-search"></i>
-                                    <input type="text" id="member-search" placeholder="Search members..." oninput="filterMembers()" data-i18n-placeholder="ui.dashboard.vip.searchMembers">
+                                    <input type="text" id="member-search" placeholder="Search members..."
+                                        oninput="filterMembers()"
+                                        data-i18n-placeholder="ui.dashboard.vip.searchMembers">
                                 </div>
                                 <div id="members-list" class="vip-members-list">
                                     <div class="vip-loading">
@@ -637,19 +724,20 @@
                                     </div>
                                 </div>
                             </div>
-                            
+
                             <!-- Manual input form (hidden by default) -->
                             <form id="add-vip-form" class="vip-manual-form hidden">
                                 <div class="vip-manual-input-wrapper">
                                     <i class="fas fa-phone"></i>
-                                    <input type="text" id="vip-id" placeholder="5511999999999@s.whatsapp.net" required data-i18n-placeholder="ui.dashboard.vip.vipIdPlaceholder">
+                                    <input type="text" id="vip-id" placeholder="5511999999999@s.whatsapp.net" required
+                                        data-i18n-placeholder="ui.dashboard.vip.vipIdPlaceholder">
                                 </div>
                                 <button type="submit" class="vip-add-btn">
                                     <i class="fas fa-plus"></i>
                                 </button>
                             </form>
                         </div>
-                        
+
                         <!-- Right: Current VIPs -->
                         <div class="vip-list-panel">
                             <div class="vip-panel-header">
@@ -676,12 +764,14 @@
                 <div class="footer-info">
                     <span class="footer-version">v1.0.0</span>
                     <span class="footer-separator">•</span>
-                    <a href="https://github.com/JoaoAJMatos" target="_blank" rel="noopener noreferrer" class="footer-copyright" title="Copyright JoaoAJMatos">
+                    <a href="https://github.com/JoaoAJMatos" target="_blank" rel="noopener noreferrer"
+                        class="footer-copyright" title="Copyright JoaoAJMatos">
                         <span class="footer-author">JoaoAJMatos</span>
                         <span class="footer-year">2024</span>
                     </a>
                     <span class="footer-separator">•</span>
-                    <a href="https://github.com/JoaoAJMatos/WabiSaby" target="_blank" rel="noopener noreferrer" class="footer-github-link" title="View on GitHub">
+                    <a href="https://github.com/JoaoAJMatos/WabiSaby" target="_blank" rel="noopener noreferrer"
+                        class="footer-github-link" title="View on GitHub">
                         <i class="fab fa-github"></i>
                         <span>GitHub</span>
                     </a>
@@ -700,15 +790,16 @@
                         </div>
                         <h2 data-i18n="ui.dashboard.settings.title">Settings</h2>
                     </div>
-                    
+
                     <div class="settings-search-wrapper">
                         <i class="fas fa-search"></i>
-                        <input type="text" id="settings-search" placeholder="Search settings..." autocomplete="off" data-i18n-placeholder="ui.dashboard.settings.searchPlaceholder">
+                        <input type="text" id="settings-search" placeholder="Search settings..." autocomplete="off"
+                            data-i18n-placeholder="ui.dashboard.settings.searchPlaceholder">
                         <button type="button" id="settings-search-clear" class="settings-search-clear hidden">
                             <i class="fas fa-times"></i>
                         </button>
                     </div>
-                    
+
                     <ul class="settings-nav">
                         <li class="settings-nav-item active" data-category="download">
                             <i class="fas fa-download"></i>
@@ -747,7 +838,7 @@
                         </li>
                     </ul>
                 </nav>
-                
+
                 <!-- Main Content Area -->
                 <div class="settings-main">
                     <div class="settings-main-header">
@@ -757,14 +848,15 @@
                             </div>
                             <div class="panel-title" id="settings-main-header-title">
                                 <h3 data-i18n="ui.dashboard.settings.download.title">Download</h3>
-                                <p data-i18n="ui.dashboard.settings.download.description">Configure audio format, quality, and download behavior</p>
+                                <p data-i18n="ui.dashboard.settings.download.description">Configure audio format,
+                                    quality, and download behavior</p>
                             </div>
                         </div>
                         <button id="settings-modal-close" class="modal-close-btn">
                             <i class="fas fa-times"></i>
                         </button>
                     </div>
-                    
+
                     <div class="settings-content" id="settings-content">
                         <!-- Download Settings Panel -->
                         <div class="settings-panel active" data-panel="download">
@@ -774,19 +866,24 @@
                                 </div>
                                 <div class="panel-title">
                                     <h3 data-i18n="ui.dashboard.settings.download.title">Download</h3>
-                                    <p data-i18n="ui.dashboard.settings.download.description">Configure audio format, quality, and download behavior</p>
+                                    <p data-i18n="ui.dashboard.settings.download.description">Configure audio format,
+                                        quality, and download behavior</p>
                                 </div>
                             </div>
-                            
+
                             <div class="settings-group">
                                 <div class="setting-row" data-searchable="audio format mp3 m4a opus flac wav">
                                     <div class="setting-info">
-                                        <label for="setting-audioFormat" data-i18n="ui.dashboard.settings.download.audioFormat">Audio Format</label>
-                                        <p class="setting-description" data-i18n="ui.dashboard.settings.download.audioFormatDesc">Output format for downloaded audio files</p>
+                                        <label for="setting-audioFormat"
+                                            data-i18n="ui.dashboard.settings.download.audioFormat">Audio Format</label>
+                                        <p class="setting-description"
+                                            data-i18n="ui.dashboard.settings.download.audioFormatDesc">Output format for
+                                            downloaded audio files</p>
                                     </div>
                                     <div class="setting-control">
                                         <div class="select-wrapper">
-                                            <select id="setting-audioFormat" data-category="download" data-key="audioFormat">
+                                            <select id="setting-audioFormat" data-category="download"
+                                                data-key="audioFormat">
                                                 <option value="mp3">MP3</option>
                                                 <option value="m4a">M4A</option>
                                                 <option value="opus">Opus</option>
@@ -797,15 +894,21 @@
                                         </div>
                                     </div>
                                 </div>
-                                
-                                <div class="setting-row" data-searchable="audio quality bitrate 64 128 192 256 320 kbps">
+
+                                <div class="setting-row"
+                                    data-searchable="audio quality bitrate 64 128 192 256 320 kbps">
                                     <div class="setting-info">
-                                        <label for="setting-audioQuality" data-i18n="ui.dashboard.settings.download.audioQuality">Audio Quality</label>
-                                        <p class="setting-description" data-i18n="ui.dashboard.settings.download.audioQualityDesc">Bitrate for audio encoding. Higher = better quality, larger files</p>
+                                        <label for="setting-audioQuality"
+                                            data-i18n="ui.dashboard.settings.download.audioQuality">Audio
+                                            Quality</label>
+                                        <p class="setting-description"
+                                            data-i18n="ui.dashboard.settings.download.audioQualityDesc">Bitrate for
+                                            audio encoding. Higher = better quality, larger files</p>
                                     </div>
                                     <div class="setting-control">
                                         <div class="quality-selector">
-                                            <input type="range" id="setting-audioQuality-slider" min="0" max="4" step="1" value="2">
+                                            <input type="range" id="setting-audioQuality-slider" min="0" max="4"
+                                                step="1" value="2">
                                             <div class="quality-labels">
                                                 <span data-value="64k">64k</span>
                                                 <span data-value="128k">128k</span>
@@ -814,7 +917,8 @@
                                                 <span data-value="320k">320k</span>
                                             </div>
                                         </div>
-                                        <select id="setting-audioQuality" data-category="download" data-key="audioQuality" class="hidden">
+                                        <select id="setting-audioQuality" data-category="download"
+                                            data-key="audioQuality" class="hidden">
                                             <option value="64k">64 kbps</option>
                                             <option value="128k">128 kbps</option>
                                             <option value="192k">192 kbps</option>
@@ -823,52 +927,65 @@
                                         </select>
                                     </div>
                                 </div>
-                                
+
                                 <div class="setting-row" data-searchable="youtube client android web ios player">
                                     <div class="setting-info">
-                                        <label for="setting-playerClient" data-i18n="ui.dashboard.settings.download.playerClient">YouTube Client</label>
-                                        <p class="setting-description" data-i18n="ui.dashboard.settings.download.playerClientDesc">Client to emulate when fetching from YouTube</p>
+                                        <label for="setting-playerClient"
+                                            data-i18n="ui.dashboard.settings.download.playerClient">YouTube
+                                            Client</label>
+                                        <p class="setting-description"
+                                            data-i18n="ui.dashboard.settings.download.playerClientDesc">Client to
+                                            emulate when fetching from YouTube</p>
                                     </div>
                                     <div class="setting-control">
                                         <div class="client-selector">
                                             <label class="client-option">
-                                                <input type="radio" name="playerClient" value="android" data-category="download" data-key="playerClient">
+                                                <input type="radio" name="playerClient" value="android"
+                                                    data-category="download" data-key="playerClient">
                                                 <span class="client-btn">
                                                     <i class="fab fa-android"></i>
                                                     <span>Android</span>
                                                 </span>
                                             </label>
                                             <label class="client-option">
-                                                <input type="radio" name="playerClient" value="web" data-category="download" data-key="playerClient">
+                                                <input type="radio" name="playerClient" value="web"
+                                                    data-category="download" data-key="playerClient">
                                                 <span class="client-btn">
                                                     <i class="fas fa-globe"></i>
                                                     <span>Web</span>
                                                 </span>
                                             </label>
                                             <label class="client-option">
-                                                <input type="radio" name="playerClient" value="ios" data-category="download" data-key="playerClient">
+                                                <input type="radio" name="playerClient" value="ios"
+                                                    data-category="download" data-key="playerClient">
                                                 <span class="client-btn">
                                                     <i class="fab fa-apple"></i>
                                                     <span>iOS</span>
                                                 </span>
                                             </label>
                                         </div>
-                                        <select id="setting-playerClient" data-category="download" data-key="playerClient" class="hidden">
+                                        <select id="setting-playerClient" data-category="download"
+                                            data-key="playerClient" class="hidden">
                                             <option value="android">Android</option>
                                             <option value="web">Web</option>
                                             <option value="ios">iOS</option>
                                         </select>
                                     </div>
                                 </div>
-                                
+
                                 <div class="setting-row" data-searchable="download thumbnails album art cover image">
                                     <div class="setting-info">
-                                        <label for="setting-downloadThumbnails" data-i18n="ui.dashboard.settings.download.downloadThumbnails">Download Thumbnails</label>
-                                        <p class="setting-description" data-i18n="ui.dashboard.settings.download.downloadThumbnailsDesc">Save album artwork alongside audio files</p>
+                                        <label for="setting-downloadThumbnails"
+                                            data-i18n="ui.dashboard.settings.download.downloadThumbnails">Download
+                                            Thumbnails</label>
+                                        <p class="setting-description"
+                                            data-i18n="ui.dashboard.settings.download.downloadThumbnailsDesc">Save album
+                                            artwork alongside audio files</p>
                                     </div>
                                     <div class="setting-control">
                                         <label class="toggle-switch-v2">
-                                            <input type="checkbox" id="setting-downloadThumbnails" data-category="download" data-key="downloadThumbnails">
+                                            <input type="checkbox" id="setting-downloadThumbnails"
+                                                data-category="download" data-key="downloadThumbnails">
                                             <span class="toggle-track">
                                                 <span class="toggle-thumb"></span>
                                             </span>
@@ -877,7 +994,7 @@
                                 </div>
                             </div>
                         </div>
-                        
+
                         <!-- Playback Settings Panel -->
                         <div class="settings-panel" data-panel="playback">
                             <div class="panel-header">
@@ -886,73 +1003,98 @@
                                 </div>
                                 <div class="panel-title">
                                     <h3 data-i18n="ui.dashboard.settings.playback.title">Playback</h3>
-                                    <p data-i18n="ui.dashboard.settings.playback.description">Control playback behavior and transitions</p>
+                                    <p data-i18n="ui.dashboard.settings.playback.description">Control playback behavior
+                                        and transitions</p>
                                 </div>
                             </div>
-                            
+
                             <div class="settings-group">
                                 <div class="setting-row" data-searchable="cleanup after play delete remove files">
                                     <div class="setting-info">
-                                        <label for="setting-cleanupAfterPlay" data-i18n="ui.dashboard.settings.playback.cleanupAfterPlay">Cleanup After Play</label>
-                                        <p class="setting-description" data-i18n="ui.dashboard.settings.playback.cleanupAfterPlayDesc">Automatically delete audio files after playback completes</p>
+                                        <label for="setting-cleanupAfterPlay"
+                                            data-i18n="ui.dashboard.settings.playback.cleanupAfterPlay">Cleanup After
+                                            Play</label>
+                                        <p class="setting-description"
+                                            data-i18n="ui.dashboard.settings.playback.cleanupAfterPlayDesc">
+                                            Automatically delete audio files after playback completes</p>
                                     </div>
                                     <div class="setting-control">
                                         <label class="toggle-switch-v2">
-                                            <input type="checkbox" id="setting-cleanupAfterPlay" data-category="playback" data-key="cleanupAfterPlay">
+                                            <input type="checkbox" id="setting-cleanupAfterPlay"
+                                                data-category="playback" data-key="cleanupAfterPlay">
                                             <span class="toggle-track">
                                                 <span class="toggle-thumb"></span>
                                             </span>
                                         </label>
                                     </div>
                                 </div>
-                                
+
                                 <div class="setting-row" data-searchable="confirm skip dialog prompt">
                                     <div class="setting-info">
-                                        <label for="setting-confirmSkip" data-i18n="ui.dashboard.settings.playback.confirmSkip">Confirm Skip</label>
-                                        <p class="setting-description" data-i18n="ui.dashboard.settings.playback.confirmSkipDesc">Show confirmation dialog before skipping songs</p>
+                                        <label for="setting-confirmSkip"
+                                            data-i18n="ui.dashboard.settings.playback.confirmSkip">Confirm Skip</label>
+                                        <p class="setting-description"
+                                            data-i18n="ui.dashboard.settings.playback.confirmSkipDesc">Show confirmation
+                                            dialog before skipping songs</p>
                                     </div>
                                     <div class="setting-control">
                                         <label class="toggle-switch-v2">
-                                            <input type="checkbox" id="setting-confirmSkip" data-category="playback" data-key="confirmSkip">
+                                            <input type="checkbox" id="setting-confirmSkip" data-category="playback"
+                                                data-key="confirmSkip">
                                             <span class="toggle-track">
                                                 <span class="toggle-thumb"></span>
                                             </span>
                                         </label>
                                     </div>
                                 </div>
-                                
-                                <div class="setting-row" data-searchable="show requester name display current song who requested">
+
+                                <div class="setting-row"
+                                    data-searchable="show requester name display current song who requested">
                                     <div class="setting-info">
-                                        <label for="setting-showRequesterName" data-i18n="ui.dashboard.settings.playback.showRequesterName">Show Requester Name</label>
-                                        <p class="setting-description" data-i18n="ui.dashboard.settings.playback.showRequesterNameDesc">Display the requester's name on the currently playing song</p>
+                                        <label for="setting-showRequesterName"
+                                            data-i18n="ui.dashboard.settings.playback.showRequesterName">Show Requester
+                                            Name</label>
+                                        <p class="setting-description"
+                                            data-i18n="ui.dashboard.settings.playback.showRequesterNameDesc">Display the
+                                            requester's name on the currently playing song</p>
                                     </div>
                                     <div class="setting-control">
                                         <label class="toggle-switch-v2">
-                                            <input type="checkbox" id="setting-showRequesterName" data-category="playback" data-key="showRequesterName">
+                                            <input type="checkbox" id="setting-showRequesterName"
+                                                data-category="playback" data-key="showRequesterName">
                                             <span class="toggle-track">
                                                 <span class="toggle-thumb"></span>
                                             </span>
                                         </label>
                                     </div>
                                 </div>
-                                
-                                <div class="setting-row" data-searchable="transition delay milliseconds gap pause between songs">
+
+                                <div class="setting-row"
+                                    data-searchable="transition delay milliseconds gap pause between songs">
                                     <div class="setting-info">
-                                        <label for="setting-songTransitionDelay" data-i18n="ui.dashboard.settings.playback.songTransitionDelay">Transition Delay</label>
-                                        <p class="setting-description" data-i18n="ui.dashboard.settings.playback.songTransitionDelayDesc">Pause between songs in milliseconds (0 - 10000)</p>
+                                        <label for="setting-songTransitionDelay"
+                                            data-i18n="ui.dashboard.settings.playback.songTransitionDelay">Transition
+                                            Delay</label>
+                                        <p class="setting-description"
+                                            data-i18n="ui.dashboard.settings.playback.songTransitionDelayDesc">Pause
+                                            between songs in milliseconds (0 - 10000)</p>
                                     </div>
                                     <div class="setting-control">
                                         <div class="number-input-wrapper">
-                                            <button type="button" class="number-btn minus"><i class="fas fa-minus"></i></button>
-                                            <input type="number" id="setting-songTransitionDelay" data-category="playback" data-key="songTransitionDelay" min="0" max="10000" step="100">
+                                            <button type="button" class="number-btn minus"><i
+                                                    class="fas fa-minus"></i></button>
+                                            <input type="number" id="setting-songTransitionDelay"
+                                                data-category="playback" data-key="songTransitionDelay" min="0"
+                                                max="10000" step="100">
                                             <span class="number-unit">ms</span>
-                                            <button type="button" class="number-btn plus"><i class="fas fa-plus"></i></button>
+                                            <button type="button" class="number-btn plus"><i
+                                                    class="fas fa-plus"></i></button>
                                         </div>
                                     </div>
                                 </div>
                             </div>
                         </div>
-                        
+
                         <!-- Performance Settings Panel -->
                         <div class="settings-panel" data-panel="performance">
                             <div class="panel-header">
@@ -961,51 +1103,65 @@
                                 </div>
                                 <div class="panel-title">
                                     <h3 data-i18n="ui.dashboard.settings.performance.title">Performance</h3>
-                                    <p data-i18n="ui.dashboard.settings.performance.description">Optimize loading and caching behavior</p>
+                                    <p data-i18n="ui.dashboard.settings.performance.description">Optimize loading and
+                                        caching behavior</p>
                                 </div>
                             </div>
-                            
+
                             <div class="settings-group">
                                 <div class="setting-row" data-searchable="prefetch enable preload cache buffer">
                                     <div class="setting-info">
-                                        <label for="setting-prefetchNext" data-i18n="ui.dashboard.settings.performance.prefetchNext">Enable Prefetch</label>
-                                        <p class="setting-description" data-i18n="ui.dashboard.settings.performance.prefetchNextDesc">Download upcoming songs before they're needed</p>
+                                        <label for="setting-prefetchNext"
+                                            data-i18n="ui.dashboard.settings.performance.prefetchNext">Enable
+                                            Prefetch</label>
+                                        <p class="setting-description"
+                                            data-i18n="ui.dashboard.settings.performance.prefetchNextDesc">Download
+                                            upcoming songs before they're needed</p>
                                     </div>
                                     <div class="setting-control">
                                         <label class="toggle-switch-v2">
-                                            <input type="checkbox" id="setting-prefetchNext" data-category="performance" data-key="prefetchNext">
+                                            <input type="checkbox" id="setting-prefetchNext" data-category="performance"
+                                                data-key="prefetchNext">
                                             <span class="toggle-track">
                                                 <span class="toggle-thumb"></span>
                                             </span>
                                         </label>
                                     </div>
                                 </div>
-                                
+
                                 <div class="setting-row" data-searchable="prefetch count number songs queue ahead">
                                     <div class="setting-info">
-                                        <label for="setting-prefetchCount" data-i18n="ui.dashboard.settings.performance.prefetchCount">Prefetch Count</label>
-                                        <p class="setting-description" data-i18n="ui.dashboard.settings.performance.prefetchCountDesc">Number of songs to preload ahead (0 = all queued songs)</p>
+                                        <label for="setting-prefetchCount"
+                                            data-i18n="ui.dashboard.settings.performance.prefetchCount">Prefetch
+                                            Count</label>
+                                        <p class="setting-description"
+                                            data-i18n="ui.dashboard.settings.performance.prefetchCountDesc">Number of
+                                            songs to preload ahead (0 = all queued songs)</p>
                                     </div>
                                     <div class="setting-control">
                                         <div class="number-input-wrapper">
-                                            <button type="button" class="number-btn minus"><i class="fas fa-minus"></i></button>
-                                            <input type="number" id="setting-prefetchCount" data-category="performance" data-key="prefetchCount" min="0" max="20" step="1">
+                                            <button type="button" class="number-btn minus"><i
+                                                    class="fas fa-minus"></i></button>
+                                            <input type="number" id="setting-prefetchCount" data-category="performance"
+                                                data-key="prefetchCount" min="0" max="20" step="1">
                                             <span class="number-unit">songs</span>
-                                            <button type="button" class="number-btn plus"><i class="fas fa-plus"></i></button>
+                                            <button type="button" class="number-btn plus"><i
+                                                    class="fas fa-plus"></i></button>
                                         </div>
                                     </div>
                                 </div>
                             </div>
-                            
+
                             <div class="settings-info-card performance">
                                 <i class="fas fa-lightbulb"></i>
                                 <div>
                                     <strong data-i18n="ui.dashboard.settings.performance.proTip">Pro Tip</strong>
-                                    <p data-i18n="ui.dashboard.settings.performance.proTipText">Enable prefetch with count 2-3 for smooth playback without using too much storage.</p>
+                                    <p data-i18n="ui.dashboard.settings.performance.proTipText">Enable prefetch with
+                                        count 2-3 for smooth playback without using too much storage.</p>
                                 </div>
                             </div>
                         </div>
-                        
+
                         <!-- Volume Normalization Settings Panel -->
                         <div class="settings-panel" data-panel="audio">
                             <div class="panel-header">
@@ -1014,19 +1170,26 @@
                                 </div>
                                 <div class="panel-title">
                                     <h3 data-i18n="ui.dashboard.settings.audio.title">Audio Normalization</h3>
-                                    <p data-i18n="ui.dashboard.settings.audio.description">Automatically adjust song volumes to consistent levels</p>
+                                    <p data-i18n="ui.dashboard.settings.audio.description">Automatically adjust song
+                                        volumes to consistent levels</p>
                                 </div>
                             </div>
-                            
+
                             <div class="settings-group">
-                                <div class="setting-row" data-searchable="enable volume normalization automatic adjust levels">
+                                <div class="setting-row"
+                                    data-searchable="enable volume normalization automatic adjust levels">
                                     <div class="setting-info">
-                                        <label for="setting-volumeNormalizationEnabled" data-i18n="ui.dashboard.settings.audio.enabled">Enable Volume Normalization</label>
-                                        <p class="setting-description" data-i18n="ui.dashboard.settings.audio.enabledDesc">Automatically analyze and adjust song volumes based on configured thresholds</p>
+                                        <label for="setting-volumeNormalizationEnabled"
+                                            data-i18n="ui.dashboard.settings.audio.enabled">Enable Volume
+                                            Normalization</label>
+                                        <p class="setting-description"
+                                            data-i18n="ui.dashboard.settings.audio.enabledDesc">Automatically analyze
+                                            and adjust song volumes based on configured thresholds</p>
                                     </div>
                                     <div class="setting-control">
                                         <label class="toggle-switch-v2">
-                                            <input type="checkbox" id="setting-volumeNormalizationEnabled" data-category="volumeNormalization" data-key="enabled">
+                                            <input type="checkbox" id="setting-volumeNormalizationEnabled"
+                                                data-category="volumeNormalization" data-key="enabled">
                                             <span class="toggle-track">
                                                 <span class="toggle-thumb"></span>
                                             </span>
@@ -1034,94 +1197,152 @@
                                     </div>
                                 </div>
                             </div>
-                            
+
                             <!-- Visual Threshold Range Component -->
                             <div class="volume-normalization-range-container" id="volume-normalization-range">
                                 <div class="volume-range-header">
-                                    <label data-i18n="ui.dashboard.settings.audio.rangeTitle">Volume Level Range (dB)</label>
+                                    <label data-i18n="ui.dashboard.settings.audio.rangeTitle">Volume Level Range
+                                        (dB)</label>
                                 </div>
+
+                                <!-- Main visualization area -->
                                 <div class="volume-range-visual">
                                     <div class="volume-range-track">
+                                        <!-- Colored zones -->
                                         <div class="volume-zone volume-zone-too-low" id="zone-too-low"></div>
                                         <div class="volume-zone volume-zone-ok" id="zone-ok"></div>
                                         <div class="volume-zone volume-zone-too-high" id="zone-too-high"></div>
-                                        <div class="volume-marker volume-marker-too-low draggable-marker" id="marker-too-low" data-marker-type="thresholdTooLow">
+
+                                        <!-- Markers - now minimal with hover tooltips -->
+                                        <div class="volume-marker volume-marker-too-low draggable-marker"
+                                            id="marker-too-low" data-marker-type="thresholdTooLow">
                                             <div class="marker-line"></div>
-                                            <div class="marker-label">
+                                            <div class="marker-handle"></div>
+                                            <div class="marker-tooltip">
                                                 <i class="fas fa-circle" style="color: #eab308;"></i>
-                                                <span data-i18n="ui.dashboard.settings.audio.tooLow">Too Low</span>
+                                                <span class="tooltip-label"
+                                                    data-i18n="ui.dashboard.settings.audio.tooLow">Too Low</span>
+                                                <span class="tooltip-value" id="value-too-low">-20 dB</span>
                                             </div>
-                                            <div class="marker-value" id="value-too-low">-20</div>
                                         </div>
-                                        <div class="volume-marker volume-marker-too-high draggable-marker" id="marker-too-high" data-marker-type="thresholdTooHigh">
+                                        <div class="volume-marker volume-marker-too-high draggable-marker"
+                                            id="marker-too-high" data-marker-type="thresholdTooHigh">
                                             <div class="marker-line"></div>
-                                            <div class="marker-label">
+                                            <div class="marker-handle"></div>
+                                            <div class="marker-tooltip">
                                                 <i class="fas fa-circle" style="color: #ef4444;"></i>
-                                                <span data-i18n="ui.dashboard.settings.audio.tooHigh">Too High</span>
+                                                <span class="tooltip-label"
+                                                    data-i18n="ui.dashboard.settings.audio.tooHigh">Too High</span>
+                                                <span class="tooltip-value" id="value-too-high">-6 dB</span>
                                             </div>
-                                            <div class="marker-value" id="value-too-high">-6</div>
                                         </div>
-                                        <div class="volume-marker volume-marker-target draggable-marker" id="marker-target" data-marker-type="targetLevel">
+                                        <div class="volume-marker volume-marker-target draggable-marker"
+                                            id="marker-target" data-marker-type="targetLevel">
                                             <div class="marker-line"></div>
-                                            <div class="marker-label">
+                                            <div class="marker-handle marker-handle-target"></div>
+                                            <div class="marker-tooltip">
                                                 <i class="fas fa-bullseye" style="color: #3b82f6;"></i>
-                                                <span data-i18n="ui.dashboard.settings.audio.target">Target</span>
+                                                <span class="tooltip-label"
+                                                    data-i18n="ui.dashboard.settings.audio.target">Target</span>
+                                                <span class="tooltip-value" id="value-target">-12 dB</span>
                                             </div>
-                                            <div class="marker-value" id="value-target">-12</div>
                                         </div>
-                                        <div class="volume-marker volume-marker-current" id="marker-current-song" style="display: none;">
+                                        <div class="volume-marker volume-marker-current" id="marker-current-song"
+                                            style="display: none;">
                                             <div class="marker-line"></div>
-                                            <div class="marker-label">
+                                            <div class="marker-handle marker-handle-current"></div>
+                                            <div class="marker-tooltip">
                                                 <i class="fas fa-music" style="color: #06b6d4;"></i>
-                                                <span data-i18n="ui.dashboard.settings.audio.nowPlaying">Now Playing</span>
+                                                <span class="tooltip-label"
+                                                    data-i18n="ui.dashboard.settings.audio.nowPlaying">Now
+                                                    Playing</span>
+                                                <span class="tooltip-value" id="value-current-song">-18 dB</span>
                                             </div>
-                                            <div class="marker-value" id="value-current-song">-18</div>
                                         </div>
                                     </div>
                                 </div>
+
+                                <!-- dB Axis below the track -->
                                 <div class="volume-range-axis" id="volume-range-axis">
                                     <!-- Decibel axis will be generated by JavaScript -->
                                 </div>
-                                <div class="volume-range-legend">
-                                    <div class="legend-item">
-                                        <span class="legend-color" style="background: rgba(234, 179, 8, 0.3);"></span>
-                                        <span data-i18n="ui.dashboard.settings.audio.legendTooLow">Songs below threshold → Boosted</span>
+
+                                <!-- Threshold values display row -->
+                                <div class="volume-threshold-values">
+                                    <div class="threshold-value-item threshold-too-low">
+                                        <div class="threshold-indicator" style="background: #eab308;"></div>
+                                        <div class="threshold-info">
+                                            <span class="threshold-label"
+                                                data-i18n="ui.dashboard.settings.audio.tooLow">Too Low</span>
+                                            <span class="threshold-db" id="display-too-low">-20 dB</span>
+                                        </div>
                                     </div>
-                                    <div class="legend-item">
-                                        <span class="legend-color" style="background: rgba(34, 197, 94, 0.3);"></span>
-                                        <span data-i18n="ui.dashboard.settings.audio.legendOk">Songs in range → Fine-tuned</span>
+                                    <div class="threshold-value-item threshold-ok">
+                                        <div class="threshold-indicator" style="background: #22c55e;"></div>
+                                        <div class="threshold-info">
+                                            <span class="threshold-label"
+                                                data-i18n="ui.dashboard.settings.audio.ok">OK</span>
+                                            <span class="threshold-db" id="display-ok-range">-20 to -6 dB</span>
+                                        </div>
                                     </div>
-                                    <div class="legend-item">
-                                        <span class="legend-color" style="background: rgba(239, 68, 68, 0.3);"></span>
-                                        <span data-i18n="ui.dashboard.settings.audio.legendTooHigh">Songs above threshold → Reduced</span>
+                                    <div class="threshold-value-item threshold-target">
+                                        <div class="threshold-indicator" style="background: #3b82f6;"></div>
+                                        <div class="threshold-info">
+                                            <span class="threshold-label"
+                                                data-i18n="ui.dashboard.settings.audio.target">Target</span>
+                                            <span class="threshold-db" id="display-target">-12 dB</span>
+                                        </div>
                                     </div>
-                                    <div class="legend-item">
-                                        <span class="legend-color" style="background: rgba(59, 130, 246, 0.3);"></span>
-                                        <span data-i18n="ui.dashboard.settings.audio.legendTarget">Target level → Desired volume</span>
+                                    <div class="threshold-value-item threshold-too-high">
+                                        <div class="threshold-indicator" style="background: #ef4444;"></div>
+                                        <div class="threshold-info">
+                                            <span class="threshold-label"
+                                                data-i18n="ui.dashboard.settings.audio.tooHigh">Too High</span>
+                                            <span class="threshold-db" id="display-too-high">-6 dB</span>
+                                        </div>
+                                    </div>
+                                    <div class="threshold-value-item threshold-current" id="display-current-container"
+                                        style="display: none;">
+                                        <div class="threshold-indicator threshold-indicator-pulse"
+                                            style="background: #06b6d4;"></div>
+                                        <div class="threshold-info">
+                                            <span class="threshold-label"
+                                                data-i18n="ui.dashboard.settings.audio.nowPlaying">Now Playing</span>
+                                            <span class="threshold-db" id="display-current-song">-18 dB</span>
+                                        </div>
                                     </div>
                                 </div>
                             </div>
-                            
-                            
+
+
                             <!-- How It Works Card -->
                             <div class="settings-info-card audio">
                                 <i class="fas fa-info-circle"></i>
                                 <div>
                                     <strong data-i18n="ui.dashboard.settings.audio.howItWorks">How it works</strong>
-                                    <p data-i18n="ui.dashboard.settings.audio.howItWorksText">When a song is downloaded, its volume level is analyzed. Songs that are too quiet or too loud are automatically adjusted to match your target level. For example, a song at -25 dB will be boosted by 13 dB to reach the -12 dB target.</p>
+                                    <p data-i18n="ui.dashboard.settings.audio.howItWorksText">When a song is downloaded,
+                                        its volume level is analyzed. Songs that are too quiet or too loud are
+                                        automatically adjusted to match your target level. For example, a song at -25 dB
+                                        will be boosted by 13 dB to reach the -12 dB target.</p>
                                 </div>
                             </div>
-                            
+
                             <!-- Threshold Guide Card -->
                             <div class="settings-info-card audio">
                                 <i class="fas fa-book"></i>
                                 <div>
-                                    <strong data-i18n="ui.dashboard.settings.audio.thresholdGuide">Threshold Guide</strong>
-                                    <p data-i18n="ui.dashboard.settings.audio.thresholdGuideText"><strong>Too Low:</strong> Songs quieter than this threshold will be boosted.<br><strong>OK:</strong> Songs in this range are acceptable but may be fine-tuned.<br><strong>Too High:</strong> Songs louder than this threshold will be reduced.<br><strong>Target:</strong> The desired volume level for all normalized songs.</p>
+                                    <strong data-i18n="ui.dashboard.settings.audio.thresholdGuide">Threshold
+                                        Guide</strong>
+                                    <p data-i18n="ui.dashboard.settings.audio.thresholdGuideText"><strong>Too
+                                            Low:</strong> Songs quieter than this threshold will be
+                                        boosted.<br><strong>OK:</strong> Songs in this range are acceptable but may be
+                                        fine-tuned.<br><strong>Too High:</strong> Songs louder than this threshold will
+                                        be reduced.<br><strong>Target:</strong> The desired volume level for all
+                                        normalized songs.</p>
                                 </div>
                             </div>
                         </div>
-                        
+
                         <!-- Notifications Settings Panel -->
                         <div class="settings-panel" data-panel="notifications">
                             <div class="panel-header">
@@ -1130,47 +1351,64 @@
                                 </div>
                                 <div class="panel-title">
                                     <h3 data-i18n="ui.dashboard.settings.notifications.title">Notifications</h3>
-                                    <p data-i18n="ui.dashboard.settings.notifications.description">Configure WhatsApp notification behavior</p>
+                                    <p data-i18n="ui.dashboard.settings.notifications.description">Configure WhatsApp
+                                        notification behavior</p>
                                 </div>
                             </div>
-                            
+
                             <div class="settings-group">
                                 <div class="setting-row" data-searchable="enable notifications alerts messages">
                                     <div class="setting-info">
-                                        <label for="setting-notificationsEnabled" data-i18n="ui.dashboard.settings.notifications.enabled">Enable Notifications</label>
-                                        <p class="setting-description" data-i18n="ui.dashboard.settings.notifications.enabledDesc">Send WhatsApp messages when songs are about to play</p>
+                                        <label for="setting-notificationsEnabled"
+                                            data-i18n="ui.dashboard.settings.notifications.enabled">Enable
+                                            Notifications</label>
+                                        <p class="setting-description"
+                                            data-i18n="ui.dashboard.settings.notifications.enabledDesc">Send WhatsApp
+                                            messages when songs are about to play</p>
                                     </div>
                                     <div class="setting-control">
                                         <label class="toggle-switch-v2">
-                                            <input type="checkbox" id="setting-notificationsEnabled" data-category="notifications" data-key="enabled">
+                                            <input type="checkbox" id="setting-notificationsEnabled"
+                                                data-category="notifications" data-key="enabled">
                                             <span class="toggle-track">
                                                 <span class="toggle-thumb"></span>
                                             </span>
                                         </label>
                                     </div>
                                 </div>
-                                
+
                                 <div class="setting-row" data-searchable="notify position queue spot alert when">
                                     <div class="setting-info">
-                                        <label for="setting-notifyAtPosition" data-i18n="ui.dashboard.settings.notifications.notifyAtPosition">Notify at Position</label>
-                                        <p class="setting-description" data-i18n="ui.dashboard.settings.notifications.notifyAtPositionDesc">Alert users when their song reaches this queue position (1 = next up)</p>
+                                        <label for="setting-notifyAtPosition"
+                                            data-i18n="ui.dashboard.settings.notifications.notifyAtPosition">Notify at
+                                            Position</label>
+                                        <p class="setting-description"
+                                            data-i18n="ui.dashboard.settings.notifications.notifyAtPositionDesc">Alert
+                                            users when their song reaches this queue position (1 = next up)</p>
                                     </div>
                                     <div class="setting-control">
                                         <div class="number-input-wrapper">
-                                            <button type="button" class="number-btn minus"><i class="fas fa-minus"></i></button>
-                                            <input type="number" id="setting-notifyAtPosition" data-category="notifications" data-key="notifyAtPosition" min="1" max="10" step="1">
+                                            <button type="button" class="number-btn minus"><i
+                                                    class="fas fa-minus"></i></button>
+                                            <input type="number" id="setting-notifyAtPosition"
+                                                data-category="notifications" data-key="notifyAtPosition" min="1"
+                                                max="10" step="1">
                                             <span class="number-unit">pos</span>
-                                            <button type="button" class="number-btn plus"><i class="fas fa-plus"></i></button>
+                                            <button type="button" class="number-btn plus"><i
+                                                    class="fas fa-plus"></i></button>
                                         </div>
                                     </div>
                                 </div>
                             </div>
-                            
+
                             <div class="settings-info-card notifications">
                                 <i class="fas fa-info-circle"></i>
                                 <div>
-                                    <strong data-i18n="ui.dashboard.settings.notifications.howItWorks">How it works</strong>
-                                    <p data-i18n="ui.dashboard.settings.notifications.howItWorksText">When enabled, the person who requested a song gets a WhatsApp message when their song is about to play.</p>
+                                    <strong data-i18n="ui.dashboard.settings.notifications.howItWorks">How it
+                                        works</strong>
+                                    <p data-i18n="ui.dashboard.settings.notifications.howItWorksText">When enabled, the
+                                        person who requested a song gets a WhatsApp message when their song is about to
+                                        play.</p>
                                 </div>
                             </div>
                         </div>
@@ -1183,19 +1421,23 @@
                                 </div>
                                 <div class="panel-title">
                                     <h3 data-i18n="ui.dashboard.settings.groups.title">Monitored Groups</h3>
-                                    <p data-i18n="ui.dashboard.settings.groups.description">Manage WhatsApp groups the bot listens to</p>
+                                    <p data-i18n="ui.dashboard.settings.groups.description">Manage WhatsApp groups the
+                                        bot listens to</p>
                                 </div>
                             </div>
-                            
+
                             <div class="settings-group">
                                 <div class="setting-row">
                                     <div class="setting-info">
                                         <label data-i18n="ui.dashboard.settings.groups.addGroup">Add Group</label>
-                                        <p class="setting-description" data-i18n="ui.dashboard.settings.groups.addGroupDesc">Manually add a group by its WhatsApp ID (ends with @g.us)</p>
+                                        <p class="setting-description"
+                                            data-i18n="ui.dashboard.settings.groups.addGroupDesc">Manually add a group
+                                            by its WhatsApp ID (ends with @g.us)</p>
                                     </div>
                                     <div class="setting-control">
                                         <form id="add-group-form" class="groups-add-form">
-                                            <input type="text" id="group-id-input" placeholder="123456789@g.us" required data-i18n-placeholder="ui.dashboard.settings.groups.groupPlaceholder">
+                                            <input type="text" id="group-id-input" placeholder="123456789@g.us" required
+                                                data-i18n-placeholder="ui.dashboard.settings.groups.groupPlaceholder">
                                             <button type="submit" class="groups-add-btn">
                                                 <i class="fas fa-plus"></i>
                                                 <span data-i18n="ui.dashboard.settings.groups.add">Add</span>
@@ -1204,32 +1446,37 @@
                                     </div>
                                 </div>
                             </div>
-                            
+
                             <div class="groups-pending-container" id="groups-pending-container" style="display: none;">
                                 <div class="groups-list-header">
-                                    <span data-i18n="ui.dashboard.settings.groups.pendingRequests">Pending Requests</span> (<span id="pending-count">0</span>)
+                                    <span data-i18n="ui.dashboard.settings.groups.pendingRequests">Pending
+                                        Requests</span> (<span id="pending-count">0</span>)
                                 </div>
                                 <div id="groups-pending-list" class="groups-list">
                                     <!-- Pending confirmations will be loaded here -->
                                 </div>
                             </div>
-                            
+
                             <div class="settings-info-card groups">
                                 <i class="fas fa-info-circle"></i>
                                 <div>
                                     <strong data-i18n="ui.dashboard.settings.groups.howToAdd">How to add groups</strong>
-                                    <p data-i18n="ui.dashboard.settings.groups.howToAddText">Send <code>!ping</code> in any WhatsApp group you want to add. The request will appear here for confirmation. You can also manually add groups using the form above.</p>
+                                    <p data-i18n="ui.dashboard.settings.groups.howToAddText">Send <code>!ping</code> in
+                                        any WhatsApp group you want to add. The request will appear here for
+                                        confirmation. You can also manually add groups using the form above.</p>
                                 </div>
                             </div>
-                            
+
                             <div class="groups-list-container">
                                 <div class="groups-list-header">
-                                    <span data-i18n="ui.dashboard.settings.groups.monitoredGroups">Monitored Groups</span> (<span id="groups-count">0</span>)
+                                    <span data-i18n="ui.dashboard.settings.groups.monitoredGroups">Monitored
+                                        Groups</span> (<span id="groups-count">0</span>)
                                 </div>
                                 <div id="groups-list" class="groups-list">
                                     <div class="groups-loading">
                                         <i class="fas fa-circle-notch fa-spin"></i>
-                                        <span data-i18n="ui.dashboard.settings.groups.loadingGroups">Loading groups...</span>
+                                        <span data-i18n="ui.dashboard.settings.groups.loadingGroups">Loading
+                                            groups...</span>
                                     </div>
                                 </div>
                             </div>
@@ -1243,15 +1490,19 @@
                                 </div>
                                 <div class="panel-title">
                                     <h3 data-i18n="ui.dashboard.settings.system.title">System</h3>
-                                    <p data-i18n="ui.dashboard.settings.system.description">Manage session state and system maintenance</p>
+                                    <p data-i18n="ui.dashboard.settings.system.description">Manage session state and
+                                        system maintenance</p>
                                 </div>
                             </div>
-                            
+
                             <div class="settings-group">
                                 <div class="setting-row" data-searchable="language lang locale english portuguese">
                                     <div class="setting-info">
-                                        <label for="setting-language" data-i18n="ui.dashboard.settings.system.language">Language</label>
-                                        <p class="setting-description" data-i18n="ui.dashboard.settings.system.languageDesc">Choose your preferred language for the web interface</p>
+                                        <label for="setting-language"
+                                            data-i18n="ui.dashboard.settings.system.language">Language</label>
+                                        <p class="setting-description"
+                                            data-i18n="ui.dashboard.settings.system.languageDesc">Choose your preferred
+                                            language for the web interface</p>
                                     </div>
                                     <div class="setting-control">
                                         <div class="select-wrapper">
@@ -1263,27 +1514,37 @@
                                         </div>
                                     </div>
                                 </div>
-                                
+
                                 <div class="setting-row" data-searchable="new session reset clear queue stats">
                                     <div class="setting-info">
                                         <label data-i18n="ui.dashboard.settings.system.newSession">New Session</label>
-                                        <p class="setting-description" data-i18n="ui.dashboard.settings.system.newSessionDesc">Clear the current queue, stop playback, and reset all statistics. Use this when starting a fresh event or day.</p>
+                                        <p class="setting-description"
+                                            data-i18n="ui.dashboard.settings.system.newSessionDesc">Clear the current
+                                            queue, stop playback, and reset all statistics. Use this when starting a
+                                            fresh event or day.</p>
                                     </div>
                                     <div class="setting-control">
-                                        <button id="new-session-btn" class="cyber-btn danger small" style="width: auto;">
-                                            <i class="fas fa-redo"></i> <span data-i18n="ui.dashboard.settings.system.startNewSession">Start New Session</span>
+                                        <button id="new-session-btn" class="cyber-btn danger small"
+                                            style="width: auto;">
+                                            <i class="fas fa-redo"></i> <span
+                                                data-i18n="ui.dashboard.settings.system.startNewSession">Start New
+                                                Session</span>
                                         </button>
                                     </div>
                                 </div>
-                                
+
                                 <div class="setting-row" data-searchable="demo mode privacy blur whatsapp id">
                                     <div class="setting-info">
-                                        <label for="setting-demoMode" data-i18n="ui.dashboard.settings.privacy.demoMode">Demo Mode</label>
-                                        <p class="setting-description" data-i18n="ui.dashboard.settings.privacy.demoModeDesc">Blur WhatsApp IDs and group IDs for safe screen recording and demos</p>
+                                        <label for="setting-demoMode"
+                                            data-i18n="ui.dashboard.settings.privacy.demoMode">Demo Mode</label>
+                                        <p class="setting-description"
+                                            data-i18n="ui.dashboard.settings.privacy.demoModeDesc">Blur WhatsApp IDs and
+                                            group IDs for safe screen recording and demos</p>
                                     </div>
                                     <div class="setting-control">
                                         <label class="toggle-switch-v2">
-                                            <input type="checkbox" id="setting-demoMode" data-category="privacy" data-key="demoMode">
+                                            <input type="checkbox" id="setting-demoMode" data-category="privacy"
+                                                data-key="demoMode">
                                             <span class="toggle-track">
                                                 <span class="toggle-thumb"></span>
                                             </span>
@@ -1291,26 +1552,29 @@
                                     </div>
                                 </div>
                             </div>
-                            
+
                             <div class="settings-info-card system">
                                 <i class="fas fa-exclamation-circle"></i>
                                 <div>
                                     <strong data-i18n="ui.dashboard.settings.system.warning">Warning</strong>
-                                    <p data-i18n="ui.dashboard.settings.system.warningText">Starting a new session is destructive. All playback history, stats, and the current queue will be cleared immediately.</p>
+                                    <p data-i18n="ui.dashboard.settings.system.warningText">Starting a new session is
+                                        destructive. All playback history, stats, and the current queue will be cleared
+                                        immediately.</p>
                                 </div>
                             </div>
-                            
+
                             <!-- Disk Usage Section -->
                             <div class="settings-group">
                                 <div id="disk-usage-container" class="disk-usage-container">
                                     <div class="disk-usage-loading">
                                         <i class="fas fa-spinner fa-spin"></i>
-                                        <span data-i18n="ui.dashboard.settings.system.loadingDiskUsage">Loading disk usage...</span>
+                                        <span data-i18n="ui.dashboard.settings.system.loadingDiskUsage">Loading disk
+                                            usage...</span>
                                     </div>
                                 </div>
                             </div>
                         </div>
-                        
+
                         <!-- Search Results Panel (hidden by default) -->
                         <div class="settings-panel" data-panel="search-results" id="search-results-panel">
                             <div class="panel-header">
@@ -1319,7 +1583,8 @@
                                 </div>
                                 <div class="panel-title">
                                     <h3 data-i18n="ui.dashboard.settings.search.title">Search Results</h3>
-                                    <p id="search-results-count" data-i18n="ui.dashboard.settings.search.settingsFound">0 settings found</p>
+                                    <p id="search-results-count" data-i18n="ui.dashboard.settings.search.settingsFound">
+                                        0 settings found</p>
                                 </div>
                             </div>
                             <div class="settings-group" id="search-results-container">
@@ -1332,17 +1597,19 @@
                         </div>
                     </div>
                 </div>
-                
+
                 <!-- Unified Footer -->
                 <div class="settings-footer">
                     <div class="footer-left">
-                        <button type="button" id="settings-reset-all" class="settings-reset-link" title="Reset All Settings" data-i18n-title="ui.dashboard.settings.footer.resetAll">
+                        <button type="button" id="settings-reset-all" class="settings-reset-link"
+                            title="Reset All Settings" data-i18n-title="ui.dashboard.settings.footer.resetAll">
                             <i class="fas fa-undo"></i>
                             <span data-i18n="ui.dashboard.settings.footer.resetAll">Reset All</span>
                         </button>
                         <div class="footer-note">
                             <i class="fas fa-info-circle"></i>
-                            <span data-i18n="ui.dashboard.settings.footer.footerNote">Changes apply instantly. Server settings require <code>.env</code> edit and restart.</span>
+                            <span data-i18n="ui.dashboard.settings.footer.footerNote">Changes apply instantly. Server
+                                settings require <code>.env</code> edit and restart.</span>
                         </div>
                     </div>
                     <div class="footer-right">
@@ -1375,22 +1642,34 @@
                                 <span data-i18n="ui.dashboard.modals.addTrack.songUrlLabel">Song URL or Search</span>
                             </label>
                             <div class="track-input-wrapper">
-                                <input type="text" id="song-url" class="track-input" placeholder="Paste YouTube/Spotify URL or search by name..." required autocomplete="off" data-i18n-placeholder="ui.dashboard.modals.addTrack.songUrlPlaceholder">
+                                <input type="text" id="song-url" class="track-input"
+                                    placeholder="Paste YouTube/Spotify URL or search by name..." required
+                                    autocomplete="off"
+                                    data-i18n-placeholder="ui.dashboard.modals.addTrack.songUrlPlaceholder">
                                 <div class="track-platforms">
-                                    <span class="track-platform" title="YouTube supported" data-i18n-title="ui.dashboard.modals.addTrack.youtubeSupported"><i class="fab fa-youtube"></i></span>
-                                    <span class="track-platform" title="Spotify supported" data-i18n-title="ui.dashboard.modals.addTrack.spotifySupported"><i class="fab fa-spotify"></i></span>
+                                    <span class="track-platform" title="YouTube supported"
+                                        data-i18n-title="ui.dashboard.modals.addTrack.youtubeSupported"><i
+                                            class="fab fa-youtube"></i></span>
+                                    <span class="track-platform" title="Spotify supported"
+                                        data-i18n-title="ui.dashboard.modals.addTrack.spotifySupported"><i
+                                            class="fab fa-spotify"></i></span>
                                 </div>
                             </div>
                         </div>
                         <div class="track-input-group">
                             <label class="track-input-label">
                                 <i class="fas fa-user"></i>
-                                <span data-i18n="ui.dashboard.modals.addTrack.requestedBy">Requested By</span> <span class="optional-tag" data-i18n="ui.dashboard.modals.addTrack.optional">Optional</span>
+                                <span data-i18n="ui.dashboard.modals.addTrack.requestedBy">Requested By</span> <span
+                                    class="optional-tag"
+                                    data-i18n="ui.dashboard.modals.addTrack.optional">Optional</span>
                             </label>
-                            <input type="text" id="requester-name" class="track-input dj-field" placeholder="Your name or DJ alias..." autocomplete="off" data-i18n-placeholder="ui.dashboard.modals.addTrack.requesterPlaceholder">
+                            <input type="text" id="requester-name" class="track-input dj-field"
+                                placeholder="Your name or DJ alias..." autocomplete="off"
+                                data-i18n-placeholder="ui.dashboard.modals.addTrack.requesterPlaceholder">
                         </div>
                         <button type="submit" class="cyber-btn primary track-submit-btn">
-                            <i class="fas fa-plus"></i> <span data-i18n="ui.dashboard.modals.addTrack.addToQueue">Add to Queue</span>
+                            <i class="fas fa-plus"></i> <span data-i18n="ui.dashboard.modals.addTrack.addToQueue">Add to
+                                Queue</span>
                         </button>
                     </form>
                 </div>
@@ -1403,7 +1682,8 @@
                 <div class="modal-header">
                     <div class="modal-title">
                         <i id="confirmation-icon" class="fas fa-exclamation-triangle"></i>
-                        <h2 id="confirmation-title" data-i18n="ui.dashboard.modals.confirmation.title">Confirm Action</h2>
+                        <h2 id="confirmation-title" data-i18n="ui.dashboard.modals.confirmation.title">Confirm Action
+                        </h2>
                     </div>
                     <button id="confirmation-modal-close" class="modal-close-btn">
                         <i class="fas fa-times"></i>
@@ -1414,10 +1694,12 @@
                 </div>
                 <div class="modal-footer confirmation-footer">
                     <button id="confirmation-cancel" class="cyber-btn secondary confirmation-btn">
-                        <i class="fas fa-times"></i> <span data-i18n="ui.dashboard.modals.confirmation.cancel">Cancel</span>
+                        <i class="fas fa-times"></i> <span
+                            data-i18n="ui.dashboard.modals.confirmation.cancel">Cancel</span>
                     </button>
                     <button id="confirmation-confirm" class="cyber-btn primary confirmation-btn confirm-action-btn">
-                        <i class="fas fa-check"></i> <span data-i18n="ui.dashboard.modals.confirmation.confirm">Confirm</span>
+                        <i class="fas fa-check"></i> <span
+                            data-i18n="ui.dashboard.modals.confirmation.confirm">Confirm</span>
                     </button>
                 </div>
             </div>
@@ -1425,16 +1707,16 @@
     </div>
 
     <script src="https://cdn.rawgit.com/davidshimjs/qrcodejs/gh-pages/qrcode.min.js"></script>
-    
+
     <!-- Core Modules (no dependencies) -->
     <script src="../js/core/config.js"></script>
     <script src="../js/core/utils.js"></script>
     <script src="../js/core/i18n.js"></script>
-    
+
     <!-- Core Modules (with dependencies) -->
     <script src="../js/core/broadcast.js"></script>
     <script src="../js/core/api.js"></script>
-    
+
     <!-- Feature Modules -->
     <script src="../js/modules/notifications.js"></script>
     <script src="../js/modules/modals.js"></script>
@@ -1449,8 +1731,9 @@
     <script src="../js/modules/stats.js"></script>
     <script src="../js/modules/groups.js"></script>
     <script src="../js/modules/fullscreen.js"></script>
-    
+
     <!-- Main Dashboard (orchestration) -->
     <script src="../js/pages/dashboard.js"></script>
 </body>
+
 </html>

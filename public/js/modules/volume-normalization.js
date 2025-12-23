@@ -15,10 +15,10 @@ async function loadVolumeNormalizationSettings() {
     try {
         const response = await fetch('/api/volume-normalization/settings');
         if (!response.ok) throw new Error('Failed to fetch settings');
-        
+
         const data = await response.json();
         if (!data.success) throw new Error(data.error || 'Failed to load settings');
-        
+
         normalizationSettings = data.settings;
         // Remove thresholdOk if it exists (backward compatibility)
         if (normalizationSettings.thresholdOk !== undefined) {
@@ -27,7 +27,7 @@ async function loadVolumeNormalizationSettings() {
         applySettingsToUI();
         updateVisualRange();
         setupDragHandlers();
-        
+
         return normalizationSettings;
     } catch (error) {
         console.error('Failed to load volume normalization settings:', error);
@@ -50,7 +50,7 @@ async function loadVolumeNormalizationSettings() {
  */
 function applySettingsToUI() {
     if (!normalizationSettings) return;
-    
+
     const enabledToggle = document.getElementById('setting-volumeNormalizationEnabled');
     if (enabledToggle) {
         enabledToggle.checked = normalizationSettings.enabled;
@@ -62,64 +62,77 @@ function applySettingsToUI() {
  */
 function updateVisualRange() {
     if (!normalizationSettings) return;
-    
+
     const { thresholdTooLow, thresholdTooHigh, targetLevel } = normalizationSettings;
-    
+
     // Calculate positions as percentages (0-100%)
     const range = RANGE_MAX - RANGE_MIN;
     const posTooLow = ((thresholdTooLow - RANGE_MIN) / range) * 100;
     const posTooHigh = ((thresholdTooHigh - RANGE_MIN) / range) * 100;
     const posTarget = ((targetLevel - RANGE_MIN) / range) * 100;
-    
-    // Update marker positions
+
+    // Update marker positions and tooltip values
     const markerTooLow = document.getElementById('marker-too-low');
     const markerTooHigh = document.getElementById('marker-too-high');
     const markerTarget = document.getElementById('marker-target');
-    
+
     if (markerTooLow) {
         markerTooLow.style.left = `${posTooLow}%`;
-        const valueEl = markerTooLow.querySelector('.marker-value');
-        if (valueEl) valueEl.textContent = thresholdTooLow;
+        const valueEl = markerTooLow.querySelector('.tooltip-value');
+        if (valueEl) valueEl.textContent = `${thresholdTooLow} dB`;
     }
-    
+
     if (markerTooHigh) {
         markerTooHigh.style.left = `${posTooHigh}%`;
-        const valueEl = markerTooHigh.querySelector('.marker-value');
-        if (valueEl) valueEl.textContent = thresholdTooHigh;
+        const valueEl = markerTooHigh.querySelector('.tooltip-value');
+        if (valueEl) valueEl.textContent = `${thresholdTooHigh} dB`;
     }
-    
+
     if (markerTarget) {
         markerTarget.style.left = `${posTarget}%`;
-        const valueEl = markerTarget.querySelector('.marker-value');
-        if (valueEl) valueEl.textContent = targetLevel;
+        const valueEl = markerTarget.querySelector('.tooltip-value');
+        if (valueEl) valueEl.textContent = `${targetLevel} dB`;
     }
-    
+
+    // Update the threshold display row below the graph
+    const displayTooLow = document.getElementById('display-too-low');
+    const displayTarget = document.getElementById('display-target');
+    const displayTooHigh = document.getElementById('display-too-high');
+    const displayOkRange = document.getElementById('display-ok-range');
+
+    if (displayTooLow) displayTooLow.textContent = `${thresholdTooLow} dB`;
+    if (displayTarget) displayTarget.textContent = `${targetLevel} dB`;
+    if (displayTooHigh) displayTooHigh.textContent = `${thresholdTooHigh} dB`;
+    if (displayOkRange) displayOkRange.textContent = `${thresholdTooLow} to ${thresholdTooHigh} dB`;
+
     // Update zone widths (3 zones: too-low, ok, too-high)
     const zoneTooLow = document.getElementById('zone-too-low');
     const zoneOk = document.getElementById('zone-ok');
     const zoneTooHigh = document.getElementById('zone-too-high');
-    
+
     if (zoneTooLow) {
         zoneTooLow.style.width = `${posTooLow}%`;
     }
-    
+
     // OK zone is inferred between too-low and too-high
     if (zoneOk) {
         zoneOk.style.left = `${posTooLow}%`;
         zoneOk.style.width = `${posTooHigh - posTooLow}%`;
     }
-    
+
     if (zoneTooHigh) {
         zoneTooHigh.style.left = `${posTooHigh}%`;
         zoneTooHigh.style.width = `${100 - posTooHigh}%`;
     }
-    
+
     // Update decibel axis
     updateDecibelAxis();
-    
+
     // Validate and show errors if needed
     validateThresholds();
 }
+
+
 
 /**
  * Generate and update the decibel axis with tick marks and labels
@@ -127,31 +140,31 @@ function updateVisualRange() {
 function updateDecibelAxis() {
     const axisContainer = document.getElementById('volume-range-axis');
     if (!axisContainer) return;
-    
+
     // Clear existing ticks
     axisContainer.innerHTML = '';
-    
+
     // Generate ticks every 5 dB from -40 to 0
     const tickInterval = 5;
     const ticks = [];
     for (let db = RANGE_MIN; db <= RANGE_MAX; db += tickInterval) {
         ticks.push(db);
     }
-    
+
     // Calculate position for each tick
     const range = RANGE_MAX - RANGE_MIN;
-    
+
     ticks.forEach(db => {
         const position = ((db - RANGE_MIN) / range) * 100;
-        
+
         const tick = document.createElement('div');
         tick.className = 'volume-axis-tick';
         tick.style.left = `${position}%`;
-        
+
         const label = document.createElement('div');
         label.className = 'volume-axis-tick-label';
         label.textContent = `${db} dB`;
-        
+
         tick.appendChild(label);
         axisContainer.appendChild(tick);
     });
@@ -162,21 +175,21 @@ function updateDecibelAxis() {
  */
 function validateThresholds() {
     if (!normalizationSettings) return true;
-    
+
     const { thresholdTooLow, thresholdTooHigh, targetLevel } = normalizationSettings;
-    
+
     const errors = [];
-    
+
     // Check ordering
     if (thresholdTooLow >= thresholdTooHigh) {
         errors.push('Too Low threshold must be less than Too High threshold');
     }
-    
+
     // Check target level is within range
     if (targetLevel < thresholdTooLow || targetLevel > thresholdTooHigh) {
         errors.push('Target level must be between Too Low and Too High thresholds');
     }
-    
+
     // Update UI to show errors
     const rangeContainer = document.getElementById('volume-normalization-range');
     if (rangeContainer) {
@@ -199,7 +212,7 @@ function validateThresholds() {
             }
         }
     }
-    
+
     return errors.length === 0;
 }
 
@@ -212,18 +225,18 @@ function calculateCurrentRMS() {
     if (typeof analyser === 'undefined' || !analyser) {
         return null;
     }
-    
+
     // Check if audio is playing
     if (typeof currentAudio === 'undefined' || !currentAudio || currentAudio.paused) {
         return null;
     }
-    
+
     try {
         // Get time domain data (waveform samples)
         const bufferLength = analyser.frequencyBinCount;
         const dataArray = new Uint8Array(bufferLength);
         analyser.getByteTimeDomainData(dataArray);
-        
+
         // Calculate RMS (Root Mean Square)
         let sumSquares = 0;
         for (let i = 0; i < bufferLength; i++) {
@@ -231,13 +244,13 @@ function calculateCurrentRMS() {
             const normalized = (dataArray[i] - 128) / 128;
             sumSquares += normalized * normalized;
         }
-        
+
         const rms = Math.sqrt(sumSquares / bufferLength);
-        
+
         // Convert to dB
         // Avoid log(0) by using a small epsilon
         const rmsDb = rms > 0.0001 ? 20 * Math.log10(rms) : -100;
-        
+
         return rmsDb;
     } catch (error) {
         console.debug('Error calculating RMS:', error);
@@ -250,32 +263,41 @@ function calculateCurrentRMS() {
  */
 function updateCurrentSongIndicator() {
     const markerCurrent = document.getElementById('marker-current-song');
+    const displayCurrentContainer = document.getElementById('display-current-container');
+    const displayCurrentSong = document.getElementById('display-current-song');
+
     if (!markerCurrent) return;
-    
+
     const rmsDb = calculateCurrentRMS();
-    
+
     if (rmsDb !== null && isFinite(rmsDb)) {
         // Clamp to visible range
         const clampedRms = Math.max(RANGE_MIN, Math.min(RANGE_MAX, rmsDb));
-        
+
         // Calculate position on graph
         const range = RANGE_MAX - RANGE_MIN;
         const pos = ((clampedRms - RANGE_MIN) / range) * 100;
-        
+
         // Update marker position
         markerCurrent.style.left = `${pos}%`;
         markerCurrent.style.display = 'block';
-        
-        // Update value display
-        const valueEl = markerCurrent.querySelector('.marker-value');
+
+        // Update tooltip value
+        const valueEl = markerCurrent.querySelector('.tooltip-value');
         if (valueEl) {
-            valueEl.textContent = clampedRms.toFixed(1);
+            valueEl.textContent = `${clampedRms.toFixed(1)} dB`;
         }
+
+        // Update display row
+        if (displayCurrentContainer) displayCurrentContainer.style.display = 'flex';
+        if (displayCurrentSong) displayCurrentSong.textContent = `${clampedRms.toFixed(1)} dB`;
     } else {
-        // Hide marker if no audio or calculation failed
+        // Hide marker and display row if no audio or calculation failed
         markerCurrent.style.display = 'none';
+        if (displayCurrentContainer) displayCurrentContainer.style.display = 'none';
     }
 }
+
 
 /**
  * Save settings to API with debouncing
@@ -284,28 +306,28 @@ async function saveVolumeNormalizationSettings() {
     if (saveTimeout) {
         clearTimeout(saveTimeout);
     }
-    
+
     saveTimeout = setTimeout(async () => {
         if (!normalizationSettings) return;
-        
+
         // Validate before saving
         if (!validateThresholds()) {
             console.warn('Cannot save: Invalid threshold configuration');
             return;
         }
-        
+
         try {
             const response = await fetch('/api/volume-normalization/settings', {
                 method: 'PUT',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify(normalizationSettings)
             });
-            
+
             if (!response.ok) {
                 const errorData = await response.json();
                 throw new Error(errorData.error || 'Failed to save settings');
             }
-            
+
             const data = await response.json();
             if (data.success) {
                 normalizationSettings = data.settings;
@@ -345,7 +367,7 @@ function updateSetting(key, value) {
             targetLevel: -12
         };
     }
-    
+
     normalizationSettings[key] = value;
     updateVisualRange();
     saveVolumeNormalizationSettings();
@@ -357,7 +379,11 @@ function updateSetting(key, value) {
  */
 function pixelToDb(pixelX, trackElement) {
     const rect = trackElement.getBoundingClientRect();
-    const percentage = Math.max(0, Math.min(100, ((pixelX - rect.left) / rect.width) * 100));
+    // Use clientLeft and clientWidth to get content area (excluding border)
+    // This matches how zones are positioned within the track
+    const contentLeft = rect.left + trackElement.clientLeft;
+    const trackWidth = trackElement.clientWidth;
+    const percentage = Math.max(0, Math.min(100, ((pixelX - contentLeft) / trackWidth) * 100));
     const db = RANGE_MIN + (percentage / 100) * (RANGE_MAX - RANGE_MIN);
     return Math.round(db);
 }
@@ -370,11 +396,11 @@ let dragState = null;
 function handleDragStart(e, markerType) {
     e.preventDefault();
     e.stopPropagation();
-    
+
     const marker = e.currentTarget;
     const track = document.querySelector('.volume-range-track');
     if (!track || !normalizationSettings) return;
-    
+
     dragState = {
         markerType,
         marker,
@@ -382,17 +408,17 @@ function handleDragStart(e, markerType) {
         startX: e.touches ? e.touches[0].clientX : e.clientX,
         startLeft: parseFloat(marker.style.left) || 0
     };
-    
+
     marker.classList.add('dragging');
     // Disable transitions during drag for immediate feedback
     const allMarkers = document.querySelectorAll('.volume-marker');
     allMarkers.forEach(m => {
         m.style.transition = 'none';
     });
-    
+
     document.body.style.userSelect = 'none';
     document.body.style.cursor = 'grabbing';
-    
+
     // Add global listeners
     document.addEventListener('mousemove', handleDragMove);
     document.addEventListener('mouseup', handleDragEnd);
@@ -402,17 +428,17 @@ function handleDragStart(e, markerType) {
 
 function handleDragMove(e) {
     if (!dragState) return;
-    
+
     e.preventDefault();
     e.stopPropagation();
-    
+
     const clientX = e.touches ? e.touches[0].clientX : e.clientX;
     const db = pixelToDb(clientX, dragState.track);
-    
+
     // Apply constraints based on marker type
     let constrainedDb = db;
     const { thresholdTooLow, thresholdTooHigh, targetLevel } = normalizationSettings;
-    
+
     if (dragState.markerType === 'thresholdTooLow') {
         // Can't go past thresholdTooHigh
         constrainedDb = Math.min(constrainedDb, thresholdTooHigh - 1);
@@ -427,36 +453,36 @@ function handleDragMove(e) {
         // Must stay between thresholds
         constrainedDb = Math.max(thresholdTooLow, Math.min(thresholdTooHigh, constrainedDb));
     }
-    
+
     // Update setting
     normalizationSettings[dragState.markerType] = constrainedDb;
-    
+
     // Update visual immediately
     updateVisualRange();
 }
 
 function handleDragEnd(e) {
     if (!dragState) return;
-    
+
     dragState.marker.classList.remove('dragging');
     // Re-enable transitions after drag
     const allMarkers = document.querySelectorAll('.volume-marker');
     allMarkers.forEach(m => {
         m.style.transition = '';
     });
-    
+
     document.body.style.userSelect = '';
     document.body.style.cursor = '';
-    
+
     // Remove global listeners
     document.removeEventListener('mousemove', handleDragMove);
     document.removeEventListener('mouseup', handleDragEnd);
     document.removeEventListener('touchmove', handleDragMove);
     document.removeEventListener('touchend', handleDragEnd);
-    
+
     // Save settings
     saveVolumeNormalizationSettings();
-    
+
     dragState = null;
 }
 
@@ -468,7 +494,7 @@ function setupDragHandlers() {
     draggableMarkers.forEach(marker => {
         // Skip if already has drag listeners (check for data attribute)
         if (marker.dataset.dragHandlersSetup === 'true') return;
-        
+
         const markerType = marker.getAttribute('data-marker-type');
         if (markerType) {
             marker.addEventListener('mousedown', (e) => handleDragStart(e, markerType));
@@ -484,7 +510,7 @@ function setupDragHandlers() {
 function initVolumeNormalization() {
     // Load settings (will call setupDragHandlers after load)
     loadVolumeNormalizationSettings();
-    
+
     // Enable/disable toggle
     const enabledToggle = document.getElementById('setting-volumeNormalizationEnabled');
     if (enabledToggle) {
@@ -492,7 +518,7 @@ function initVolumeNormalization() {
             updateSetting('enabled', e.target.checked);
         });
     }
-    
+
     // Set up Intersection Observer to start/stop monitoring based on panel visibility
     const audioPanel = document.querySelector('.settings-panel[data-panel="audio"]');
     if (audioPanel) {
@@ -507,9 +533,9 @@ function initVolumeNormalization() {
                 }
             });
         }, { threshold: 0.1 });
-        
+
         observer.observe(audioPanel);
-        
+
         // Also start monitoring if panel is already active
         if (audioPanel.classList.contains('active')) {
             startRMSMonitoring();
@@ -532,7 +558,7 @@ function startRMSMonitoring() {
     if (window.volumeNormalizationRMSInterval) {
         return;
     }
-    
+
     // Update every ~100ms for smooth animation (10 updates/sec)
     window.volumeNormalizationRMSInterval = setInterval(() => {
         updateCurrentSongIndicator();
@@ -547,7 +573,7 @@ function stopRMSMonitoring() {
         clearInterval(window.volumeNormalizationRMSInterval);
         window.volumeNormalizationRMSInterval = null;
     }
-    
+
     // Hide marker
     const markerCurrent = document.getElementById('marker-current-song');
     if (markerCurrent) {
