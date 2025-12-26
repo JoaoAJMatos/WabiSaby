@@ -540,17 +540,54 @@ function getVolume() {
 async function playFileWithMpv(filePath, startOffset = 0) {
     const playbackController = require('./playback.controller');
     
+    // Ensure any previous MPV process is fully stopped before starting new one
+    await stopMpv();
+    
     await startMpv(filePath, startOffset);
+    
+    // Verify socket is connected before proceeding
+    if (!ipcSocket || ipcSocket.destroyed) {
+        throw new Error('Failed to establish MPV IPC connection');
+    }
     
     // Emit playback started
     playbackController.emit(PLAYBACK_STARTED, { filePath });
     
     // Set up event handlers
-    const effectsHandler = () => updateMpvFilters();
-    const pauseHandler = async () => await pausePlayback();
-    const resumeHandler = async () => await resumePlayback();
-    const seekHandler = async ({ positionMs }) => await seekTo(positionMs);
-    const skipHandler = async () => await stopMpv();
+    // Note: Effects are also handled by a global listener, but we keep per-playback listener
+    // for consistency and to ensure effects are applied immediately when socket is ready
+    const effectsHandler = () => {
+        if (ipcSocket && !ipcSocket.destroyed) {
+            updateMpvFilters().catch(err => {
+                logger.error('Failed to update MPV filters:', err);
+            });
+        }
+    };
+    const pauseHandler = async () => {
+        if (ipcSocket && !ipcSocket.destroyed) {
+            await pausePlayback();
+        } else {
+            logger.warn('Cannot pause: MPV socket not ready');
+        }
+    };
+    const resumeHandler = async () => {
+        if (ipcSocket && !ipcSocket.destroyed) {
+            await resumePlayback();
+        } else {
+            logger.warn('Cannot resume: MPV socket not ready');
+        }
+    };
+    const seekHandler = async ({ positionMs }) => {
+        if (ipcSocket && !ipcSocket.destroyed) {
+            await seekTo(positionMs);
+        } else {
+            logger.warn('Cannot seek: MPV socket not ready');
+        }
+    };
+    const skipHandler = async () => {
+        // Skip should work even if socket is not ready - it will stop the process
+        await stopMpv();
+    };
     
     playbackController.on(EFFECTS_CHANGED, effectsHandler);
     playbackController.on(PLAYBACK_PAUSE, pauseHandler);
@@ -560,6 +597,19 @@ async function playFileWithMpv(filePath, startOffset = 0) {
     
     // Wait for playback to finish
     await new Promise((resolve) => {
+        let finished = false; // Guard flag to prevent duplicate PLAYBACK_FINISHED events
+        const currentProcess = mpvProcess; // Capture the specific process instance for this playback
+        
+        const processCloseHandler = (code) => {
+            // Only handle close if it's for this specific process instance
+            if (mpvProcess === currentProcess) {
+                logger.info(`MPV exited with code ${code}`);
+                handleFinished('process_close', `exit code ${code}`);
+            } else {
+                logger.debug(`Ignoring close event from old MPV process (current process: ${mpvProcess?.pid}, closed process: ${currentProcess?.pid})`);
+            }
+        };
+        
         const cleanup = () => {
             playbackController.removeListener(EFFECTS_CHANGED, effectsHandler);
             playbackController.removeListener(PLAYBACK_PAUSE, pauseHandler);
@@ -567,28 +617,42 @@ async function playFileWithMpv(filePath, startOffset = 0) {
             playbackController.removeListener(PLAYBACK_SEEK, seekHandler);
             playbackController.removeListener(PLAYBACK_SKIP, skipHandler);
             playerEvents.removeListener('mpv_file_ended', fileEndHandler);
+            // Remove the close handler for this specific process
+            if (currentProcess) {
+                currentProcess.removeListener('close', processCloseHandler);
+            }
         };
         
-        const fileEndHandler = (reason) => {
-            logger.info(`Playback ended: ${reason}`);
+        const handleFinished = async (source, reason) => {
+            if (finished) {
+                logger.debug(`Playback finish already handled (ignoring ${source})`);
+                return;
+            }
+            finished = true;
+            logger.info(`Playback ended: ${reason} (${source})`);
             cleanup();
+            
+            // Stop MPV and wait for cleanup before resolving
+            // This ensures the old process/socket is fully cleaned up before new playback starts
+            await stopMpv();
+            
             playbackController.emit(PLAYBACK_FINISHED, { filePath, reason: 'ended' });
             resolve();
         };
         
+        const fileEndHandler = (reason) => {
+            handleFinished('mpv_file_ended', reason);
+        };
+        
         playerEvents.on('mpv_file_ended', fileEndHandler);
         
-        if (mpvProcess) {
-            mpvProcess.on('close', (code) => {
-                logger.info(`MPV exited with code ${code}`);
-                cleanup();
-                playbackController.emit(PLAYBACK_FINISHED, { filePath, reason: 'ended' });
-                resolve();
-            });
+        if (currentProcess) {
+            currentProcess.on('close', processCloseHandler);
         }
     });
     
-    await stopMpv();
+    // Note: stopMpv() is now called in handleFinished before resolving
+    // This ensures cleanup happens before new playback can start
 }
 
 /**
@@ -849,10 +913,16 @@ function initializeEventListeners() {
         });
     });
 
-    // Listen for effects changes (for ffplay backend when currently playing)
-    // This is a global listener that will work even if the per-playback listeners aren't set up
+    // Listen for effects changes (global listener that works even if per-playback listeners aren't set up)
+    // For MPV: Seamlessly updates filters via IPC
+    // For ffplay: Restarts playback with new filters
     playbackController.on(EFFECTS_CHANGED, () => {
-        if (audioBackend === 'ffplay' && ffplayProcess && !ffplayProcess.killed) {
+        if (audioBackend === 'mpv' && ipcSocket && !ipcSocket.destroyed) {
+            // MPV: Apply effects seamlessly via IPC
+            updateMpvFilters().catch(err => {
+                logger.error('Failed to update MPV filters via global listener:', err);
+            });
+        } else if (audioBackend === 'ffplay' && ffplayProcess && !ffplayProcess.killed) {
             logger.info('Effects changed while ffplay is running - restarting with new filters');
             // Kill current ffplay process - it will restart automatically if in playback loop
             stopFfplay();

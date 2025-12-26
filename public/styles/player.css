@@ -671,13 +671,13 @@
             padding: 120px 60px 120px; /* Added 120px top and bottom padding for more space */
             display: flex;
             flex-direction: column;
-            align-items: flex-start;
-            /* Left align like real karaoke/Apple Music generally implies or center? Apple Music is left-aligned often but centered looks good too. Let's stick to left-center balance */
-            gap: 32px; /* Increased gap between lines for better spacing */
+            align-items: center;
+            /* Center align like Spotify */
+            gap: 24px; /* Better spacing between lines */
             transform: translateY(0);
             will-change: transform;
             /* Transition handled in JS for spring physics, or simplified here */
-            transition: transform 0.8s cubic-bezier(0.25, 0.8, 0.25, 1), /* Smoother transition */
+            transition: transform 0.6s cubic-bezier(0.33, 1, 0.68, 1), /* Smoother, more natural transition */
                 opacity 0.6s cubic-bezier(0.4, 0, 0.2, 1);
             opacity: 0;
         }
@@ -700,28 +700,29 @@
         }
 
         .lyric-line {
-            font-size: 2rem;
-            /* Base size */
-            font-weight: 700;
-            /* Bold by default */
-            color: rgba(255, 255, 255, 0.35);
+            font-size: 1.75rem;
+            /* Base size - slightly smaller for better hierarchy */
+            font-weight: 500;
+            /* Medium weight for inactive lines */
+            color: rgba(255, 255, 255, 0.4);
             /* Inactive color */
-            text-align: left;
-            /* Left align looks more professional for prose */
-            padding: 8px 16px;
+            text-align: center;
+            /* Center align like Spotify */
+            padding: 12px 24px;
             border-radius: 16px;
             cursor: pointer;
             transition:
-                color 0.4s ease,
-                opacity 0.4s ease,
-                filter 0.4s ease,
-                transform 0.4s cubic-bezier(0.2, 0.8, 0.2, 1);
-            line-height: 1.3;
-            max-width: 90%;
-            filter: blur(0.8px);
+                font-size 0.5s cubic-bezier(0.33, 1, 0.68, 1),
+                color 0.5s cubic-bezier(0.33, 1, 0.68, 1),
+                opacity 0.5s cubic-bezier(0.33, 1, 0.68, 1),
+                filter 0.5s cubic-bezier(0.33, 1, 0.68, 1),
+                transform 0.5s cubic-bezier(0.33, 1, 0.68, 1);
+            line-height: 1.4;
+            max-width: 85%;
+            filter: blur(1px);
             /* Slight blur for inactive */
-            opacity: 0.7;
-            transform-origin: left center;
+            opacity: 0.5;
+            transform-origin: center center;
         }
 
         .lyric-line:hover {
@@ -731,27 +732,31 @@
         }
 
         .lyric-line.active {
-            font-size: 3rem;
-            /* Big jump */
-            font-weight: 800;
+            font-size: 2.75rem;
+            /* Prominent but not too large */
+            font-weight: 700;
             color: #ffffff;
             opacity: 1;
             filter: blur(0px);
-            transform: scale(1.05) translateX(10px);
-            /* Subtle pop */
-            text-shadow: 0 0 30px rgba(255, 255, 255, 0.3);
+            transform: scale(1);
+            /* No transform - cleaner look */
+            text-shadow: 0 2px 20px rgba(255, 255, 255, 0.2);
         }
 
         .lyric-line.past {
-            opacity: 0.3;
-            filter: blur(1.5px);
+            font-size: 1.5rem;
+            /* Smaller for past lines */
+            opacity: 0.25;
+            filter: blur(1.2px);
+            color: rgba(255, 255, 255, 0.25);
         }
 
         /* Next line preview */
         .lyric-line.next {
-            opacity: 0.5;
-            color: rgba(255, 255, 255, 0.5);
-            filter: blur(0px);
+            font-size: 1.75rem;
+            opacity: 0.4;
+            color: rgba(255, 255, 255, 0.4);
+            filter: blur(0.5px);
         }
 
         .lyrics-placeholder {
@@ -892,12 +897,17 @@
             }
 
             .lyric-line {
-                font-size: 1.2rem;
+                font-size: 1.25rem;
                 padding: 10px 16px;
+                text-align: center;
             }
 
             .lyric-line.active {
-                font-size: 1.7rem;
+                font-size: 2rem;
+            }
+            
+            .lyric-line.past {
+                font-size: 1.1rem;
             }
 
             .lyrics-container {

@@ -170,6 +170,16 @@ class PlaybackController extends EventEmitter {
             this.prefetchNext().catch(err => logger.error('Prefetch error:', err));
         });
         
+        // Listen for playback started from Player - update state
+        this.on(PLAYBACK_STARTED, ({ filePath }) => {
+            // When playback actually starts, ensure state is correct
+            if (this.currentSong) {
+                this.isPlaying = true;
+                this.isPaused = false;
+                this.emitStateChanged();
+            }
+        });
+        
         // Listen for playback finished from Player
         this.on(PLAYBACK_FINISHED, ({ filePath, reason }) => {
             this.handlePlaybackFinished(reason !== 'error');
@@ -368,51 +378,24 @@ class PlaybackController extends EventEmitter {
                 
                 // Remove item from queue (it's now playing)
                 const queue = queueManager.getQueue();
-                if (queue.length > 0) {
-                    // If itemIndex is provided (shuffle mode), use it directly
-                    if (itemIndex !== null && itemIndex >= 0 && itemIndex < queue.length) {
-                        const itemAtIndex = queue[itemIndex];
-                        // Verify the item matches (by ID if available)
-                        const matches = (item.id && itemAtIndex.id) 
-                            ? (itemAtIndex.id === item.id)
-                            : (itemAtIndex === item);
-                        
-                        if (matches) {
+                if (queue.length > 0 && item.id) {
+                    // Prefer ID-based removal for robustness
+                    const removed = queueManager.removeById(item.id);
+                    if (!removed) {
+                        logger.warn(`Failed to remove item by ID ${item.id}, falling back to index-based removal`);
+                        // Fallback to index-based if ID removal fails
+                        if (itemIndex !== null && itemIndex >= 0 && itemIndex < queue.length) {
                             queueManager.remove(itemIndex);
-                        } else {
-                            // Item at index doesn't match, fall back to ID search
-                            const index = queue.findIndex(q => q.id === item.id);
-                            if (index !== -1) {
-                                logger.warn(`Queue item mismatch at provided index ${itemIndex}, found at ${index} (id: ${item.id})`);
-                                queueManager.remove(index);
-                            } else {
-                                logger.error(`Failed to remove item from queue: item not found (id: ${item.id}, title: ${item.title || 'unknown'})`);
-                            }
+                        } else if (queue.length > 0) {
+                            queueManager.remove(0);
                         }
+                    }
+                } else if (queue.length > 0) {
+                    // No ID available, use index-based removal
+                    if (itemIndex !== null && itemIndex >= 0 && itemIndex < queue.length) {
+                        queueManager.remove(itemIndex);
                     } else {
-                        // No index provided (normal FIFO mode) - remove first item
-                        const firstItem = queue[0];
-                        // Verify that the first item matches what we're playing (by ID if available)
-                        const matches = (item.id && firstItem.id) 
-                            ? (firstItem.id === item.id)
-                            : (firstItem === item);
-                        
-                        if (matches) {
-                            queueManager.remove(0);
-                        } else if (item.id) {
-                            // Fallback: try to find by ID if first item doesn't match
-                            const index = queue.findIndex(q => q.id === item.id);
-                            if (index !== -1) {
-                                logger.warn(`Queue item mismatch: expected first item but found at index ${index} (id: ${item.id})`);
-                                queueManager.remove(index);
-                            } else {
-                                logger.error(`Failed to remove item from queue: item not found (id: ${item.id}, title: ${item.title || 'unknown'})`);
-                            }
-                        } else {
-                            // No ID available - this shouldn't happen, but try to remove first item anyway
-                            logger.warn(`Removing first queue item without ID verification (title: ${item.title || 'unknown'})`);
-                            queueManager.remove(0);
-                        }
+                        queueManager.remove(0);
                     }
                 }
                 
@@ -659,7 +642,9 @@ class PlaybackController extends EventEmitter {
      * Seek to position
      */
     seek(timeMs) {
-        if (this.isPlaying && this.currentSong && this.currentSong.duration) {
+        // Allow seeking if we have a current song, even if paused
+        // (seeking will resume playback)
+        if (this.currentSong && this.currentSong.duration) {
             const seekTime = Math.max(0, Math.min(timeMs, this.currentSong.duration));
             this.isSeeking = true;
             
@@ -676,6 +661,9 @@ class PlaybackController extends EventEmitter {
                 this.currentSong.pausedAt = null;
                 this.isPaused = false;
             }
+            
+            // Ensure isPlaying is true since seeking resumes playback
+            this.isPlaying = true;
             
             this.emitStateChanged();
             this.emit(PLAYBACK_SEEK, { positionMs: seekTime });
@@ -825,12 +813,15 @@ class PlaybackController extends EventEmitter {
             const originalUrl = item.content;
             
             // Skip if URL is already being downloaded
+            // Note: This check-and-add pattern is safe in JavaScript because execution is single-threaded.
+            // The check and add happen atomically within this synchronous block, with no await points
+            // between them, so there's no race condition risk.
             if (this.downloadingUrls.has(originalUrl)) {
-                logger.debug(`Skipping duplicate download (race): ${item.title || originalUrl}`);
+                logger.debug(`Skipping duplicate download (already in progress): ${item.title || originalUrl}`);
                 continue;
             }
             
-            // Mark URL as being downloaded
+            // Mark URL as being downloaded (immediately after check, no await points between)
             this.downloadingUrls.add(originalUrl);
             this.activePrefetchCount++;
             this.lastPrefetchTime = Date.now();
@@ -884,7 +875,18 @@ class PlaybackController extends EventEmitter {
                     this.downloadingUrls.delete(originalUrl);
                     this.activePrefetchCount--;
                 }
-            })();
+            })().catch(err => {
+                // Catch any unhandled errors in the async IIFE
+                logger.error(`Unhandled prefetch error for ${item.title || originalUrl}:`, err);
+                // Clean up on error
+                this.downloadingUrls.delete(originalUrl);
+                this.activePrefetchCount--;
+                item.downloading = false;
+                item.downloadStatus = 'error';
+                item.downloadProgress = 0;
+                queueManager.saveQueue(true);
+                failedCount++;
+            });
             
             // Small delay between starting prefetches
             if (i < itemsToPrefetch - 1) {

@@ -179,13 +179,13 @@ class QueueManager extends EventEmitter {
         this.queue.splice(insertIndex, 0, queueItem);
         this.queueItemIds.set(insertIndex, queueItemId);
 
-        // Update positions for items after insertion
-        for (let i = insertIndex + 1; i < this.queue.length; i++) {
-            const itemId = this.queueItemIds.get(i);
-            if (itemId) {
-                this.queueItemIds.set(i, itemId);
+        // Rebuild position mappings after insertion
+        this.queueItemIds.clear();
+        this.queue.forEach((item, i) => {
+            if (item.id) {
+                this.queueItemIds.set(i, item.id);
             }
-        }
+        });
 
         this.saveQueue();
         this.emit(QUEUE_UPDATED);
@@ -216,6 +216,14 @@ class QueueManager extends EventEmitter {
             this.emit(QUEUE_UPDATED);
             this.emit(QUEUE_ITEM_REMOVED, { index, item: removed[0] });
             return removed[0];
+        }
+        return null;
+    }
+
+    removeById(itemId) {
+        const index = this.queue.findIndex(item => item.id === itemId);
+        if (index !== -1) {
+            return this.remove(index);
         }
         return null;
     }

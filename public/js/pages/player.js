@@ -766,6 +766,15 @@ function renderLyrics(lyrics, statusMsg = null) {
 
         container.appendChild(div);
     });
+    
+    // Ensure proper spacing - add a small delay to let CSS transitions work
+    setTimeout(() => {
+        const lines = container.querySelectorAll('.lyric-line');
+        lines.forEach((line, i) => {
+            // Add smooth transitions for size changes
+            line.style.transition = 'font-size 0.5s cubic-bezier(0.33, 1, 0.68, 1), opacity 0.5s cubic-bezier(0.33, 1, 0.68, 1), color 0.5s cubic-bezier(0.33, 1, 0.68, 1)';
+        });
+    }, 50);
 
     // Add bottom spacer for better centering
     const bottomSpacer = document.createElement('div');
@@ -795,6 +804,9 @@ function renderLyrics(lyrics, statusMsg = null) {
     // If at song start (no active line yet), position first line at center
     if (currentLineIndex < 0) {
         setTimeout(() => scrollToLyricLine(-1), 100);
+    } else {
+        // If we already have an active line, scroll to it
+        setTimeout(() => scrollToLyricLine(currentLineIndex), 100);
     }
 }
 
@@ -824,6 +836,8 @@ function updateProgress(data) {
         const currentTimeSec = (data.current / 1000) + lyricsOffset;
 
         let activeIndex = -1;
+        
+        // Find the active line - the last line whose time we've passed
         for (let i = 0; i < currentLyrics.length; i++) {
             if (currentTimeSec >= currentLyrics[i].time) {
                 activeIndex = i;
@@ -831,12 +845,34 @@ function updateProgress(data) {
                 break;
             }
         }
+        
+        // If we're between lines (closer to next line than current), show next line
+        // This makes transitions smoother and more responsive
+        if (activeIndex >= 0 && activeIndex < currentLyrics.length - 1) {
+            const currentLineTime = currentLyrics[activeIndex].time;
+            const nextLineTime = currentLyrics[activeIndex + 1].time;
+            const timeUntilNext = nextLineTime - currentTimeSec;
+            const timeSinceCurrent = currentTimeSec - currentLineTime;
+            
+            // If we're closer to the next line (within 0.3s), show it instead
+            // This creates a smoother "preview" effect like Spotify
+            if (timeUntilNext < 0.3 && timeUntilNext < timeSinceCurrent) {
+                activeIndex = activeIndex + 1;
+            }
+        }
 
-        // Only update if index changed
-        if (activeIndex !== currentLineIndex) {
+        // Update highlighting and scrolling
+        const indexChanged = activeIndex !== currentLineIndex;
+        if (indexChanged) {
             currentLineIndex = activeIndex;
             highlightLyricLine(activeIndex);
-            scrollToLyricLine(activeIndex);
+        }
+        
+        // Always scroll to keep active line centered
+        // Scroll on every update when in lyrics mode to ensure smooth following
+        if (activeIndex >= 0 && showLyricsMode) {
+            // Always force update to ensure smooth scrolling
+            scrollToLyricLine(activeIndex, true);
         }
     }
 }
@@ -855,7 +891,7 @@ function highlightLyricLine(index) {
     });
 }
 
-function scrollToLyricLine(index) {
+function scrollToLyricLine(index, forceUpdate = false) {
     if (isScrubbingLyrics) return;
 
     const lines = document.querySelectorAll('.lyric-line');
@@ -869,31 +905,61 @@ function scrollToLyricLine(index) {
     const container = elements.lyricsContainer;
     const stage = document.querySelector('.lyrics-stage');
 
-    if (!stage || !line) return;
+    if (!stage || !line || !container) {
+        console.warn('scrollToLyricLine: Missing elements', { stage: !!stage, line: !!line, container: !!container });
+        return;
+    }
 
-    // Use requestAnimationFrame to ensure layout is complete before calculating
+    // Use requestAnimationFrame to ensure layout is complete
     requestAnimationFrame(() => {
-        // Force a layout recalculation to ensure accurate measurements
-        void container.offsetHeight;
-        void stage.offsetHeight;
-        void line.offsetHeight;
+        requestAnimationFrame(() => {
+            // Force a layout recalculation to ensure accurate measurements
+            void container.offsetHeight;
+            void stage.offsetHeight;
+            void line.offsetHeight;
 
-        // Get the line's position relative to the container
-        const lineTop = line.offsetTop;
-        const lineHeight = line.offsetHeight;
-        const stageHeight = stage.offsetHeight;
-        
-        // Calculate position to center the active line
-        // We want the CENTER of the line to be at the CENTER of the stage
-        // lineTop is the top of the line relative to container
-        // lineTop + lineHeight/2 is the center of the line
-        // stageHeight/2 is the center of the stage
-        // So we need: lineTop + lineHeight/2 - stageHeight/2
-        const targetPosition = lineTop + (lineHeight / 2) - (stageHeight / 2);
+            // Get bounding boxes for accurate positioning
+            const stageRect = stage.getBoundingClientRect();
+            const lineRect = line.getBoundingClientRect();
+            const containerRect = container.getBoundingClientRect();
+            
+            // Get the line's position relative to the container (using offsetTop which is relative to container's original position)
+            const lineTop = line.offsetTop;
+            const lineHeight = line.offsetHeight;
+            const stageHeight = stage.offsetHeight;
+            
+            // Calculate how much we need to move the container to center the line
+            // The line's center (relative to container) is at: lineTop + lineHeight/2
+            // The stage's center is at: stageHeight/2
+            // To center the line in the stage, we need to move the container by:
+            // We want: lineCenter (after transform) = stageCenter
+            // lineCenter (before transform) = lineTop + lineHeight/2
+            // After translateY(-Y): lineCenter (visual) = lineTop + lineHeight/2 - Y
+            // So: lineTop + lineHeight/2 - Y = stageHeight/2
+            // Therefore: Y = lineTop + lineHeight/2 - stageHeight/2
+            const lineCenter = lineTop + (lineHeight / 2);
+            const stageCenter = stageHeight / 2;
+            const targetY = lineCenter - stageCenter;
 
-        // Apply translation with smoother animation
-        // Negative value moves container up, which moves content down (showing later lines)
-        container.style.transform = `translateY(-${Math.round(targetPosition)}px)`;
+            // Get current transform value (the actual translateY value, which is negative when container is moved up)
+            const currentTransform = container.style.transform || '';
+            const currentMatch = currentTransform.match(/translateY\((-?\d+(?:\.\d+)?)px\)/);
+            const currentTransformY = currentMatch ? parseFloat(currentMatch[1]) : 0;
+            const targetOffset = Math.round(targetY);
+            const targetTransformY = -targetOffset; // Transform value is negative of offset
+            
+            // Always update when forced, or if position changed significantly
+            const shouldUpdate = forceUpdate || Math.abs(currentTransformY - targetTransformY) > 1;
+            
+            if (shouldUpdate) {
+                // Apply the transform - negative value moves container up (content appears to move down)
+                container.style.transition = 'transform 0.6s cubic-bezier(0.33, 1, 0.68, 1)';
+                container.style.transform = `translateY(${targetTransformY}px)`;
+                
+                // Debug logging
+                console.log(`[Lyrics Scroll] Line ${index}: lineTop=${lineTop.toFixed(0)}, lineHeight=${lineHeight.toFixed(0)}, stageHeight=${stageHeight.toFixed(0)}, lineCenter=${lineCenter.toFixed(0)}, stageCenter=${stageCenter.toFixed(0)}, targetOffset=${targetOffset}, targetTransform=${targetTransformY}, currentTransform=${currentTransformY.toFixed(0)}, forceUpdate=${forceUpdate}`);
+            }
+        });
     });
 }
 
@@ -920,8 +986,15 @@ function setLyricsMode() {
     showLyricsMode = true;
     updateOffsetButtonVisibility();
 
-    // Re-scroll to current line (or first line if at song start)
-    setTimeout(() => scrollToLyricLine(currentLineIndex), 100);
+    // Immediately scroll to current line (or first line if at song start)
+    // Use multiple timeouts to ensure DOM is ready and CSS transitions are applied
+    setTimeout(() => {
+        scrollToLyricLine(currentLineIndex >= 0 ? currentLineIndex : 0, true);
+        // Also scroll again after a short delay to account for any CSS transitions
+        setTimeout(() => {
+            scrollToLyricLine(currentLineIndex >= 0 ? currentLineIndex : 0, true);
+        }, 300);
+    }, 50);
 }
 
 elements.btnVisualizer.addEventListener('click', setVisualizerMode);
