@@ -32,7 +32,8 @@ function getOrCreateSong(songData) {
     
     if (song) {
         // Update song if new data provided
-        if (songData.title || songData.artist || songData.channel || songData.duration || songData.thumbnail_path || songData.thumbnail_url || songData.source_url) {
+        if (songData.title || songData.artist || songData.channel || songData.duration || songData.thumbnail_path || songData.thumbnail_url || songData.source_url || songData.lyrics_data) {
+            const lyricsJson = songData.lyrics_data ? JSON.stringify(songData.lyrics_data) : null;
             db.prepare(`
                 UPDATE songs 
                 SET title = COALESCE(?, title),
@@ -41,7 +42,8 @@ function getOrCreateSong(songData) {
                     duration = COALESCE(?, duration),
                     thumbnail_path = COALESCE(?, thumbnail_path),
                     thumbnail_url = COALESCE(?, thumbnail_url),
-                    source_url = COALESCE(?, source_url)
+                    source_url = COALESCE(?, source_url),
+                    lyrics_data = COALESCE(?, lyrics_data)
                 WHERE id = ?
             `).run(
                 songData.title || null,
@@ -51,6 +53,7 @@ function getOrCreateSong(songData) {
                 songData.thumbnail_path || null,
                 songData.thumbnail_url || null,
                 songData.source_url || null,
+                lyricsJson,
                 song.id
             );
         }
@@ -58,9 +61,10 @@ function getOrCreateSong(songData) {
     }
     
     // Create new song
+    const lyricsJson = songData.lyrics_data ? JSON.stringify(songData.lyrics_data) : null;
     const result = db.prepare(`
-        INSERT INTO songs (content, title, artist, channel, duration, thumbnail_path, thumbnail_url, source_url)
-        VALUES (?, ?, ?, ?, ?, ?, ?, ?)
+        INSERT INTO songs (content, title, artist, channel, duration, thumbnail_path, thumbnail_url, source_url, lyrics_data)
+        VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)
     `).run(
         songData.content,
         songData.title || 'Unknown',
@@ -69,7 +73,8 @@ function getOrCreateSong(songData) {
         songData.duration || null,
         songData.thumbnail_path || null,
         songData.thumbnail_url || null,
-        songData.source_url || null
+        songData.source_url || null,
+        lyricsJson
     );
     
     return result.lastInsertRowid;
@@ -82,7 +87,34 @@ function getOrCreateSong(songData) {
  */
 function getSong(songId) {
     const db = getDatabase();
-    return db.prepare('SELECT * FROM songs WHERE id = ?').get(songId);
+    const song = db.prepare('SELECT * FROM songs WHERE id = ?').get(songId);
+    if (song && song.lyrics_data) {
+        try {
+            song.lyrics_data = JSON.parse(song.lyrics_data);
+        } catch (e) {
+            // If parsing fails, set to null
+            song.lyrics_data = null;
+        }
+    }
+    return song;
+}
+
+/**
+ * Get lyrics for a song by ID
+ * @param {number} songId - Song ID
+ * @returns {Object|null} Lyrics data or null
+ */
+function getSongLyrics(songId) {
+    const db = getDatabase();
+    const song = db.prepare('SELECT lyrics_data FROM songs WHERE id = ?').get(songId);
+    if (!song || !song.lyrics_data) {
+        return null;
+    }
+    try {
+        return JSON.parse(song.lyrics_data);
+    } catch (e) {
+        return null;
+    }
 }
 
 /**
@@ -130,6 +162,12 @@ function updateSong(songId, updates) {
     if (updates.volume_gain_db !== undefined) {
         fields.push('volume_gain_db = ?');
         values.push(updates.volume_gain_db);
+    }
+    if (updates.lyrics_data !== undefined) {
+        // Store lyrics as JSON string
+        const lyricsJson = updates.lyrics_data ? JSON.stringify(updates.lyrics_data) : null;
+        fields.push('lyrics_data = ?');
+        values.push(lyricsJson);
     }
     
     if (fields.length === 0) {
@@ -1290,6 +1328,7 @@ module.exports = {
     // Songs
     getOrCreateSong,
     getSong,
+    getSongLyrics,
     updateSong,
     updateSongVolumeGain,
     

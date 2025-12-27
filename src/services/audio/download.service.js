@@ -15,9 +15,10 @@ const { isSpotifyUrl, isYouTubeUrl, isFilePath } = require('../../utils/url.util
  * Download a track from YouTube or Spotify
  * @param {string} url - URL or search query
  * @param {function} progressCallback - Optional progress callback
+ * @param {function} metadataCallback - Optional callback called with {title, artist} as soon as metadata is available
  * @returns {Promise<{filePath: string, thumbnailPath: string|null, title: string, artist: string, url: string}>}
  */
-async function downloadTrack(url, progressCallback = null) {
+async function downloadTrack(url, progressCallback = null, metadataCallback = null) {
     const downloadLogger = logger.child({
         component: 'download',
         context: {
@@ -63,6 +64,11 @@ async function downloadTrack(url, progressCallback = null) {
             originalTitle = metadata.title;
             originalArtist = metadata.primaryArtist || metadata.artist;
 
+            // Call metadata callback early if provided (allows parallel lyrics fetch)
+            if (metadataCallback) {
+                metadataCallback({ title: originalTitle, artist: originalArtist });
+            }
+
             // Search YouTube with verification
             downloadLogger.debug({
                 context: { searchQuery: metadata.searchQuery }
@@ -94,6 +100,11 @@ async function downloadTrack(url, progressCallback = null) {
                 const trackInfo = await getTrackInfo(url);
                 title = trackInfo.title;
                 artist = trackInfo.artist || '';
+                
+                // Call metadata callback early if provided (allows parallel lyrics fetch)
+                if (metadataCallback) {
+                    metadataCallback({ title, artist });
+                }
             } catch (e) {
                 logger.warn(`Failed to get video info for ${url}, trying download directly. Error: ${e.message}`);
                 title = `YouTube_Track_${Date.now()}`;
@@ -121,6 +132,11 @@ async function downloadTrack(url, progressCallback = null) {
                 url = videoInfo.url;
                 title = videoInfo.title;
                 artist = videoInfo.artist;
+                
+                // Call metadata callback early if provided (allows parallel lyrics fetch)
+                if (metadataCallback) {
+                    metadataCallback({ title, artist });
+                }
             }
         }
 

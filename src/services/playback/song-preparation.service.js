@@ -69,10 +69,8 @@ class SongPreparationService {
             }
         }
 
-        // Fetch lyrics during preparation (non-blocking)
-        this.fetchLyricsAsync(preparedItem, downloadResult.filePath, downloadResult.title, downloadResult.artist || item.artist || '').catch(err => {
-            logger.debug(`[SongPreparation] Lyrics fetch failed (non-blocking): ${err.message}`);
-        });
+        // Lyrics are now fetched during download in download-orchestrator.service.js
+        // No need to fetch here to avoid duplicate work
 
         return preparedItem;
     }

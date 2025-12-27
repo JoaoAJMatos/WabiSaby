@@ -41,6 +41,28 @@ class DownloadOrchestratorService {
         let lastProgress = 0;
         const SAVE_THROTTLE_MS = 200; // Throttle saves to max once per 200ms
 
+        // Start fetching lyrics in parallel as soon as we have title/artist
+        let lyricsPromise = null;
+        
+        // Set up metadata callback to start lyrics fetch as soon as we get metadata from download
+        const metadataCallback = (metadata) => {
+            if (item.songId && metadata && metadata.title && !lyricsPromise) {
+                lyricsPromise = this.fetchAndStoreLyricsEarly(item.songId, metadata.title, metadata.artist || '')
+                    .catch(err => {
+                        logger.debug(`[DownloadOrchestrator] Metadata-based lyrics fetch failed (non-blocking): ${err.message}`);
+                    });
+            }
+        };
+
+        // If we already have title/artist, start lyrics fetch immediately
+        if (item.title && item.artist && item.songId) {
+            lyricsPromise = this.fetchAndStoreLyricsEarly(item.songId, item.title, item.artist)
+                .catch(err => {
+                    logger.debug(`[DownloadOrchestrator] Early lyrics fetch failed (non-blocking): ${err.message}`);
+                });
+        }
+
+        // Start download with metadata callback - lyrics will start fetching in parallel as soon as metadata is available
         const result = await downloadTrack(item.content, (progress) => {
             const newProgress = progress.percent || 0;
             item.downloadProgress = newProgress;
@@ -63,7 +85,7 @@ class DownloadOrchestratorService {
             if (progressCallback) {
                 progressCallback(progress);
             }
-        });
+        }, metadataCallback);
 
         // Update stats with thumbnail
         if (result.thumbnailPath) {
@@ -83,6 +105,36 @@ class DownloadOrchestratorService {
                 thumbnail_path: result.thumbnailPath,
                 thumbnail_url: result.thumbnailPath ? getThumbnailUrl(result.thumbnailPath) : null
             });
+
+            // Fetch lyrics if not already started, or update with duration if we have the file
+            if (!lyricsPromise) {
+                // Start lyrics fetch now (we have title/artist from download result)
+                lyricsPromise = this.fetchAndStoreLyrics(item.songId, result.filePath, result.title, result.artist || item.artist || '')
+                    .catch(err => {
+                        logger.debug(`[DownloadOrchestrator] Lyrics fetch failed (non-blocking): ${err.message}`);
+                    });
+            } else {
+                // Lyrics fetch already started, but now we can update with duration if needed
+                // The early fetch will complete, and if it didn't find lyrics, we can retry with duration
+                lyricsPromise.then(() => {
+                    // Check if lyrics were stored, if not, retry with duration
+                    const dbService = require('../../infrastructure/database/db.service');
+                    const existingLyrics = dbService.getSongLyrics(item.songId);
+                    if (!existingLyrics) {
+                        // Retry with duration for better matching
+                        this.fetchAndStoreLyrics(item.songId, result.filePath, result.title, result.artist || item.artist || '')
+                            .catch(err => {
+                                logger.debug(`[DownloadOrchestrator] Lyrics retry with duration failed: ${err.message}`);
+                            });
+                    }
+                }).catch(() => {
+                    // If early fetch failed, try again with duration
+                    this.fetchAndStoreLyrics(item.songId, result.filePath, result.title, result.artist || item.artist || '')
+                        .catch(err => {
+                            logger.debug(`[DownloadOrchestrator] Lyrics retry failed: ${err.message}`);
+                        });
+                });
+            }
 
             // Analyze audio and store volume gain (async, non-blocking)
             const settings = volumeNormalizationService.getNormalizationSettings();
@@ -127,6 +179,74 @@ class DownloadOrchestratorService {
     updateSongRecord(songId, updates) {
         const dbService = require('../../infrastructure/database/db.service');
         dbService.updateSong(songId, updates);
+    }
+
+    /**
+     * Fetch lyrics early (before download completes) - uses title/artist only
+     * @param {number} songId - Song ID
+     * @param {string} title - Song title
+     * @param {string} artist - Song artist
+     */
+    async fetchAndStoreLyricsEarly(songId, title, artist) {
+        try {
+            const lyricsService = require('../content/lyrics.service');
+
+            // Fetch lyrics without duration (faster, can start immediately)
+            const lyrics = await lyricsService.getLyrics(title, artist, null, songId);
+            
+            if (lyrics) {
+                // Store lyrics in database
+                this.updateSongRecord(songId, { lyrics_data: lyrics });
+                logger.info(`[DownloadOrchestrator] ✅ Lyrics fetched early and stored for: "${title}" by ${artist || 'Unknown'}`);
+                return true;
+            } else {
+                logger.debug(`[DownloadOrchestrator] No lyrics found early for: "${title}" by ${artist || 'Unknown'}`);
+                return false;
+            }
+        } catch (err) {
+            logger.debug(`[DownloadOrchestrator] Error fetching lyrics early: ${err.message}`);
+            return false;
+        }
+    }
+
+    /**
+     * Fetch lyrics and store in database (non-blocking)
+     * @param {number} songId - Song ID
+     * @param {string} filePath - Audio file path
+     * @param {string} title - Song title
+     * @param {string} artist - Song artist
+     */
+    async fetchAndStoreLyrics(songId, filePath, title, artist) {
+        try {
+            const lyricsService = require('../content/lyrics.service');
+            const metadataService = require('../metadata/metadata.service');
+            const dbService = require('../../infrastructure/database/db.service');
+
+            // Check if lyrics already exist (from early fetch)
+            const existingLyrics = dbService.getSongLyrics(songId);
+            if (existingLyrics) {
+                logger.debug(`[DownloadOrchestrator] Lyrics already fetched for: "${title}" by ${artist || 'Unknown'}`);
+                return;
+            }
+
+            // Get duration from audio file
+            const durationMs = await metadataService.getAudioDuration(filePath);
+            const durationSec = durationMs ? Math.round(durationMs / 1000) : null;
+
+            // Fetch lyrics with duration for better matching
+            const lyrics = await lyricsService.getLyrics(title, artist, durationSec, songId);
+            
+            if (lyrics) {
+                // Store lyrics in database
+                this.updateSongRecord(songId, { lyrics_data: lyrics });
+                logger.info(`[DownloadOrchestrator] ✅ Lyrics fetched and stored for: "${title}" by ${artist || 'Unknown'}`);
+            } else {
+                logger.debug(`[DownloadOrchestrator] No lyrics found for: "${title}" by ${artist || 'Unknown'}`);
+            }
+        } catch (err) {
+            logger.debug(`[DownloadOrchestrator] Error fetching lyrics: ${err.message}`);
+            // Don't throw - lyrics fetch is non-blocking
+        }
     }
 
     /**

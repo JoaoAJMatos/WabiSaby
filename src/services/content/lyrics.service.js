@@ -122,15 +122,24 @@ class LyricsService {
      * @param {string} fullTitle - The full title (usually "Artist - Song" or similar)
      * @param {string} [artist] - Optional artist name
      * @param {number} [duration] - Optional song duration in seconds (helps match correct version)
+     * @param {number} [songId] - Optional song ID to check database directly
      * @returns {Promise<Object|null>} - Lyrics data or null
      */
-    async getLyrics(fullTitle, artist = '', duration = null) {
+    async getLyrics(fullTitle, artist = '', duration = null, songId = null) {
         const cleanedTitle = this.cleanTitle(fullTitle);
         const cacheKey = artist ? `${artist} - ${cleanedTitle}` : cleanedTitle;
 
         if (this.lyricsCache.has(cacheKey)) {
             logger.info(`[Lyrics] Cache hit for: ${cacheKey}`);
             return this.lyricsCache.get(cacheKey);
+        }
+
+        // Check database first (if we have songId, use it; otherwise search by title/artist)
+        const dbLyrics = await this.getLyricsFromDatabase(songId, cleanedTitle, artist);
+        if (dbLyrics) {
+            logger.info(`[Lyrics] ✅ Found lyrics in database for: ${cleanedTitle} ${artist ? `by ${artist}` : ''}`);
+            this.lyricsCache.set(cacheKey, dbLyrics);
+            return dbLyrics;
         }
 
         logger.info(`[Lyrics] Searching for: ${cleanedTitle} ${artist ? `by ${artist}` : ''} ${duration ? `(~${Math.round(duration)}s)` : ''}`);
@@ -210,6 +219,10 @@ class LyricsService {
 
                                             logger.info(`[Lyrics] ✅ Found lyrics via direct API: "${data.trackName}" by ${data.artistName} (Synced: ${result.hasSynced}, Duration: ${result.duration || 'unknown'}s, Lines: ${result.syncedLyrics.length})`);
                             this.lyricsCache.set(cacheKey, result);
+                            // Try to store in database if we can find the song
+                            this.storeLyricsInDatabaseIfFound(result, cleanedTitle, artist).catch(err => {
+                                logger.debug(`[Lyrics] Failed to store lyrics in database: ${err.message}`);
+                            });
                             return result;
                         }
                     } else if (strategy.type === 'search') {
@@ -236,6 +249,10 @@ class LyricsService {
 
                                 logger.info(`[Lyrics] ✅ Selected lyrics: "${bestMatch.trackName}" by ${bestMatch.artistName} (Synced: ${result.hasSynced}, Duration: ${result.duration || 'unknown'}s, Lines: ${result.syncedLyrics.length})`);
                                 this.lyricsCache.set(cacheKey, result);
+                                // Try to store in database if we can find the song
+                                this.storeLyricsInDatabaseIfFound(result, cleanedTitle, artist).catch(err => {
+                                    logger.debug(`[Lyrics] Failed to store lyrics in database: ${err.message}`);
+                                });
                                 return result;
                             }
                         }
@@ -249,25 +266,133 @@ class LyricsService {
             logger.info(`[Lyrics] No lyrics found after trying ${searchStrategies.length} strategies for: ${cleanedTitle}`);
             return null;
 
-            const data = response.data;
-            const result = {
-                id: data.id,
-                trackName: data.trackName,
-                artistName: data.artistName,
-                duration: data.duration,
-                plainLyrics: data.plainLyrics,
-                syncedLyrics: this.parseSyncedLyrics(data.syncedLyrics),
-                hasSynced: !!data.syncedLyrics
-            };
-
-            logger.info(`[Lyrics] ✅ Found lyrics: "${result.trackName}" by ${result.artistName} (Synced: ${result.hasSynced}, Lines: ${result.syncedLyrics.length}, Duration: ${result.duration || 'unknown'}s)`);
-
-            this.lyricsCache.set(cacheKey, result);
-            return result;
-
         } catch (error) {
             logger.error(`[Lyrics] Error fetching lyrics: ${error.message}`);
             return null;
+        }
+    }
+
+    /**
+     * Get lyrics from database
+     * @param {number|null} songId - Song ID (if available)
+     * @param {string} title - Song title
+     * @param {string} artist - Song artist
+     * @returns {Promise<Object|null>} - Lyrics data or null
+     */
+    async getLyricsFromDatabase(songId, title, artist) {
+        try {
+            const dbService = require('../../infrastructure/database/db.service');
+
+            // If we have songId, use it directly
+            if (songId) {
+                const lyrics = dbService.getSongLyrics(songId);
+                return lyrics;
+            }
+
+            // Otherwise, search for songs by title and artist
+            const db = require('../../infrastructure/database').getDatabase();
+            
+            // Try exact match first
+            let query = 'SELECT lyrics_data FROM songs WHERE title = ?';
+            const params = [title];
+            
+            if (artist) {
+                query += ' AND artist = ?';
+                params.push(artist);
+            }
+            
+            query += ' AND lyrics_data IS NOT NULL LIMIT 1';
+            
+            const song = db.prepare(query).get(...params);
+            
+            if (song && song.lyrics_data) {
+                try {
+                    return JSON.parse(song.lyrics_data);
+                } catch (e) {
+                    return null;
+                }
+            }
+
+            // Try fuzzy match (case-insensitive)
+            query = 'SELECT lyrics_data FROM songs WHERE LOWER(title) = LOWER(?)';
+            params.length = 1;
+            params[0] = title;
+            
+            if (artist) {
+                query += ' AND LOWER(artist) = LOWER(?)';
+                params.push(artist);
+            }
+            
+            query += ' AND lyrics_data IS NOT NULL LIMIT 1';
+            
+            const fuzzySong = db.prepare(query).get(...params);
+            
+            if (fuzzySong && fuzzySong.lyrics_data) {
+                try {
+                    return JSON.parse(fuzzySong.lyrics_data);
+                } catch (e) {
+                    return null;
+                }
+            }
+
+            return null;
+        } catch (err) {
+            logger.debug(`[Lyrics] Error checking database: ${err.message}`);
+            return null;
+        }
+    }
+
+    /**
+     * Store lyrics in database if we can find a matching song
+     * @param {Object} lyrics - Lyrics data to store
+     * @param {string} title - Song title
+     * @param {string} artist - Song artist
+     */
+    async storeLyricsInDatabaseIfFound(lyrics, title, artist) {
+        try {
+            const db = require('../../infrastructure/database').getDatabase();
+            const dbService = require('../../infrastructure/database/db.service');
+
+            // Try to find song by title and artist
+            let query = 'SELECT id FROM songs WHERE title = ?';
+            const params = [title];
+            
+            if (artist) {
+                query += ' AND artist = ?';
+                params.push(artist);
+            }
+            
+            query += ' LIMIT 1';
+            
+            let song = db.prepare(query).get(...params);
+            
+            // Try fuzzy match if exact match failed
+            if (!song) {
+                query = 'SELECT id FROM songs WHERE LOWER(title) = LOWER(?)';
+                params.length = 1;
+                params[0] = title;
+                
+                if (artist) {
+                    query += ' AND LOWER(artist) = LOWER(?)';
+                    params.push(artist);
+                }
+                
+                query += ' LIMIT 1';
+                song = db.prepare(query).get(...params);
+            }
+
+            if (song) {
+                // Check if lyrics already exist
+                const existingLyrics = dbService.getSongLyrics(song.id);
+                if (!existingLyrics) {
+                    // Store lyrics in database
+                    dbService.updateSong(song.id, { lyrics_data: lyrics });
+                    logger.debug(`[Lyrics] Stored lyrics in database for song ID ${song.id}`);
+                }
+            }
+        } catch (err) {
+            // Silently fail - this is a best-effort operation
+            logger.debug(`[Lyrics] Error storing lyrics in database: ${err.message}`);
         }
     }
 }
