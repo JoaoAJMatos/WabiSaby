@@ -12,6 +12,8 @@
     <link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="../styles/style.css">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <link rel="preload" href="../assets/startup-sound.mp3" as="audio" crossorigin="anonymous">
+    <script src="../js/core/startup-sound.js"></script>
 </head>
 <body>
     <!-- Fullscreen Loading Overlay -->
@@ -144,101 +146,11 @@
     <script src="../js/core/broadcast.js"></script>
     <script src="../js/core/api.js"></script>
     
-    <!-- Play startup sound when loading screen appears -->
+    <!-- Initialize startup sound when loading screen appears -->
     <script>
-        (function() {
-            // Startup sound handling - plays immediately
-            let startupSoundPlayed = false;
-            let startupAudio = null;
-            
-            // Initialize and start sound immediately
-            (function initAndPlaySound() {
-                try {
-                    startupAudio = new Audio('../assets/startup-sound.mp3');
-                    startupAudio.volume = 0.5; // Set volume to 50% to avoid being too loud
-                    startupAudio.preload = 'auto';
-                    
-                    // Track when sound starts playing
-                    startupAudio.addEventListener('play', () => {
-                        startupSoundPlayed = true;
-                        console.log('✓ Startup sound started playing');
-                    }, { once: true });
-                    
-                    // Try to play as soon as we have enough data
-                    startupAudio.addEventListener('canplay', () => {
-                        console.log('Startup sound can play - attempting to start');
-                        playStartupSound();
-                    }, { once: true });
-                    
-                    // Also try when loadeddata fires (even earlier)
-                    startupAudio.addEventListener('loadeddata', () => {
-                        console.log('Startup sound data loaded - attempting to start');
-                        playStartupSound();
-                    }, { once: true });
-                    
-                    // Handle errors
-                    startupAudio.addEventListener('error', (e) => {
-                        console.error('Startup sound error:', e);
-                        console.error('Audio error details:', startupAudio.error);
-                    });
-                    
-                    // Load the audio immediately
-                    startupAudio.load();
-                    
-                    // Also try to play immediately (works if audio is cached)
-                    playStartupSound();
-                } catch (error) {
-                    console.error('Failed to create startup sound:', error);
-                }
-            })();
-            
-            function playStartupSound() {
-                // Only play once
-                if (startupSoundPlayed || !startupAudio) {
-                    return;
-                }
-                
-                try {
-                    // Try to play immediately
-                    const playPromise = startupAudio.play();
-                    
-                    if (playPromise !== undefined) {
-                        playPromise
-                            .then(() => {
-                                console.log('✓ Startup sound playing successfully');
-                                startupSoundPlayed = true;
-                            })
-                            .catch(err => {
-                                // Autoplay was blocked - will play on user interaction
-                                console.log('⚠ Startup sound autoplay blocked:', err.message);
-                                console.log('   Sound will play on first user interaction');
-                            });
-                    }
-                } catch (error) {
-                    console.error('Startup sound play error:', error);
-                }
-            }
-            
-            // Fallback: Play on first user interaction if autoplay was blocked
-            const playOnInteraction = (event) => {
-                if (!startupSoundPlayed) {
-                    console.log('User interaction detected, playing startup sound...');
-                    playStartupSound();
-                }
-            };
-            
-            // Listen for various user interactions
-            ['click', 'touchstart', 'keydown', 'mousedown'].forEach(event => {
-                document.addEventListener(event, playOnInteraction, { once: true, passive: true });
-            });
-            
-            // Also make the loading overlay clickable
-            const loadingOverlay = document.getElementById('loading-overlay');
-            if (loadingOverlay) {
-                loadingOverlay.addEventListener('click', playOnInteraction, { once: true, passive: true });
-                loadingOverlay.style.cursor = 'pointer'; // Show it's clickable
-            }
-        })();
+        if (window.StartupSound) {
+            window.StartupSound.init('../assets/startup-sound.mp3');
+        }
     </script>
     
     <!-- Auth Page Logic -->
