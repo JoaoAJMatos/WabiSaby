@@ -677,6 +677,16 @@ class PlaybackController extends EventEmitter {
      */
     skip() {
         if (this.currentSong) {
+            // Clear any pending processNext timeout (e.g., from repeat one mode)
+            if (this.processNextTimeout) {
+                clearTimeout(this.processNextTimeout);
+                this.processNextTimeout = null;
+            }
+            
+            // Reset the handling flag to allow skip to work even if handlePlaybackFinished is stuck
+            // This can happen when repeat mode is toggled on/off
+            this.isHandlingPlaybackFinished = false;
+            
             this.emit(PLAYBACK_SKIP);
             return true;
         }

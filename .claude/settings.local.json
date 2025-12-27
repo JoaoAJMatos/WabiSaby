@@ -1,0 +1,10 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(Get-Content package.json)",
+      "Bash(Select-String -Pattern '\"\"main\"\"|\"\"start\"\"|\"\"dev\"\"' -Context 1,1)",
+      "Bash(cat:*)",
+      "Bash(curl:*)"
+    ]
+  }
+}

@@ -584,31 +584,11 @@ async function playFileWithMpv(filePath, startOffset = 0) {
             logger.warn('Cannot seek: MPV socket not ready');
         }
     };
-    const skipHandler = async () => {
-        // Skip should work even if socket is not ready - it will stop the process
-        await stopMpv();
-    };
-    
-    playbackController.on(EFFECTS_CHANGED, effectsHandler);
-    playbackController.on(PLAYBACK_PAUSE, pauseHandler);
-    playbackController.on(PLAYBACK_RESUME, resumeHandler);
-    playbackController.on(PLAYBACK_SEEK, seekHandler);
-    playbackController.on(PLAYBACK_SKIP, skipHandler);
     
     // Wait for playback to finish
     await new Promise((resolve) => {
         let finished = false; // Guard flag to prevent duplicate PLAYBACK_FINISHED events
         const currentProcess = mpvProcess; // Capture the specific process instance for this playback
-        
-        const processCloseHandler = (code) => {
-            // Only handle close if it's for this specific process instance
-            if (mpvProcess === currentProcess) {
-                logger.info(`MPV exited with code ${code}`);
-                handleFinished('process_close', `exit code ${code}`);
-            } else {
-                logger.debug(`Ignoring close event from old MPV process (current process: ${mpvProcess?.pid}, closed process: ${currentProcess?.pid})`);
-            }
-        };
         
         const cleanup = () => {
             playbackController.removeListener(EFFECTS_CHANGED, effectsHandler);
@@ -623,7 +603,7 @@ async function playFileWithMpv(filePath, startOffset = 0) {
             }
         };
         
-        const handleFinished = async (source, reason) => {
+        const handleFinished = async (source, reason, skipReason = 'ended') => {
             if (finished) {
                 logger.debug(`Playback finish already handled (ignoring ${source})`);
                 return;
@@ -636,13 +616,43 @@ async function playFileWithMpv(filePath, startOffset = 0) {
             // This ensures the old process/socket is fully cleaned up before new playback starts
             await stopMpv();
             
-            playbackController.emit(PLAYBACK_FINISHED, { filePath, reason: 'ended' });
+            playbackController.emit(PLAYBACK_FINISHED, { filePath, reason: skipReason });
             resolve();
+        };
+        
+        const processCloseHandler = (code) => {
+            // Only handle close if it's for this specific process instance
+            if (mpvProcess === currentProcess) {
+                logger.info(`MPV exited with code ${code}`);
+                handleFinished('process_close', `exit code ${code}`);
+            } else {
+                logger.debug(`Ignoring close event from old MPV process (current process: ${mpvProcess?.pid}, closed process: ${currentProcess?.pid})`);
+            }
         };
         
         const fileEndHandler = (reason) => {
             handleFinished('mpv_file_ended', reason);
         };
+        
+        // Per-playback skip handler - coordinates with global handler
+        // The global handler will stop playback and emit PLAYBACK_FINISHED
+        // This handler ensures this Promise resolves cleanly
+        const skipHandler = async () => {
+            // Global handler already stopped playback and emitted PLAYBACK_FINISHED
+            // Just resolve this Promise to allow cleanup
+            if (!finished) {
+                finished = true;
+                cleanup();
+                // Don't call stopMpv() or emit PLAYBACK_FINISHED - global handler already did
+                resolve();
+            }
+        };
+        
+        playbackController.on(EFFECTS_CHANGED, effectsHandler);
+        playbackController.on(PLAYBACK_PAUSE, pauseHandler);
+        playbackController.on(PLAYBACK_RESUME, resumeHandler);
+        playbackController.on(PLAYBACK_SEEK, seekHandler);
+        playbackController.on(PLAYBACK_SKIP, skipHandler);
         
         playerEvents.on('mpv_file_ended', fileEndHandler);
         
@@ -911,6 +921,34 @@ function initializeEventListeners() {
             logger.error('Failed to play file:', err);
             playbackController.emit(PLAYBACK_ERROR, { filePath, error: err });
         });
+    });
+
+    // Global skip handler - always works regardless of per-playback Promise state
+    // This ensures skip works even during async operations or transitions
+    playbackController.on(PLAYBACK_SKIP, async () => {
+        logger.info('Global skip handler: stopping playback');
+        
+        // Capture file path BEFORE stopping (stopMpv/stopFfplay clear currentFilePath)
+        const filePathToEmit = currentFilePath;
+        
+        // Stop MPV if running
+        if (audioBackend === 'mpv' && (mpvProcess || ipcSocket)) {
+            await stopMpv();
+        }
+        
+        // Stop ffplay if running
+        if (audioBackend === 'ffplay' && ffplayProcess && !ffplayProcess.killed) {
+            stopFfplay();
+        }
+        
+        // Emit PLAYBACK_FINISHED with 'skipped' reason to trigger next song
+        // The finished flag in per-playback handlers will prevent duplicate processing
+        if (filePathToEmit) {
+            playbackController.emit(PLAYBACK_FINISHED, { 
+                filePath: filePathToEmit, 
+                reason: 'skipped' 
+            });
+        }
     });
 
     // Listen for effects changes (global listener that works even if per-playback listeners aren't set up)

@@ -90,7 +90,8 @@ class EffectsService extends EventEmitter {
                 settings: {
                     ...this.getDefaultEffects(),
                     speed: 0.85,
-                    reverb: { enabled: true, roomSize: 0.7, damping: 0.5, wetLevel: 0.4 },
+                    reverb: { enabled: true, roomSize: 0.75, damping: 0.45, wetLevel: 0.45 },
+                    eq: { bass: 2, mid: 0, treble: 1 },
                     preset: 'slowedReverb'
                 }
             },
@@ -112,7 +113,8 @@ class EffectsService extends EventEmitter {
                     ...this.getDefaultEffects(),
                     speed: 1.25,
                     pitch: 1.2,
-                    eq: { bass: 2, mid: 0, treble: 3 },
+                    eq: { bass: 1, mid: 1, treble: 5 },
+                    compressor: { enabled: true, threshold: -18, ratio: 3 },
                     preset: 'nightcore'
                 }
             },
@@ -122,7 +124,9 @@ class EffectsService extends EventEmitter {
                 description: 'Enhanced bass frequencies',
                 settings: {
                     ...this.getDefaultEffects(),
-                    eq: { bass: 12, mid: 0, treble: 0 },
+                    eq: { bass: 8, mid: -1, treble: 1 },
+                    compressor: { enabled: true, threshold: -16, ratio: 4 },
+                    limiter: { enabled: true, limit: -0.5 },
                     preset: 'bassBoost'
                 }
             },
@@ -132,9 +136,9 @@ class EffectsService extends EventEmitter {
                 description: 'Echoing bathroom effect',
                 settings: {
                     ...this.getDefaultEffects(),
-                    reverb: { enabled: true, roomSize: 0.9, damping: 0.3, wetLevel: 0.5 },
-                    echo: { enabled: true, delay: 100, decay: 0.3 },
-                    eq: { bass: -3, mid: 2, treble: -2 },
+                    reverb: { enabled: true, roomSize: 0.85, damping: 0.25, wetLevel: 0.55 },
+                    echo: { enabled: true, delay: 120, decay: 0.35 },
+                    eq: { bass: -4, mid: 3, treble: -3 },
                     preset: 'bathroom'
                 }
             },
@@ -144,8 +148,9 @@ class EffectsService extends EventEmitter {
                 description: 'Large venue reverb',
                 settings: {
                     ...this.getDefaultEffects(),
-                    reverb: { enabled: true, roomSize: 0.95, damping: 0.4, wetLevel: 0.35 },
-                    eq: { bass: 2, mid: 1, treble: 2 },
+                    reverb: { enabled: true, roomSize: 0.92, damping: 0.35, wetLevel: 0.4 },
+                    eq: { bass: 3, mid: 2, treble: 3 },
+                    compressor: { enabled: true, threshold: -20, ratio: 3 },
                     preset: 'concert'
                 }
             },
@@ -155,8 +160,9 @@ class EffectsService extends EventEmitter {
                 description: 'Old phone effect',
                 settings: {
                     ...this.getDefaultEffects(),
-                    eq: { bass: -15, mid: 5, treble: -10 },
-                    distortion: { enabled: true, drive: 0.2 },
+                    eq: { bass: -18, mid: 6, treble: -12 },
+                    distortion: { enabled: true, drive: 0.25 },
+                    compressor: { enabled: true, threshold: -12, ratio: 2 },
                     preset: 'telephone'
                 }
             },
@@ -166,9 +172,9 @@ class EffectsService extends EventEmitter {
                 description: 'Muffled underwater sound',
                 settings: {
                     ...this.getDefaultEffects(),
-                    eq: { bass: 3, mid: -5, treble: -15 },
-                    reverb: { enabled: true, roomSize: 0.8, damping: 0.7, wetLevel: 0.4 },
-                    speed: 0.95,
+                    eq: { bass: 4, mid: -6, treble: -18 },
+                    reverb: { enabled: true, roomSize: 0.75, damping: 0.75, wetLevel: 0.45 },
+                    speed: 0.92,
                     preset: 'underwater'
                 }
             },
@@ -178,8 +184,8 @@ class EffectsService extends EventEmitter {
                 description: 'Enhanced vocals',
                 settings: {
                     ...this.getDefaultEffects(),
-                    eq: { bass: -2, mid: 4, treble: 2 },
-                    compressor: { enabled: true, threshold: -15, ratio: 3 },
+                    eq: { bass: -3, mid: 6, treble: 3 },
+                    compressor: { enabled: true, threshold: -14, ratio: 4 },
                     preset: 'vocal'
                 }
             },
@@ -189,10 +195,10 @@ class EffectsService extends EventEmitter {
                 description: 'Warm lo-fi aesthetic',
                 settings: {
                     ...this.getDefaultEffects(),
-                    speed: 0.95,
-                    eq: { bass: 4, mid: -2, treble: -4 },
-                    distortion: { enabled: true, drive: 0.15 },
-                    reverb: { enabled: true, roomSize: 0.4, damping: 0.6, wetLevel: 0.2 },
+                    speed: 0.92,
+                    eq: { bass: 5, mid: -3, treble: -6 },
+                    distortion: { enabled: true, drive: 0.18 },
+                    reverb: { enabled: true, roomSize: 0.35, damping: 0.65, wetLevel: 0.25 },
                     preset: 'lofi'
                 }
             },
@@ -202,8 +208,9 @@ class EffectsService extends EventEmitter {
                 description: 'Surround sound effect',
                 settings: {
                     ...this.getDefaultEffects(),
-                    reverb: { enabled: true, roomSize: 0.6, damping: 0.5, wetLevel: 0.3 },
-                    delay: { enabled: true, delay: 50, feedback: 0.2 },
+                    reverb: { enabled: true, roomSize: 0.65, damping: 0.45, wetLevel: 0.35 },
+                    delay: { enabled: true, delay: 60, feedback: 0.25 },
+                    eq: { bass: 1, mid: 0, treble: 2 },
                     preset: '8d'
                 }
             },
