@@ -53,7 +53,6 @@ class MobileController {
         eventBus.on(QUEUE_ITEM_REMOVED, broadcastMobileStatus);
         eventBus.on(QUEUE_REORDERED, broadcastMobileStatus);
         eventBus.on(QUEUE_CLEARED, broadcastMobileStatus);
-        eventBus.on(PLAYBACK_STARTED, broadcastMobileStatus);
         eventBus.on(PLAYBACK_FINISHED, broadcastMobileStatus);
         eventBus.on(PLAYBACK_PAUSED, broadcastMobileStatus);
         eventBus.on(PLAYBACK_RESUMED, broadcastMobileStatus);
@@ -268,7 +267,7 @@ class MobileController {
         // Store client with req context for mobile-specific status
         const clientData = { req, res };
         this.mobileStatusClients.add(clientData);
-        
+
         // Send current mobile status as initial data
         try {
             const status = await this.getMobileStatusForSSE(req);
@@ -276,13 +275,32 @@ class MobileController {
             res.write(`data: ${initialData}\n\n`);
         } catch (error) {
             logger.error('Error sending initial mobile status:', error);
-        }
-        
-        // Handle client disconnect
-        req.on('close', () => {
+            // Remove client if initial write fails
             this.mobileStatusClients.delete(clientData);
-        });
-        
+            
+            // Send error via SSE format and end the connection
+            try {
+                const errorData = JSON.stringify({
+                    error: 'Failed to get initial status',
+                    message: error?.message || 'Unknown error'
+                });
+                res.write(`event: error\ndata: ${errorData}\n\n`);
+            } catch (writeError) {
+                // If we can't write, the connection is likely already closed
+                logger.debug('Could not write error to SSE stream:', writeError);
+            }
+            
+            // End the response to prevent error middleware from trying to send JSON
+            try {
+                res.end();
+            } catch (endError) {
+                // Response might already be ended
+                logger.debug('Could not end SSE response:', endError);
+            }
+            
+            return;
+        }
+
         // Keep connection alive with periodic heartbeat
         const heartbeat = setInterval(() => {
             try {
@@ -292,9 +310,11 @@ class MobileController {
                 this.mobileStatusClients.delete(clientData);
             }
         }, 30000);
-        
+
+        // Handle client disconnect
         req.on('close', () => {
             clearInterval(heartbeat);
+            this.mobileStatusClients.delete(clientData);
         });
     }
 

@@ -119,10 +119,6 @@ class EventListenerRegistry {
             }
         });
 
-        this.on(PLAYBACK_FINISHED, ({ filePath, reason }) => {
-            orchestrator.handlePlaybackFinished(reason !== 'error');
-        });
-
         this.on(PLAYBACK_ERROR, ({ filePath, error }) => {
             logger.error('Playback error:', error);
             orchestrator.handlePlaybackFinished(false);

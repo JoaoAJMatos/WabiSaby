@@ -85,6 +85,10 @@ class PlaybackOrchestrator extends EventEmitter {
             currentSong: this.currentSong,
             songsPlayed: this.songsPlayed
         });
+        
+        // Emit QUEUE_UPDATED to trigger SSE broadcast for real-time UI updates
+        // This ensures download progress and playback state changes are immediately visible
+        eventBus.emit(QUEUE_UPDATED);
     }
 
     /**
@@ -134,7 +138,8 @@ class PlaybackOrchestrator extends EventEmitter {
                 }, `Playback finished: ${reason}`);
             }
             
-            this.handlePlaybackFinished(reason !== 'error');
+            // Pass reason to handlePlaybackFinished so it knows if it was skipped
+            this.handlePlaybackFinished(reason !== 'error', reason);
         });
 
         // Listen for playback errors from Player (via bus)
@@ -152,7 +157,7 @@ class PlaybackOrchestrator extends EventEmitter {
                     }
                 }
             }, 'Playback error:', error);
-            this.handlePlaybackFinished(false);
+            this.handlePlaybackFinished(false, 'error');
         });
     }
 
@@ -246,12 +251,33 @@ class PlaybackOrchestrator extends EventEmitter {
                 }, 'Prefetch error:', err);
             });
 
-            if (item.type === 'url') {
+            // Check if item was prefetched but type wasn't updated yet
+            const { isFilePath } = require('../../utils/url.util');
+            const wasPrefetched = item.prefetched || (item.content && isFilePath(item.content));
+            
+            if (item.type === 'url' && !wasPrefetched) {
                 playbackLogger.debug('Downloading song from URL');
+                
+                // Set as current song BEFORE download starts so UI can show download progress
+                this.currentSong = {
+                    ...item,
+                    startTime: Date.now(),
+                    pausedAt: null
+                };
+                this.emitStateChanged();
+                
                 const downloadStartTime = Date.now();
                 
-                // Download and prepare the song
-                const downloadResult = await downloadOrchestratorService.downloadAndPrepare(item);
+                // Download and prepare the song with progress callback to update currentSong
+                const downloadResult = await downloadOrchestratorService.downloadAndPrepare(item, (progress) => {
+                    // Sync download progress to currentSong for real-time UI updates
+                    if (this.currentSong) {
+                        this.currentSong.downloadStatus = item.downloadStatus;
+                        this.currentSong.downloadProgress = item.downloadProgress;
+                        this.currentSong.downloading = item.downloading;
+                        this.emitStateChanged(); // Emit update to trigger SSE broadcast
+                    }
+                });
                 filePath = downloadResult.filePath;
                 title = downloadResult.title;
                 
@@ -278,22 +304,38 @@ class PlaybackOrchestrator extends EventEmitter {
                 playbackLogger.debug({
                     context: { prepareDuration }
                 }, 'Song preparation completed');
-            } else if (item.type === 'file') {
+            } else if (item.type === 'file' || wasPrefetched) {
+                // Use file path - either explicitly marked as file or was prefetched
                 filePath = item.content;
                 title = item.title || 'User Attachment';
-                playbackLogger.debug('Using local file for playback');
+                if (wasPrefetched && item.type === 'url') {
+                    playbackLogger.debug('Using prefetched file for playback (type was not updated yet)');
+                    // Update type to reflect actual state
+                    item.type = 'file';
+                } else {
+                    playbackLogger.debug('Using local file for playback');
+                }
             }
 
             if (filePath && require('fs').existsSync(filePath)) {
                 // Reset playback finished flag since we're starting a new song
                 this.isHandlingPlaybackFinished = false;
 
-                // Set as current song
-                this.currentSong = {
-                    ...item,
-                    startTime: Date.now(),
-                    pausedAt: null
-                };
+                // Update current song with final state (if not already set for URL downloads)
+                if (!this.currentSong || this.currentSong.content !== item.content) {
+                    this.currentSong = {
+                        ...item,
+                        startTime: Date.now(),
+                        pausedAt: null
+                    };
+                } else {
+                    // Update existing currentSong with final item state
+                    Object.assign(this.currentSong, {
+                        ...item,
+                        startTime: this.currentSong.startTime || Date.now(),
+                        pausedAt: null
+                    });
+                }
                 this.emitStateChanged();
 
                 // Record song in stats
@@ -370,6 +412,39 @@ class PlaybackOrchestrator extends EventEmitter {
             // Log the full error object for debugging
             logger.error('Full error object:', error);
 
+            // Check if this is a "No results found on YouTube" error
+            // If so, remove the item from the queue to prevent infinite retry loops
+            const isYouTubeNotFoundError = errorMessage.includes('No results found on YouTube');
+            
+            if (isYouTubeNotFoundError) {
+                playbackLogger.warn({
+                    context: {
+                        event: 'removing_unfindable_song',
+                        songTitle: item.title || item.content,
+                        songId: item.id,
+                        reason: 'No results found on YouTube'
+                    }
+                }, `Removing song from queue: "${item.title || item.content}" - No results found on YouTube`);
+                
+                // Remove the item from the queue
+                if (item.id) {
+                    queueService.removeById(item.id);
+                } else if (itemIndex !== null) {
+                    queueService.remove(itemIndex);
+                } else {
+                    // Fallback: find and remove by content/title
+                    const queue = queueService.getQueue();
+                    const indexToRemove = queue.findIndex(qItem => 
+                        (qItem.id === item.id) ||
+                        (qItem.content === item.content && qItem.type === item.type) ||
+                        (qItem.title === item.title && qItem.artist === item.artist)
+                    );
+                    if (indexToRemove !== -1) {
+                        queueService.remove(indexToRemove);
+                    }
+                }
+            }
+
             if (item.remoteJid) {
                 await notificationService.sendPlaybackNotification(
                     item.remoteJid,
@@ -382,25 +457,40 @@ class PlaybackOrchestrator extends EventEmitter {
             this.isPlaying = false;
             this.isProcessing = false;
             
-            // Wait before retrying to prevent immediate retry loop
-            await new Promise(resolve => setTimeout(resolve, config.playback.songTransitionDelay));
-            
-            // Only retry if queue still has items and we're not already processing
-            const updatedQueue = queueService.getQueue();
-            if (updatedQueue.length > 0 && !this.isProcessing) {
-                this.handlePlaybackFinished(false);
+            // If we removed the item due to YouTube not found error, skip the delay and go straight to next
+            if (isYouTubeNotFoundError) {
+                // Process next item immediately (no delay needed since we removed the problematic item)
+                const updatedQueue = queueService.getQueue();
+                if (updatedQueue.length > 0 && !this.isProcessing) {
+                    this.handlePlaybackFinished(false);
+                } else {
+                    // No items left - just reset state
+                    this.isPlaying = false;
+                    this.isProcessing = false;
+                }
             } else {
-                // No items left or already processing - just reset state
-                this.isPlaying = false;
-                this.isProcessing = false;
+                // Wait before retrying to prevent immediate retry loop
+                await new Promise(resolve => setTimeout(resolve, config.playback.songTransitionDelay));
+                
+                // Only retry if queue still has items and we're not already processing
+                const updatedQueue = queueService.getQueue();
+                if (updatedQueue.length > 0 && !this.isProcessing) {
+                    this.handlePlaybackFinished(false);
+                } else {
+                    // No items left or already processing - just reset state
+                    this.isPlaying = false;
+                    this.isProcessing = false;
+                }
             }
         }
     }
 
     /**
      * Handle playback finished (called by Player via event)
+     * @param {boolean} success - Whether playback was successful (not an error)
+     * @param {string} reason - Reason for finishing ('ended', 'skipped', 'error')
      */
-    async handlePlaybackFinished(success = true) {
+    async handlePlaybackFinished(success = true, reason = 'ended') {
         // Prevent duplicate calls
         if (this.isHandlingPlaybackFinished) {
             logger.debug('handlePlaybackFinished already in progress, ignoring duplicate call');
@@ -419,6 +509,41 @@ class PlaybackOrchestrator extends EventEmitter {
         config._ensureSettingsLoaded();
         const repeatMode = config.playback.repeatMode;
 
+        // Don't handle repeat modes for skipped songs
+        if (reason === 'skipped') {
+            // Just move to next song without tracking for repeat
+            this.isPlaying = false;
+            this.isPaused = false;
+            
+            // Cleanup after playback
+            if (this.currentSong) {
+                cleanupService.cleanupAfterPlayback(this.currentSong, config);
+            }
+            
+            this.currentSong = null;
+            this.emitStateChanged();
+
+            // Small delay to ensure broadcast completes before processing next song
+            setTimeout(() => {
+                // Emit playback ended event via bus
+                eventBus.emit(PLAYBACK_ENDED, { success: false });
+
+                // Process next item if available
+                const updatedQueue = queueService.getQueue();
+                if (updatedQueue.length > 0 && !this.isProcessing) {
+                    this.processNextTimeout = setTimeout(() => {
+                        this.processNextTimeout = null;
+                        this.isHandlingPlaybackFinished = false;
+                        this.processNext();
+                    }, config.playback.songTransitionDelay);
+                } else {
+                    // No more songs or already processing, reset flag immediately
+                    this.isHandlingPlaybackFinished = false;
+                }
+            }, 50); // Small delay to ensure broadcast is sent
+            return;
+        }
+
         // Handle repeat one mode - restart current song
         if (repeatModeService.shouldRestartSong(repeatMode, this.currentSong, success)) {
             const handled = await repeatModeService.handleRepeatOne(
@@ -434,7 +559,7 @@ class PlaybackOrchestrator extends EventEmitter {
             }
         }
 
-        // For repeat all mode, track the finished song
+        // For repeat all mode, track the finished song (only if it actually finished, not skipped)
         repeatModeService.trackSongForRepeatAll(this.currentSong, success);
 
         this.isPlaying = false;
@@ -454,12 +579,15 @@ class PlaybackOrchestrator extends EventEmitter {
         // Emit playback ended event via bus
         eventBus.emit(PLAYBACK_ENDED, { success });
 
-        // Handle repeat all mode if queue is empty
-        await repeatModeService.handleRepeatAll(config);
-
-        // Process next item if available
+        // Handle repeat all mode ONLY if queue is empty
         const updatedQueue = queueService.getQueue();
-        if (updatedQueue.length > 0 && !this.isProcessing) {
+        if (updatedQueue.length === 0) {
+            await repeatModeService.handleRepeatAll(config);
+        }
+
+        // Process next item if available (check queue again in case repeat all added songs)
+        const finalQueue = queueService.getQueue();
+        if (finalQueue.length > 0 && !this.isProcessing) {
             this.processNextTimeout = setTimeout(() => {
                 this.processNextTimeout = null;
                 this.isHandlingPlaybackFinished = false;
@@ -519,6 +647,8 @@ class PlaybackOrchestrator extends EventEmitter {
     skip() {
         if (this.isPlaying || this.currentSong) {
             eventBus.emit(PLAYBACK_SKIP);
+            // Trigger immediate status update
+            this.emitStateChanged();
             return true;
         }
         return false;

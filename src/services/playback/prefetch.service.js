@@ -2,6 +2,7 @@ const { logger } = require('../../utils/logger.util');
 const config = require('../../config');
 const { downloadTrack } = require('../audio/download.service');
 const { isRateLimitError } = require('../../utils/rate-limit.util');
+const { getThumbnailUrl } = require('../../utils/helpers.util');
 // Direct requires to avoid circular dependencies
 const queueService = require('./queue.service');
 const downloadOrchestratorService = require('./download-orchestrator.service');
@@ -44,8 +45,14 @@ class PrefetchService {
         if (queue.length === 0) return;
 
         // Filter to only songs that need prefetching
+        const { isFilePath } = require('../../utils/url.util');
         const itemsNeedingPrefetch = queue.filter(item => {
             if (item.type !== 'url') return false;
+            // Skip if content is actually a file path (not a URL)
+            if (isFilePath(item.content)) {
+                logger.debug(`Skipping prefetch for file path: ${item.title || item.content}`);
+                return false;
+            }
             if (item.prefetched) return false;
             if (item.downloading) return false;
             if (downloadOrchestratorService.isDownloading(item.content)) {
@@ -118,6 +125,7 @@ class PrefetchService {
                         const newProgress = progress.percent || 0;
                         item.downloadProgress = newProgress;
                         item.downloadStatus = progress.status || 'downloading';
+                        item.downloading = true; // Ensure downloading flag is set during progress updates
 
                         // Throttle saves to prevent excessive updates, but always save on significant changes
                         const now = Date.now();
@@ -132,16 +140,40 @@ class PrefetchService {
                         }
                     });
 
+                    // Update song record in database: set content to file path and preserve original URL as source_url
+                    if (item.songId) {
+                        downloadOrchestratorService.updateSongRecord(item.songId, {
+                            content: result.filePath, // Update content to file path
+                            source_url: originalUrl, // Preserve original URL
+                            title: result.title,
+                            artist: result.artist,
+                            thumbnail_path: result.thumbnailPath,
+                            thumbnail_url: result.thumbnailPath ? getThumbnailUrl(result.thumbnailPath) : null
+                        });
+                    }
+
+                    // Update queue item in memory
                     item.type = 'file';
                     item.content = result.filePath;
+                    item.sourceUrl = originalUrl; // Keep in memory for reference
                     item.title = result.title;
                     item.thumbnail = result.thumbnailPath;
+                    // Add thumbnail URL if thumbnail exists
+                    if (result.thumbnailPath) {
+                        const thumbnailUrl = getThumbnailUrl(result.thumbnailPath);
+                        if (thumbnailUrl) {
+                            item.thumbnailUrl = thumbnailUrl;
+                        }
+                    }
                     item.prefetched = true;
                     item.downloading = false;
                     item.downloadStatus = 'ready';
                     item.downloadProgress = 100;
                     logger.info(`✓ Prefetch complete for: ${item.title}`);
+                    
+                    // Save queue (this emits QUEUE_UPDATED internally)
                     queueService.saveQueue(true);
+                    
                     prefetchedCount++;
 
                     // On success, slightly reduce delay
@@ -149,10 +181,35 @@ class PrefetchService {
                 } catch (err) {
                     const errorMsg = err?.message || String(err) || 'Unknown error';
                     logger.error(`✗ Prefetch failed for ${item.title || originalUrl}:`, errorMsg);
-                    item.downloading = false;
-                    item.downloadStatus = 'error';
-                    item.downloadProgress = 0;
-                    queueService.saveQueue(true);
+                    
+                    // Check if this is a "No results found on YouTube" error
+                    // If so, remove the item from the queue to prevent it from being retried
+                    const isYouTubeNotFoundError = errorMsg.includes('No results found on YouTube');
+                    
+                    if (isYouTubeNotFoundError) {
+                        logger.warn(`Removing song from queue (prefetch): "${item.title || originalUrl}" - No results found on YouTube`);
+                        
+                        // Remove the item from the queue
+                        if (item.id) {
+                            queueService.removeById(item.id);
+                        } else {
+                            // Fallback: find and remove by content
+                            const queue = queueService.getQueue();
+                            const indexToRemove = queue.findIndex(qItem => 
+                                qItem.content === originalUrl && qItem.type === 'url'
+                            );
+                            if (indexToRemove !== -1) {
+                                queueService.remove(indexToRemove);
+                            }
+                        }
+                    } else {
+                        // Only update status if we're not removing the item
+                        item.downloading = false;
+                        item.downloadStatus = 'error';
+                        item.downloadProgress = 0;
+                        queueService.saveQueue(true);
+                    }
+                    
                     failedCount++;
 
                     // On rate limit error, increase delay significantly

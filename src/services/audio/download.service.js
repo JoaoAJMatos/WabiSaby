@@ -4,7 +4,7 @@ const config = require('../../config');
 const { downloadFromYouTube } = require('../youtube/download.service');
 const { getSpotifyMetadata } = require('../spotify/metadata.service');
 const { searchYouTube } = require('../youtube/search.service');
-const { isSpotifyUrl, isYouTubeUrl } = require('../../utils/url.util');
+const { isSpotifyUrl, isYouTubeUrl, isFilePath } = require('../../utils/url.util');
 
 /**
  * Audio Download Service
@@ -29,6 +29,11 @@ async function downloadTrack(url, progressCallback = null) {
     const downloadStartTime = Date.now();
     
     try {
+        // Validate that input is not a file path
+        if (isFilePath(url)) {
+            throw new Error(`Cannot download file path as URL: ${url}. File paths should be played directly, not downloaded.`);
+        }
+        
         downloadLogger.info({
             context: { event: 'download_track_started' }
         }, 'Starting track download');

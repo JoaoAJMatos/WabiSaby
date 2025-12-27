@@ -26,6 +26,17 @@ function errorHandler(err, req, res, next) {
     // Don't leak error details in production
     const isDevelopment = process.env.NODE_ENV === 'development';
 
+    // Check if response has already been sent (e.g., for SSE streams)
+    if (res.headersSent) {
+        // If headers are already sent, we can't send a JSON response
+        // This can happen with SSE streams or other streaming responses
+        logger.warn('Cannot send error response: headers already sent', {
+            url: req.url,
+            method: req.method
+        });
+        return;
+    }
+
     // Handle different types of errors
     if (err.name === 'ValidationError') {
         return res.status(400).json({

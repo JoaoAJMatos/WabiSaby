@@ -104,8 +104,13 @@ class QueueManager {
             // Update download progress for items that have changed
             // This is important for prefetch/download progress to be persisted
             this.queue.forEach((item, index) => {
-                if (item.id && (item.downloadProgress !== undefined || item.downloadStatus !== undefined || item.prefetched !== undefined)) {
+                if (item.id && (item.downloadProgress !== undefined || item.downloadStatus !== undefined || item.prefetched !== undefined || item.downloading !== undefined)) {
                     try {
+                        // Sync downloading flag based on downloadStatus if not explicitly set
+                        if (item.downloading === undefined && item.downloadStatus) {
+                            item.downloading = item.downloadStatus === 'downloading';
+                        }
+                        
                         dbService.updateQueueItemProgress(
                             item.id,
                             item.downloadProgress || 0,

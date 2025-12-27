@@ -1,4 +1,5 @@
 const { logger } = require('../../utils/logger.util');
+const { isFilePath } = require('../../utils/url.util');
 // Direct requires to avoid circular dependencies
 const queueService = require('./queue.service');
 const shuffleService = require('./shuffle.service');
@@ -64,11 +65,30 @@ class RepeatModeService {
      */
     trackSongForRepeatAll(currentSong, success) {
         if (success && currentSong) {
+            // Determine the source URL for repeat all
+            // Prefer sourceUrl if available, otherwise use content if it's a URL
+            let sourceUrl = currentSong.sourceUrl;
+            let content = currentSong.content;
+            
+            // If no sourceUrl, check if content is a URL (not a file path)
+            if (!sourceUrl && content && !isFilePath(content)) {
+                sourceUrl = content;
+            }
+            
+            // If content is a file path and we have sourceUrl, use sourceUrl as content
+            if (isFilePath(content) && sourceUrl) {
+                content = sourceUrl;
+            }
+            
+            // Determine type: if we have a valid URL (not file path), it's 'url', otherwise 'file'
+            const finalContent = sourceUrl || content;
+            const isUrl = finalContent && !isFilePath(finalContent);
+            
             // Create a copy of the song data for repeat all
             const songCopy = {
-                content: currentSong.sourceUrl || currentSong.content,
-                sourceUrl: currentSong.sourceUrl || currentSong.content,
-                type: currentSong.sourceUrl ? 'url' : (currentSong.type || 'file'),
+                content: finalContent,
+                sourceUrl: sourceUrl || (isUrl ? finalContent : null),
+                type: isUrl ? 'url' : 'file',
                 title: currentSong.title,
                 artist: currentSong.artist,
                 channel: currentSong.channel,

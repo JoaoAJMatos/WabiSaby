@@ -51,23 +51,45 @@ class StatusController {
             services.system.status.statusService.initialize(this);
         }
         
-        // Add this response to clients
+        // Add this response to pending clients (will be activated after setup)
         services.system.status.statusService.addClient(res);
-        
+
         // Send current status as initial data
         try {
             const status = await services.system.status.statusService.getStatus();
             const initialData = JSON.stringify(status);
             res.write(`data: ${initialData}\n\n`);
+
+            // Now activate the client for broadcasts
+            services.system.status.statusService.activateClient(res);
         } catch (error) {
             logger.error('Error sending initial status:', error);
-        }
-        
-        // Handle client disconnect
-        req.on('close', () => {
+            // Remove client if initial write fails
             services.system.status.statusService.removeClient(res);
-        });
-        
+            
+            // Send error via SSE format and end the connection
+            try {
+                const errorData = JSON.stringify({
+                    error: 'Failed to get initial status',
+                    message: error?.message || 'Unknown error'
+                });
+                res.write(`event: error\ndata: ${errorData}\n\n`);
+            } catch (writeError) {
+                // If we can't write, the connection is likely already closed
+                logger.debug('Could not write error to SSE stream:', writeError);
+            }
+            
+            // End the response to prevent error middleware from trying to send JSON
+            try {
+                res.end();
+            } catch (endError) {
+                // Response might already be ended
+                logger.debug('Could not end SSE response:', endError);
+            }
+            
+            return;
+        }
+
         // Keep connection alive with periodic heartbeat
         const heartbeat = setInterval(() => {
             try {
@@ -77,9 +99,11 @@ class StatusController {
                 services.system.status.statusService.removeClient(res);
             }
         }, 30000);
-        
+
+        // Handle client disconnect
         req.on('close', () => {
             clearInterval(heartbeat);
+            services.system.status.statusService.removeClient(res);
         });
     }
 

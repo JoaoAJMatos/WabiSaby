@@ -33,6 +33,7 @@ class DownloadOrchestratorService {
 
         item.downloadStatus = 'preparing';
         item.downloadProgress = 0;
+        item.downloading = true; // Set downloading flag for UI updates
         queueService.saveQueue(true);
 
         const originalUrl = item.content; // Store original URL before download
@@ -44,6 +45,7 @@ class DownloadOrchestratorService {
             const newProgress = progress.percent || 0;
             item.downloadProgress = newProgress;
             item.downloadStatus = progress.status || 'downloading';
+            item.downloading = true; // Ensure downloading flag is set during progress updates
 
             // Throttle saves to prevent excessive updates, but always save on significant changes
             const now = Date.now();
@@ -106,6 +108,7 @@ class DownloadOrchestratorService {
         }
         item.downloadStatus = 'ready';
         item.downloadProgress = 100;
+        item.downloading = false; // Clear downloading flag when complete
         queueService.saveQueue(true);
 
         return {

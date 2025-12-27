@@ -345,26 +345,101 @@ class MpvPlayer extends PlayerAdapter {
      * Stop MPV and cleanup
      */
     async stop() {
-        if (this.ipcSocket && !this.ipcSocket.destroyed) {
+        const currentProcess = this.process;
+        const currentSocket = this.ipcSocket;
+        
+        // Close socket first
+        if (currentSocket && !currentSocket.destroyed) {
             try {
                 await this.sendCommand(['quit']);
-            } catch (e) { }
-            this.ipcSocket.destroy();
+            } catch (e) {
+                // Socket might already be closed, ignore
+            }
+            currentSocket.destroy();
             this.ipcSocket = null;
         }
 
-        if (this.process) {
-            this.process.kill('SIGTERM');
-            this.process = null;
+        // Kill process and wait for it to exit
+        if (currentProcess) {
+            return new Promise((resolve) => {
+                let resolved = false;
+                
+                // Set up exit handler
+                const onExit = () => {
+                    if (resolved) return;
+                    resolved = true;
+                    
+                    this.process = null;
+                    this.isPlayingState = false;
+                    this.currentFilePath = null;
+                    this.pendingRequests.clear();
+                    
+                    // Clean up socket file
+                    if (this.ipcSocketPath && fs.existsSync(this.ipcSocketPath)) {
+                        try { 
+                            fs.unlinkSync(this.ipcSocketPath); 
+                        } catch (e) {
+                            // Ignore errors
+                        }
+                    }
+                    
+                    resolve();
+                };
+
+                // Check if process already exited
+                if (currentProcess.exitCode !== null) {
+                    onExit();
+                    return;
+                }
+
+                // Set up exit listeners
+                currentProcess.once('exit', onExit);
+                currentProcess.once('close', onExit);
+
+                // Kill the process
+                try {
+                    if (!currentProcess.killed) {
+                        currentProcess.kill('SIGTERM');
+                    } else {
+                        // Already killed, resolve immediately
+                        onExit();
+                        return;
+                    }
+                } catch (e) {
+                    // Process might already be dead
+                    onExit();
+                    return;
+                }
+
+                // Timeout fallback - force kill after 1 second if still running
+                setTimeout(() => {
+                    if (!resolved && currentProcess && currentProcess.exitCode === null) {
+                        try {
+                            if (!currentProcess.killed) {
+                                currentProcess.kill('SIGKILL');
+                            }
+                        } catch (e) {
+                            // Ignore
+                        }
+                        // Resolve anyway after timeout
+                        onExit();
+                    }
+                }, 1000);
+            });
         }
 
-        if (this.ipcSocketPath && fs.existsSync(this.ipcSocketPath)) {
-            try { fs.unlinkSync(this.ipcSocketPath); } catch (e) { }
-        }
-
+        // No process to stop, just clean up
         this.isPlayingState = false;
         this.currentFilePath = null;
         this.pendingRequests.clear();
+        
+        if (this.ipcSocketPath && fs.existsSync(this.ipcSocketPath)) {
+            try { 
+                fs.unlinkSync(this.ipcSocketPath); 
+            } catch (e) {
+                // Ignore errors
+            }
+        }
     }
 
     /**

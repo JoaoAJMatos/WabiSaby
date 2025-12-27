@@ -536,8 +536,9 @@ function updateQueueUI(data, shuffleEnabled = false) {
             const isDownloading = item.type === 'url' && item.downloading;
             const progress = item.downloadProgress || 0;
             
-            // Use item content as unique ID for progress tracking
-            const itemId = item.content || item.title || `item-${index}`;
+            // Use stable identifier for progress tracking (ID doesn't change when item is downloaded)
+            // Fallback to sourceUrl or content if ID not available
+            const itemId = item.id ? `item-${item.id}` : (item.sourceUrl || item.content || `item-${index}`);
             
             // Add loading class and progress CSS variable for downloading items
             if (isDownloading) {
