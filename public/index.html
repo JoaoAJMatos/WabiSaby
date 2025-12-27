@@ -35,6 +35,114 @@
         
         const loadingMessageEl = document.getElementById('loading-message');
         
+        // Startup sound handling - plays immediately and waits for completion
+        let startupSoundPlayed = false;
+        let startupAudio = null;
+        let soundFinished = false;
+        let soundDuration = null;
+        
+        // Initialize and start sound immediately
+        (function initAndPlaySound() {
+            try {
+                startupAudio = new Audio('assets/startup-sound.mp3');
+                startupAudio.volume = 0.5; // Set volume to 50% to avoid being too loud
+                startupAudio.preload = 'auto';
+                
+                // Track when sound starts playing
+                startupAudio.addEventListener('play', () => {
+                    startupSoundPlayed = true;
+                    console.log('✓ Startup sound started playing');
+                }, { once: true });
+                
+                // Track when sound ends - this is what we'll wait for
+                startupAudio.addEventListener('ended', () => {
+                    soundFinished = true;
+                    console.log('✓ Startup sound finished playing');
+                }, { once: true });
+                
+                // Get duration when metadata loads
+                startupAudio.addEventListener('loadedmetadata', () => {
+                    soundDuration = startupAudio.duration;
+                    console.log(`Startup sound duration: ${soundDuration.toFixed(2)}s`);
+                }, { once: true });
+                
+                // Try to play as soon as we have enough data
+                startupAudio.addEventListener('canplay', () => {
+                    console.log('Startup sound can play - attempting to start');
+                    playStartupSound();
+                }, { once: true });
+                
+                // Also try when loadeddata fires (even earlier)
+                startupAudio.addEventListener('loadeddata', () => {
+                    console.log('Startup sound data loaded - attempting to start');
+                    playStartupSound();
+                }, { once: true });
+                
+                // Handle errors
+                startupAudio.addEventListener('error', (e) => {
+                    console.error('Startup sound error:', e);
+                    console.error('Audio error details:', startupAudio.error);
+                    soundFinished = true; // Don't block redirect on error
+                });
+                
+                // Load the audio immediately
+                startupAudio.load();
+                
+                // Also try to play immediately (works if audio is cached)
+                playStartupSound();
+            } catch (error) {
+                console.error('Failed to create startup sound:', error);
+                soundFinished = true; // Don't block redirect on error
+            }
+        })();
+        
+        function playStartupSound() {
+            // Only play once
+            if (startupSoundPlayed || !startupAudio) {
+                return;
+            }
+            
+            try {
+                // Try to play immediately
+                const playPromise = startupAudio.play();
+                
+                if (playPromise !== undefined) {
+                    playPromise
+                        .then(() => {
+                            console.log('✓ Startup sound playing successfully');
+                            startupSoundPlayed = true;
+                        })
+                        .catch(err => {
+                            // Autoplay was blocked - will play on user interaction
+                            console.log('⚠ Startup sound autoplay blocked:', err.message);
+                            console.log('   Sound will play on first user interaction');
+                        });
+                }
+            } catch (error) {
+                console.error('Startup sound play error:', error);
+            }
+        }
+        
+        // Fallback: Play on first user interaction if autoplay was blocked
+        const playOnInteraction = (event) => {
+            if (!startupSoundPlayed) {
+                console.log('User interaction detected, playing startup sound...');
+                playStartupSound();
+            }
+        };
+        
+        // Listen for various user interactions
+        ['click', 'touchstart', 'keydown', 'mousedown'].forEach(event => {
+            document.addEventListener(event, playOnInteraction, { once: true, passive: true });
+        });
+        
+        // Also make the loading overlay clickable
+        const loadingOverlay = document.getElementById('loading-overlay');
+        if (loadingOverlay) {
+            loadingOverlay.addEventListener('click', playOnInteraction, { once: true, passive: true });
+            loadingOverlay.style.cursor = 'pointer'; // Show it's clickable
+        }
+        
         function updateLoadingMessage(text) {
             if (!loadingMessageEl) return;
             
@@ -45,19 +153,31 @@
             }, 150);
         }
         
-        function redirectWithDelay(url, finalMessage) {
+        async function redirectWithDelay(url, finalMessage) {
             const elapsedTime = Date.now() - pageLoadStartTime;
             const remainingTime = Math.max(0, MIN_LOADING_TIME - elapsedTime);
+            
+            // Wait for sound to finish playing, but don't wait forever
+            const maxWaitTime = soundDuration ? (soundDuration * 1000) + 500 : 5000; // Sound duration + 500ms buffer, or max 5s
+            const startWait = Date.now();
+            
+            // Wait for sound to finish or timeout
+            while (!soundFinished && (Date.now() - startWait) < maxWaitTime) {
+                await new Promise(resolve => setTimeout(resolve, 100));
+            }
+            
+            // Ensure minimum loading time
+            const totalDelay = Math.max(remainingTime, 0);
             
             if (finalMessage && loadingMessageEl) {
                 setTimeout(() => {
                     updateLoadingMessage(finalMessage);
-                }, Math.max(0, remainingTime - 500));
+                }, Math.max(0, totalDelay - 500));
             }
             
             setTimeout(() => {
                 window.location.replace(url);
-            }, remainingTime);
+            }, totalDelay);
         }
 
         (async function() {

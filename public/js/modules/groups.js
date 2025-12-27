@@ -5,7 +5,7 @@
 
 // Polling interval for pending confirmations
 let pendingConfirmationsPollInterval = null;
-const PENDING_CONFIRMATIONS_POLL_INTERVAL = 3000; // Poll every 3 seconds
+const PENDING_CONFIRMATIONS_POLL_INTERVAL = 10000; // Poll every 10 seconds
 
 function startPendingConfirmationsPolling() {
     // Clear any existing interval

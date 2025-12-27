@@ -313,8 +313,8 @@ function toggleStatsCollapse() {
 // Load overview on initial page load
 fetchOverviewView();
 
-// Fetch detailed stats every 10 seconds (less frequent, backend handles persistence)
-setInterval(fetchDetailedStats, 10000);
+// Fetch detailed stats every 30 seconds (less frequent, backend handles persistence)
+setInterval(fetchDetailedStats, 30000);
 // Initial fetch
 initStatsTabs();
 fetchDetailedStats();

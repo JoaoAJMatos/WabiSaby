@@ -2,7 +2,7 @@ const { logger } = require('../utils/logger.util');
 const { sendMessageWithMention } = require('../utils/helpers.util');
 const { deps } = require('./dependencies');
 const { t: i18n } = require('../utils/i18n.util');
-const dbService = require('../database/db.service');
+const dbService = require('../infrastructure/database/db.service');
 const playCommand = require('./implementations/play');
 const skipCommand = require('./implementations/skip');
 const queueCommand = require('./implementations/queue');
@@ -43,6 +43,7 @@ async function handleCommand(sock, msg, text) {
     const remoteJid = msg.key.remoteJid;
     const sender = msg.key.participant || msg.key.remoteJid;
     const [command, ...args] = text.trim().split(' ');
+    const commandId = `cmd-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`;
     
     const userLang = dbService.getUserLanguage(sender);
     
@@ -51,7 +52,20 @@ async function handleCommand(sock, msg, text) {
         userLang
     };
 
+    const commandLogger = logger.child({
+        component: 'commands',
+        context: {
+            commandId,
+            command,
+            sender,
+            groupId: remoteJid,
+            args
+        }
+    });
+
     try {
+        commandLogger.debug('Processing command');
+        
         switch (command) {
             case COMMANDS.PLAY:
                 await playCommand(sock, msg, args, depsWithLang);
@@ -95,10 +109,21 @@ async function handleCommand(sock, msg, text) {
                 break;
                 
             default:
+                commandLogger.warn('Unknown command received');
                 await sendMessageWithMention(sock, remoteJid, i18n('commands.unknown', userLang, { command }), sender);
         }
+        
+        commandLogger.debug('Command processed successfully');
     } catch (error) {
-        logger.error('Error handling command:', error);
+        commandLogger.error({
+            context: {
+                error: {
+                    message: error?.message,
+                    stack: error?.stack,
+                    name: error?.name
+                }
+            }
+        }, 'Error handling command:', error);
         await sendMessageWithMention(sock, remoteJid, i18n('commands.error', userLang), sender);
     }
 }

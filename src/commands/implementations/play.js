@@ -1,5 +1,5 @@
 const { deps: defaultDeps } = require('../dependencies');
-const rateLimitService = require('../../services/rate-limit.service');
+const rateLimitService = require('../../services/user/command-rate-limit.service');
 
 /**
  * !play command - Add a track to the queue

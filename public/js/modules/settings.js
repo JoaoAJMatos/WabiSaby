@@ -321,13 +321,13 @@ function startDiskUsagePolling() {
     // Load immediately
     loadDiskUsage();
     
-    // Then poll every 5 seconds
+    // Then poll every 30 seconds
     if (diskUsagePollInterval) {
         clearInterval(diskUsagePollInterval);
     }
     diskUsagePollInterval = setInterval(() => {
         loadDiskUsage(true); // Pass true to indicate it's a refresh (preserve expanded state)
-    }, 5000);
+    }, 30000);
 }
 
 function stopDiskUsagePolling() {

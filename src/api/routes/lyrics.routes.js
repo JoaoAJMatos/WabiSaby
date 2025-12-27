@@ -1,6 +1,5 @@
 const express = require('express');
-const lyricsService = require('../../services/lyrics.service');
-const { logger } = require('../../utils/logger.util');
+const lyricsController = require('../controllers/lyrics.controller');
 
 const router = express.Router();
 
@@ -14,29 +13,7 @@ const router = express.Router();
  * GET /api/lyrics?title=Song Title&artist=Artist&duration=180
  * Duration is optional but helps match the correct version of the song
  */
-router.get('/lyrics', async (req, res) => {
-    const { title, artist, duration } = req.query;
-    
-    if (!title) {
-        return res.status(400).json({ error: 'Title parameter is required' });
-    }
-    
-    try {
-        // Parse duration to number (it's in seconds)
-        const durationSec = duration ? parseFloat(duration) : null;
-        
-        const lyrics = await lyricsService.getLyrics(title, artist, durationSec);
-        
-        if (!lyrics) {
-            return res.status(404).json({ error: 'Lyrics not found' });
-        }
-        
-        res.json(lyrics);
-    } catch (error) {
-        logger.error(`Error in lyrics route: ${error.message}`);
-        res.status(500).json({ error: 'Internal server error' });
-    }
-});
+router.get('/lyrics', lyricsController.getLyrics);
 
 module.exports = { router };
 

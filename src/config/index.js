@@ -1,46 +1,38 @@
 const path = require('path');
 const fs = require('fs');
-const os = require('os');
-const { execSync } = require('child_process');
 require('dotenv').config();
 
+// Import specialized config classes
+const StorageConfig = require('./storage.config');
+const ServerConfig = require('./server.config');
+const DownloadConfig = require('./download.config');
+const PlaybackConfig = require('./playback.config');
+const LoggingConfig = require('./logging.config');
+const DefaultsConfig = require('./defaults');
+
 /**
- * Central Configuration for WppMusicBot
- * All paths, settings, and constants are managed here
+ * Central Configuration for WabiSaby
+ * Orchestrates all configuration sections
  */
 
 class Config {
     constructor() {
         this.rootDir = process.cwd();
         this.isDevMode = process.env.NODE_ENV === 'development' || process.env.DEV_MODE === 'true';
-        
-        // In dev mode, use local dev-storage directory
-        if (this.isDevMode) {
-            this.storageDir = path.join(this.rootDir, 'dev-storage');
-        } else {
-            const storagePath = process.env.STORAGE_DIR || process.env.STORAGE_PATH;
-            this.storageDir = storagePath 
-                ? (path.isAbsolute(storagePath) ? storagePath : path.join(this.rootDir, storagePath))
-                : this.getDefaultStorageDir();
-        }
-        
-        this.paths = {
-            storage: this.storageDir,
-            temp: path.join(this.storageDir, 'temp'),
-            data: path.join(this.storageDir, 'data'),
-            database: path.join(this.storageDir, 'data', 'wabisaby.db'),
-            auth: path.join(this.storageDir, 'auth'),
-            media: path.join(this.storageDir, 'media'),
-            thumbnails: path.join(this.storageDir, 'thumbnails'),
-        };
-        
-        this.files = {
-            queue: path.join(this.paths.data, 'queue.json'),
-            priority: path.join(this.paths.data, 'priority.json'),
-            stats: path.join(this.paths.data, 'stats.json'),
-            groups: path.join(this.paths.data, 'groups.json'),
-            settings: path.join(this.paths.data, 'settings.json'),
-        };
+
+        // Initialize specialized configs
+        this.storageConfig = new StorageConfig(this.rootDir, this.isDevMode);
+        this.serverConfig = ServerConfig;
+        this.downloadConfig = new DownloadConfig(this.storageConfig);
+        this.playbackConfig = PlaybackConfig;
+        this.loggingConfig = LoggingConfig;
+        this.defaultsConfig = DefaultsConfig;
+
+        // Expose configurations through unified interface
+        this.paths = this.storageConfig.paths;
+        this.files = this.storageConfig.files;
+
+        // API credentials (not configurable via database)
         this.spotify = {
             clientId: process.env.SPOTIFY_CLIENT_ID || null,
             clientSecret: process.env.SPOTIFY_CLIENT_SECRET || null,
@@ -48,30 +40,23 @@ class Config {
         this.youtube = {
             apiKey: process.env.YOUTUBE_API_KEY || null,
         };
-        
+
         // Initialize settings with defaults to avoid undefined access
         // These will be overridden by loadSettings() when database is available
         const defaults = this.getDefaultSettings();
-        this.server = { 
-            ...defaults.server,
-            port: process.env.PORT ? parseInt(process.env.PORT, 10) : defaults.server.port,
-            host: process.env.HOST || defaults.server.host,
-        };
+        this.server = this.serverConfig.getConfig();
         this.whatsapp = {
             ...defaults.whatsapp,
             targetGroupId: process.env.TARGET_GROUP_ID || null,
         };
-        this.download = { ...defaults.download };
-        this.playback = { ...defaults.playback };
-        // In dev mode, ensure debug logging is enabled even if settings override it
-        this.logging = this.isDevMode 
-            ? { level: 'debug', pretty: true }
-            : { ...defaults.logging };
+        this.download = this.downloadConfig.getConfig();
+        this.playback = this.playbackConfig.getConfig();
+        this.logging = this.loggingConfig.getConfig(this.isDevMode);
         this.performance = { ...defaults.performance };
         this.notifications = { ...defaults.notifications };
         this.privacy = { ...defaults.privacy };
-        
-        this.initializeStorage();
+
+        this.storageConfig.initializeStorage();
         // Don't load settings in constructor to avoid circular dependency
         // Settings will be loaded lazily on first access or explicitly after initialization
         this._settingsLoaded = false;
@@ -82,73 +67,14 @@ class Config {
      * @returns {string} Path to default storage directory
      */
     getDefaultStorageDir() {
-        const appName = 'wabi-saby';
-        const homeDir = os.homedir();
-        const platform = process.platform;
-        
-        // Use platform-specific standard locations
-        if (platform === 'darwin') {
-            // macOS: ~/Library/Application Support/wabi-saby
-            return path.join(homeDir, 'Library', 'Application Support', appName);
-        } else if (platform === 'win32') {
-            // Windows: %APPDATA%\wabi-saby
-            const appData = process.env.APPDATA || path.join(homeDir, 'AppData', 'Roaming');
-            return path.join(appData, appName);
-        } else {
-            // Linux and other Unix-like systems: ~/.local/share/wabi-saby
-            return path.join(homeDir, '.local', 'share', appName);
-        }
+        return this.storageConfig.getDefaultStorageDir();
     }
     
     /**
      * Get default settings (used when no persisted settings exist)
      */
     getDefaultSettings() {
-        const loggingDefaults = this.isDevMode 
-            ? { level: 'debug', pretty: true }
-            : { level: 'info', pretty: true };
-        
-        const wppBrowserName = this.isDevMode ? 'WabiSaby-Dev' : 'WabiSaby';
-
-        return {
-            server: {
-                port: 3000,
-                host: 'localhost',
-            },
-            whatsapp: {
-                browserName: wppBrowserName,
-                browserVersion: '1.0.0',
-            },
-            download: {
-                audioFormat: 'mp3',
-                audioQuality: '128k',
-                downloadThumbnails: true,
-                thumbnailFormat: 'jpg',
-                playerClient: 'android',
-                maxFilenameLength: 50,
-            },
-            playback: {
-                cleanupAfterPlay: true,
-                cleanupOnStartup: false,
-                songTransitionDelay: 100,
-                confirmSkip: true,
-                showRequesterName: true,
-                shuffleEnabled: false,
-                repeatMode: 'off',
-            },
-            logging: loggingDefaults,
-            performance: {
-                prefetchNext: true,
-                prefetchCount: 0,
-            },
-            notifications: {
-                enabled: true,
-                notifyAtPosition: 1,
-            },
-            privacy: {
-                demoMode: false,
-            },
-        };
+        return this.defaultsConfig.getDefaultSettings();
     }
     
     /**
@@ -158,14 +84,14 @@ class Config {
         if (this._settingsLoaded) {
             return; // Already loaded
         }
-        
+
         let loadedSettings = {};
-        
+
         // Try to load from database first
         try {
-            const dbService = require('../database/db.service');
+            const dbService = require('./infrastructure/database/db.service');
             const dbSettings = dbService.getAllSettings();
-            
+
             // Convert flat key-value to nested structure
             if (dbSettings.server) loadedSettings.server = dbSettings.server;
             if (dbSettings.whatsapp) loadedSettings.whatsapp = dbSettings.whatsapp;
@@ -187,21 +113,14 @@ class Config {
                 }
             }
         }
-        
+
         // Get defaults and merge with loaded settings
         const defaults = this.getDefaultSettings();
-        
-        // Merge settings (loaded settings override defaults)
-        // PORT and HOST can be set via .env (takes precedence) or settings
-        this.server = { 
-            ...defaults.server, 
-            ...loadedSettings.server,
-            // Environment variables take precedence over settings
-            port: process.env.PORT ? parseInt(process.env.PORT, 10) : (loadedSettings.server?.port || defaults.server.port),
-            host: process.env.HOST || loadedSettings.server?.host || defaults.server.host,
-        };
-        this.whatsapp = { 
-            ...defaults.whatsapp, 
+
+        // Update configurations with loaded settings
+        this.server = this.serverConfig.getConfig();
+        this.whatsapp = {
+            ...defaults.whatsapp,
             ...loadedSettings.whatsapp,
             // Keep targetGroupId from .env (secret) - don't override with loaded settings
             targetGroupId: process.env.TARGET_GROUP_ID || null,
@@ -209,13 +128,13 @@ class Config {
         this.download = { ...defaults.download, ...loadedSettings.download };
         this.playback = { ...defaults.playback, ...loadedSettings.playback };
         // In dev mode, always use debug logging regardless of saved settings
-        this.logging = this.isDevMode 
+        this.logging = this.isDevMode
             ? { level: 'debug', pretty: true }
             : { ...defaults.logging, ...loadedSettings.logging };
         this.performance = { ...defaults.performance, ...loadedSettings.performance };
         this.notifications = { ...defaults.notifications, ...loadedSettings.notifications };
         this.privacy = { ...defaults.privacy, ...(loadedSettings.privacy || {}) };
-        
+
         this._settingsLoaded = true;
     }
     
@@ -233,8 +152,8 @@ class Config {
      */
     saveSettings() {
         try {
-            const dbService = require('../database/db.service');
-            
+            const dbService = require('./infrastructure/database/db.service');
+
             // Build server settings object - only include PORT/HOST if not set via .env
             const serverSettings = {};
             if (!process.env.PORT) {
@@ -243,7 +162,7 @@ class Config {
             if (!process.env.HOST) {
                 serverSettings.host = this.server.host;
             }
-            
+
             const settingsToSave = {
                 // Only include server object if it has properties
                 ...(Object.keys(serverSettings).length > 0 ? { server: serverSettings } : {}),
@@ -259,12 +178,12 @@ class Config {
                 notifications: this.notifications,
                 privacy: this.privacy,
             };
-            
+
             // Save each section as a separate setting
             Object.entries(settingsToSave).forEach(([key, value]) => {
                 dbService.setSetting(key, value);
             });
-            
+
             return true;
         } catch (err) {
             console.error('Failed to save settings:', err);
@@ -276,167 +195,15 @@ class Config {
      * Create all required storage directories
      */
     initializeStorage() {
-        const dirs = [
-            this.paths.storage,
-            this.paths.temp,
-            this.paths.data,
-            this.paths.auth,
-            this.paths.media,
-            this.paths.thumbnails,
-        ];
-        
-        dirs.forEach(dir => {
-            if (!fs.existsSync(dir)) {
-                fs.mkdirSync(dir, { recursive: true });
-            }
-        });
+        return this.storageConfig.initializeStorage();
     }
     
     /**
      * Cleanup temporary files
      */
     cleanupTempFiles() {
-        if (!this.playback.cleanupOnStartup) {
-            return;
-        }
-        
-        const tempDir = this.paths.temp;
-        if (!fs.existsSync(tempDir)) {
-            return;
-        }
-        
-        try {
-            // First, try to kill any orphaned ffplay processes that might be holding files
-            try {
-                const { execSync } = require('child_process');
-                if (process.platform === 'win32') {
-                    // On Windows, try to kill any ffplay.exe processes
-                    execSync('taskkill /f /im ffplay.exe 2>nul', { stdio: 'ignore' });
-                } else {
-                    // On Unix-like systems
-                    execSync('pkill -9 ffplay 2>/dev/null', { stdio: 'ignore' });
-                }
-            } catch (e) {
-                // Ignore errors - processes might not exist
-            }
-
-            // Processes should be killed immediately
-
-            const files = fs.readdirSync(tempDir);
-            let cleanedCount = 0;
-            const deletedFiles = [];
-            
-            // Get current song file path to exclude it from deletion
-            let currentSongPath = null;
-            try {
-                const playbackController = require('../core/playback.controller');
-                const currentSong = playbackController.getCurrent();
-                if (currentSong && currentSong.content) {
-                    currentSongPath = currentSong.content;
-                }
-            } catch (e) {
-                // PlaybackController might not be initialized yet, that's okay
-            }
-            
-            // Get queue file paths to exclude from deletion
-            const queueFilePaths = new Set();
-            try {
-                // Ensure queue is loaded by requiring the queue manager
-                const queueManager = require('../core/queue');
-                // Force load if not already loaded
-                queueManager.loadQueue();
-                const queue = queueManager.getQueue();
-                
-                queue.forEach(item => {
-                    // Check if item has a file path (not a URL)
-                    if (item.content) {
-                        const isFilePath = item.content.includes(path.sep) || 
-                                          item.content.startsWith('/') ||
-                                          (!item.content.startsWith('http://') && !item.content.startsWith('https://'));
-                        
-                        if (isFilePath && item.type === 'file') {
-                            // It's a file path - normalize it for comparison
-                            try {
-                                const normalizedPath = path.resolve(item.content);
-                                queueFilePaths.add(normalizedPath.toLowerCase()); // Case-insensitive on Windows
-                                // Also add the original path in case paths differ
-                                queueFilePaths.add(item.content.toLowerCase());
-                                // Add just the filename in case of path differences
-                                const fileName = path.basename(item.content);
-                                if (fileName) {
-                                    queueFilePaths.add(fileName.toLowerCase());
-                                }
-                            } catch (e) {
-                                // Path resolution failed, just use original
-                                queueFilePaths.add(item.content.toLowerCase());
-                            }
-                        }
-                    }
-                    // Also check thumbnail paths
-                    if (item.thumbnail) {
-                        try {
-                            const normalizedThumb = path.resolve(item.thumbnail);
-                            queueFilePaths.add(normalizedThumb.toLowerCase());
-                            queueFilePaths.add(item.thumbnail.toLowerCase());
-                        } catch (e) {
-                            queueFilePaths.add(item.thumbnail.toLowerCase());
-                        }
-                    }
-                });
-                
-                if (queueFilePaths.size > 0) {
-                    logger.info(`Protecting ${queueFilePaths.size} file paths from cleanup (queue items)`);
-                }
-            } catch (e) {
-                // QueueManager might not be initialized yet, that's okay
-                logger.warn('Could not load queue for cleanup check:', e.message);
-            }
-            
-            for (const file of files) {
-                const filePath = path.join(tempDir, file);
-                const normalizedFilePath = path.resolve(filePath);
-                const filePathLower = filePath.toLowerCase();
-                const normalizedFilePathLower = normalizedFilePath.toLowerCase();
-                const fileNameLower = file.toLowerCase();
-                
-                // Skip if this is the current song file
-                if (currentSongPath) {
-                    const currentSongPathLower = currentSongPath.toLowerCase();
-                    const normalizedCurrentSongPath = path.resolve(currentSongPath).toLowerCase();
-                    if (filePathLower === currentSongPathLower || 
-                        normalizedFilePathLower === normalizedCurrentSongPath) {
-                        continue;
-                    }
-                }
-                
-                // Skip if this file is referenced in the queue (case-insensitive comparison)
-                if (queueFilePaths.has(filePathLower) || 
-                    queueFilePaths.has(normalizedFilePathLower) ||
-                    queueFilePaths.has(fileNameLower)) {
-                    logger.debug(`Skipping cleanup of queue file: ${file}`);
-                    continue;
-                }
-                
-                try {
-                    fs.unlinkSync(filePath);
-                    cleanedCount++;
-                    deletedFiles.push(filePath);
-                } catch (err) {
-                    console.error(`Failed to delete temp file ${file}:`, err);
-                }
-            }
-            
-            if (cleanedCount > 0) {
-                logger.info(`Cleaned up ${cleanedCount} temp files on startup.`);
-                if (deletedFiles.length > 0 && deletedFiles.length <= 10) {
-                    logger.debug(`Deleted files: ${deletedFiles.join(', ')}`);
-                }
-            } else {
-                logger.debug('No temp files to clean up on startup.');
-            }
-        } catch (err) {
-            console.error('Failed to cleanup temp directory:', err);
-        }
+        const services = require('../services');
+        return this.storageConfig.cleanupTempFiles(services.playback.orchestrator, services.playback.queue);
     }
     
     /**
@@ -445,16 +212,7 @@ class Config {
      * @returns {string} Path with date subdirectory
      */
     getDateSubdirectory(baseDir) {
-        const now = new Date();
-        const dateStr = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}-${String(now.getDate()).padStart(2, '0')}`;
-        const dateDir = path.join(baseDir, dateStr);
-        
-        // Ensure directory exists
-        if (!fs.existsSync(dateDir)) {
-            fs.mkdirSync(dateDir, { recursive: true });
-        }
-        
-        return dateDir;
+        return this.storageConfig.getDateSubdirectory(baseDir);
     }
     
     /**
@@ -464,11 +222,7 @@ class Config {
      * @returns {string} Safe filename with timestamp
      */
     getOutputFilename(title, extension = null) {
-        const ext = extension || this.download.audioFormat;
-        const safeTitle = title
-            .replace(/[^a-z0-9]/gi, '_')
-            .substring(0, this.download.maxFilenameLength);
-        return `${safeTitle}_${Date.now()}.${ext}`;
+        return this.downloadConfig.getOutputFilename(title, extension);
     }
     
     /**
@@ -480,19 +234,7 @@ class Config {
      * @returns {string} Full path to output file
      */
     getOutputPath(title, extension = null, useTempDir = true, organizeByDate = null) {
-        const filename = this.getOutputFilename(title, extension);
-        
-        // Default: organize media by date, but not temp files
-        const shouldOrganize = organizeByDate !== null ? organizeByDate : !useTempDir;
-        
-        let targetDir;
-        if (useTempDir) {
-            targetDir = this.paths.temp;
-        } else {
-            targetDir = shouldOrganize ? this.getDateSubdirectory(this.paths.media) : this.paths.media;
-        }
-        
-        return path.join(targetDir, filename);
+        return this.downloadConfig.getOutputPath(title, extension, useTempDir, organizeByDate);
     }
     
     /**
@@ -503,25 +245,7 @@ class Config {
      * @returns {string} Full path to thumbnail file
      */
     getThumbnailPath(title, url = null, organizeByDate = true) {
-        const crypto = require('crypto');
-        
-        // Use URL hash if available for better deduplication, otherwise use title + timestamp
-        let filename;
-        if (url) {
-            const hash = crypto.createHash('md5').update(url).digest('hex').substring(0, 12);
-            filename = `thumb_${hash}.${this.download.thumbnailFormat}`;
-        } else {
-            const safeTitle = title
-                .replace(/[^a-z0-9]/gi, '_')
-                .substring(0, this.download.maxFilenameLength);
-            filename = `${safeTitle}_${Date.now()}.${this.download.thumbnailFormat}`;
-        }
-        
-        const targetDir = organizeByDate 
-            ? this.getDateSubdirectory(this.paths.thumbnails)
-            : this.paths.thumbnails;
-        
-        return path.join(targetDir, filename);
+        return this.downloadConfig.getThumbnailPath(title, url, organizeByDate);
     }
     
     /**
@@ -530,26 +254,29 @@ class Config {
      */
     validate() {
         const warnings = [];
+
+        // Check audio backend availability
+        // Only warn about FFmpeg if MPV is not available (MPV is preferred and doesn't require FFmpeg)
+        const { isCommandInPath } = require('../utils/dependencies.util');
+        const hasMPV = isCommandInPath('mpv');
         
-        // Check if FFmpeg is available (basic check)
-        // This is a simple warning - actual validation happens when spawning processes
-        if (process.platform === 'win32') {
-            warnings.push('Make sure FFmpeg is installed and in your PATH');
+        if (!hasMPV) {
+            // MPV not available, check if FFmpeg/ffplay is available
+            const { isFFplayAvailable } = require('../utils/dependencies.util');
+            if (!isFFplayAvailable()) {
+                // Neither MPV nor ffplay available - warn about FFmpeg
+                warnings.push('Make sure FFmpeg is installed and in your PATH (or install MPV for better performance)');
+            }
         }
-        
-        // Validate port
-        if (this.server.port < 1 || this.server.port > 65535) {
-            warnings.push(`Invalid port number: ${this.server.port}. Using default: 3000`);
-            this.server.port = 3000;
-        }
-        
-        // Validate audio quality format
-        const validQualityPattern = /^\d+k$/;
-        if (!validQualityPattern.test(this.download.audioQuality)) {
-            warnings.push(`Invalid audio quality format: ${this.download.audioQuality}. Should be like "128k" or "256k". Using default: 128k`);
-            this.download.audioQuality = '128k';
-        }
-        
+
+        // Validate server config
+        const serverWarnings = this.serverConfig.validate(this.server);
+        warnings.push(...serverWarnings);
+
+        // Validate download config
+        const downloadWarnings = this.downloadConfig.validate(this.download);
+        warnings.push(...downloadWarnings);
+
         return {
             valid: warnings.length === 0,
             warnings
@@ -568,13 +295,13 @@ class Config {
      * Print current configuration (for debugging)
      */
     print() {
-        console.log('\n=== WppMusicBot Configuration ===');
+        console.log('\n=== WabiSaby Configuration ===');
         console.log('Storage Locations:');
         Object.entries(this.paths).forEach(([key, value]) => {
             console.log(`  ${key}: ${value}`);
         });
         console.log('\nServer:');
-        console.log(`  URL: http://${this.server.host}:${this.server.port}`);
+        console.log(`  URL: ${this.serverConfig.getUrl(this.server)}`);
         console.log('\nDownload Settings:');
         console.log(`  Audio Format: ${this.download.audioFormat}`);
         console.log(`  Audio Quality: ${this.download.audioQuality}`);

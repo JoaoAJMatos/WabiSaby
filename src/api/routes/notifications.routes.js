@@ -1,6 +1,5 @@
 const express = require('express');
-const notificationService = require('../../services/notification.service');
-const { logger } = require('../../utils/logger.util');
+const notificationsController = require('../controllers/notifications.controller');
 
 const router = express.Router();
 
@@ -13,39 +12,25 @@ const router = express.Router();
  * Get notification service status
  * GET /api/notifications/status
  */
-router.get('/notifications/status', (req, res) => {
-    res.json({ 
-        enabled: notificationService.isEnabled,
-        historySize: notificationService.notifiedSongs.size
-    });
-});
+router.get('/notifications/status', notificationsController.getStatus);
 
 /**
  * Enable notifications
  * POST /api/notifications/enable
  */
-router.post('/notifications/enable', (req, res) => {
-    notificationService.setEnabled(true);
-    res.json({ success: true, message: 'Notifications enabled' });
-});
+router.post('/notifications/enable', notificationsController.enable);
 
 /**
  * Disable notifications
  * POST /api/notifications/disable
  */
-router.post('/notifications/disable', (req, res) => {
-    notificationService.setEnabled(false);
-    res.json({ success: true, message: 'Notifications disabled' });
-});
+router.post('/notifications/disable', notificationsController.disable);
 
 /**
  * Clear notification history
  * POST /api/notifications/clear
  */
-router.post('/notifications/clear', (req, res) => {
-    notificationService.clearHistory();
-    res.json({ success: true, message: 'Notification history cleared' });
-});
+router.post('/notifications/clear', notificationsController.clearHistory);
 
 module.exports = { router };
 

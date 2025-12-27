@@ -19,9 +19,17 @@ function initializeErrorHandlers() {
             return;
         }
         
-        const errorMsg = reason?.message || String(reason);
-        logger.error('[Unhandled Rejection]', errorMsg);
-        logger.error('Promise:', promise);
+        // Log detailed error information
+        const errorMsg = reason?.message || String(reason) || 'Unknown error';
+        const errorStack = reason?.stack || 'No stack trace available';
+        const errorType = reason?.constructor?.name || typeof reason;
+        
+        logger.error(`[Unhandled Rejection] ${errorType}: ${errorMsg}`);
+        logger.error(`Stack: ${errorStack}`);
+        if (reason && typeof reason === 'object') {
+            logger.error(`Error object keys: ${Object.keys(reason).join(', ')}`);
+            logger.error(`Full error: ${JSON.stringify(reason, Object.getOwnPropertyNames(reason), 2)}`);
+        }
     });
 
     process.on('uncaughtException', (error) => {

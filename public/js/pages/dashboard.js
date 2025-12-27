@@ -72,16 +72,104 @@ let currentAuthState = {
 // Groups count tracking for onboarding hints
 let groupsCount = 0;
 
+// Progress smoothing: Track previous progress values and animate smoothly
+const progressSmoothing = {
+    // Store previous progress for each item (keyed by item content/ID)
+    previousProgress: new Map(),
+    // Store active animations
+    activeAnimations: new Map(),
+    
+    /**
+     * Smoothly animate progress from old value to new value
+     * @param {HTMLElement} element - The queue item element
+     * @param {number} oldProgress - Previous progress value (0-100)
+     * @param {number} newProgress - New progress value (0-100)
+     * @param {string} itemId - Unique identifier for the item
+     */
+    animateProgress(element, oldProgress, newProgress, itemId) {
+        // Cancel any existing animation for this item
+        if (this.activeAnimations.has(itemId)) {
+            cancelAnimationFrame(this.activeAnimations.get(itemId));
+        }
+        
+        // If the jump is small (< 5%), update immediately
+        const jump = Math.abs(newProgress - oldProgress);
+        if (jump < 5) {
+            element.style.setProperty('--progress', `${newProgress}%`);
+            this.previousProgress.set(itemId, newProgress);
+            return;
+        }
+        
+        // For larger jumps, animate smoothly
+        const startProgress = oldProgress;
+        const endProgress = newProgress;
+        const duration = Math.min(1000, Math.max(300, jump * 10)); // 10ms per percent, min 300ms, max 1000ms
+        const startTime = performance.now();
+        
+        const animate = (currentTime) => {
+            const elapsed = currentTime - startTime;
+            const progress = Math.min(1, elapsed / duration);
+            
+            // Use easing function for smooth animation
+            const eased = this.easeInOutCubic(progress);
+            const currentProgress = startProgress + (endProgress - startProgress) * eased;
+            
+            element.style.setProperty('--progress', `${currentProgress}%`);
+            
+            if (progress < 1) {
+                const frameId = requestAnimationFrame(animate);
+                this.activeAnimations.set(itemId, frameId);
+            } else {
+                // Animation complete
+                element.style.setProperty('--progress', `${endProgress}%`);
+                this.previousProgress.set(itemId, endProgress);
+                this.activeAnimations.delete(itemId);
+            }
+        };
+        
+        const frameId = requestAnimationFrame(animate);
+        this.activeAnimations.set(itemId, frameId);
+    },
+    
+    /**
+     * Easing function for smooth animation
+     */
+    easeInOutCubic(t) {
+        return t < 0.5 ? 4 * t * t * t : 1 - Math.pow(-2 * t + 2, 3) / 2;
+    },
+    
+    /**
+     * Get previous progress for an item
+     */
+    getPreviousProgress(itemId) {
+        return this.previousProgress.get(itemId) || 0;
+    },
+    
+    /**
+     * Clean up animations for removed items
+     */
+    cleanup(itemId) {
+        if (this.activeAnimations.has(itemId)) {
+            cancelAnimationFrame(this.activeAnimations.get(itemId));
+            this.activeAnimations.delete(itemId);
+        }
+        this.previousProgress.delete(itemId);
+    }
+};
+
 async function fetchData() {
     try {
         const response = await fetch('/api/status');
         const data = await response.json();
         
         // Check auth status first - redirect if not connected
-        if (data.auth && !data.auth.isConnected) {
+        // Only redirect if we're actually on the dashboard page (prevents loops)
+        const isOnDashboard = window.location.pathname.includes('dashboard');
+        if (isOnDashboard && data.auth && !data.auth.isConnected) {
             // Not authenticated - redirect to auth page
+            // Don't connect SSE if we're redirecting
             window.location.href = '/pages/auth.html';
-            return;
+            return Promise.resolve(); // Return resolved promise to prevent SSE connection
         }
         
         // Update auth UI (status badge only)
@@ -120,10 +208,14 @@ async function fetchData() {
         // Update other UI components
         updateQueueUI(data.queue, data.shuffleEnabled);
         updateStatsUI(data.stats);
+        
+        return Promise.resolve(); // Return resolved promise
     } catch (error) {
         console.error('Error fetching status:', error);
+        return Promise.reject(error); // Return rejected promise
     }
 }
+
 function updateQueueUI(data, shuffleEnabled = false) {
     const { queue, currentSong } = data;
     
@@ -439,31 +531,45 @@ function updateQueueUI(data, shuffleEnabled = false) {
             const artist = item.artist || '';
             const requester = item.requester || 'Unknown';
             
-            // Determine status display
+            // Determine status display and loading state
             let statusHTML = '';
+            const isDownloading = item.type === 'url' && item.downloading;
+            const progress = item.downloadProgress || 0;
+            
+            // Use item content as unique ID for progress tracking
+            const itemId = item.content || item.title || `item-${index}`;
+            
+            // Add loading class and progress CSS variable for downloading items
+            if (isDownloading) {
+                li.classList.add('loading');
+                
+                // Get previous progress for this item
+                const previousProgress = progressSmoothing.getPreviousProgress(itemId);
+                
+                // Smoothly animate from previous to new progress
+                if (previousProgress !== progress) {
+                    progressSmoothing.animateProgress(li, previousProgress, progress, itemId);
+                } else {
+                    // First time or no change, set directly
+                    li.style.setProperty('--progress', `${progress}%`);
+                    progressSmoothing.previousProgress.set(itemId, progress);
+                }
+            } else {
+                li.classList.remove('loading');
+                li.style.removeProperty('--progress');
+                // Clean up when not downloading
+                progressSmoothing.cleanup(itemId);
+            }
+            
+            // Status badges for non-downloading states
             if (item.downloadStatus === 'error') {
                 // Show error status
                 const failedText = window.i18n?.tSync('ui.dashboard.queue.status.failed') || 'FAILED';
                 statusHTML = `<div class="status-badge-small error"><i class="fas fa-exclamation-triangle"></i> <span data-i18n="ui.dashboard.queue.status.failed">${failedText}</span></div>`;
-            } else if (item.type === 'url' && item.downloading) {
-                const progress = item.downloadProgress || 0;
-                const status = item.downloadStatus || 'waiting';
-                const statusKey = `ui.dashboard.queue.status.${status}`;
-                const statusText = window.i18n?.tSync(statusKey) || status.toUpperCase();
-                
-                statusHTML = `
-                    <div class="download-status">
-                        <div class="status-text" data-i18n="${statusKey}">${statusText}</div>
-                        <div class="progress-bar-small">
-                            <div class="progress-fill" style="width: ${progress}%"></div>
-                        </div>
-                        <div class="progress-percent">${Math.round(progress)}%</div>
-                    </div>
-                `;
             } else if (item.type === 'file' || item.downloadStatus === 'ready') {
                 const readyText = window.i18n?.tSync('ui.dashboard.queue.status.ready') || 'READY';
                 statusHTML = `<div class="status-badge-small ready"><i class="fas fa-check-circle"></i> <span data-i18n="ui.dashboard.queue.status.ready">${readyText}</span></div>`;
-            } else if (item.type === 'url') {
+            } else if (item.type === 'url' && !isDownloading) {
                 const queuedText = window.i18n?.tSync('ui.dashboard.queue.status.queued') || 'QUEUED';
                 statusHTML = `<div class="status-badge-small queued"><i class="fas fa-circle"></i> <span data-i18n="ui.dashboard.queue.status.queued">${queuedText}</span></div>`;
             }
@@ -1358,14 +1464,107 @@ initializeVipArea();
 // Check VIP password setup after initialization
 checkVipPasswordSetup();
 
-// Polling interval handles both queue updates and auth checks
-setInterval(fetchData, 2000);
+// Connect to SSE stream for real-time status updates
+let statusEventSource = null;
+
+function connectStatusSSE() {
+    if (statusEventSource) {
+        statusEventSource.close();
+    }
+    
+    statusEventSource = new EventSource('/api/status/stream');
+    
+    statusEventSource.onopen = () => {
+        console.log('Status SSE connection opened');
+    };
+    
+    statusEventSource.onerror = () => {
+        console.error('Status SSE connection error');
+        
+        // Try to reconnect after 3 seconds
+        setTimeout(() => {
+            if (statusEventSource && statusEventSource.readyState === EventSource.CLOSED) {
+                connectStatusSSE();
+            }
+        }, 3000);
+    };
+    
+    statusEventSource.onmessage = (event) => {
+        try {
+            const data = JSON.parse(event.data);
+            // Reuse existing fetchData logic to update UI
+            handleStatusUpdate(data);
+        } catch (e) {
+            console.error('Failed to parse status SSE data:', e);
+        }
+    };
+    
+    statusEventSource.addEventListener('connected', () => {
+        console.log('Status SSE connected');
+    });
+}
+
+function handleStatusUpdate(data) {
+    // NEVER redirect from SSE updates - only update UI
+    // Redirects should only happen from the initial fetchData() call
+    // This prevents redirect loops when fallback status is sent during startup
+    // or when status changes while user is navigating
+    
+    // Update auth UI (status badge only)
+    if (data.auth) {
+        updateAuthUI(data.auth);
+        
+        // Store current auth state for use in menu toggle
+        currentAuthState = {
+            isConnected: data.auth.isConnected || false,
+            actionRequired: data.auth.actionRequired || false
+        };
+        
+        // Track groups count for onboarding hints
+        if (typeof data.auth.groupsCount !== 'undefined') {
+            groupsCount = data.auth.groupsCount;
+            // Update onboarding hints based on groups count
+            updateGroupConfigurationHints(groupsCount, currentAuthState.isConnected);
+        }
+    }
+    
+    // Mark auth status as received
+    authStatusReceived = true;
+    
+    // Update shuffle state
+    if (typeof data.shuffleEnabled !== 'undefined') {
+        shuffleEnabled = data.shuffleEnabled;
+        updateShuffleButtonState();
+    }
+    
+    // Update repeat mode state
+    if (typeof data.repeatMode !== 'undefined') {
+        repeatMode = data.repeatMode;
+        updateRepeatButtonState();
+    }
+    
+    // Update other UI components
+    updateQueueUI(data.queue, data.shuffleEnabled);
+    updateStatsUI(data.stats);
+}
+
+// Initial fetch (will hide loading screen on success and handle auth redirect)
+// Connect to SSE AFTER initial fetch completes to avoid redirect loops
+fetchData().then(() => {
+    // Only connect SSE if we're still on the dashboard page (not redirected)
+    // This prevents SSE fallback status from triggering redirects
+    if (window.location.pathname.includes('dashboard')) {
+        connectStatusSSE();
+    }
+}).catch(() => {
+    // Even if fetch fails, only connect SSE if still on dashboard
+    if (window.location.pathname.includes('dashboard')) {
+        connectStatusSSE();
+    }
+});
 
 // Update progress bar and stats every second for smoother updates
 setInterval(updateProgressBarAndStats, 1000);
-
-// Initial fetch (will hide loading screen on success)
-fetchData();
 
 // Initialize translations after i18n is ready
 if (window.i18n) {

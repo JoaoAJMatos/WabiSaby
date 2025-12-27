@@ -21,23 +21,23 @@
  */
 
 // Core dependencies
-const queueManager = require('../core/queue');
-const playbackController = require('../core/playback.controller');
+const services = require('../services');
 
 // Service dependencies
-const { searchYouTube } = require('../services/search.service');
-const { getTrackInfo, getSpotifyMetadata } = require('../services/metadata.service');
-const { checkPriority } = require('../services/priority.service');
-const { getPlaylistTracks } = require('../services/playlist.service');
-const notificationService = require('../services/notification.service');
-const groupsService = require('../services/groups.service');
+const { searchYouTube } = require('../services/youtube/search.service');
+const { getTrackInfo } = require('../services/metadata/metadata.service');
+const { getSpotifyMetadata } = require('../services/spotify/metadata.service');
+const { checkPriority } = require('../services/user/priority.service');
+const { getPlaylistTracks } = require('../services/content/playlist.service');
+const notificationService = require('../services/system/notification.service');
+const groupsService = require('../services/user/groups.service');
 
 // Utility dependencies
 const { isSpotifyUrl, isYouTubeUrl, isPlaylistUrl } = require('../utils/url.util');
 const { logger } = require('../utils/logger.util');
 const { sendMessageWithMention } = require('../utils/helpers.util');
 const { t: i18n } = require('../utils/i18n.util');
-const dbService = require('../database/db.service');
+const dbService = require('../infrastructure/database/db.service');
 
 /**
  * Default dependencies for production use
@@ -45,8 +45,8 @@ const dbService = require('../database/db.service');
  */
 const deps = {
     // Core
-    queueManager,
-    playbackController,
+    queueManager: services.playback.queue,
+    playbackController: services.playback.orchestrator,
     
     // Services
     searchYouTube,

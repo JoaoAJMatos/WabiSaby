@@ -5,9 +5,9 @@
 
 const { test, expect, beforeEach } = require('bun:test');
 const sinon = require('sinon');
-const { initializeDatabase, getDatabase } = require('../../../src/database/index');
-const dbService = require('../../../src/database/db.service');
-const priorityService = require('../../../src/services/priority.service');
+const { initializeDatabase, getDatabase } = require('../../../src/infrastructure/database/index');
+const { infrastructure } = require('../../../src/infrastructure');
+const { services } = require('../../../src/services');
 const helpersUtil = require('../../../src/utils/helpers.util');
 const config = require('../../../src/config');
 
@@ -25,16 +25,16 @@ beforeEach(() => {
 });
 
 test('getPriorityUsers should return empty array when no priority users exist', () => {
-    const users = priorityService.getPriorityUsers();
+    const users = services.user.priority.getPriorityUsers();
     expect(Array.isArray(users)).toBe(true);
     expect(users.length).toBe(0);
 });
 
 test('getPriorityUsers should return all priority users', () => {
-    dbService.addPriorityUser('user1@whatsapp', 'User 1');
-    dbService.addPriorityUser('user2@whatsapp', 'User 2');
+    infrastructure.database.dbService.addPriorityUser('user1@whatsapp', 'User 1');
+    infrastructure.database.dbService.addPriorityUser('user2@whatsapp', 'User 2');
     
-    const users = priorityService.getPriorityUsers();
+    const users = services.user.priority.getPriorityUsers();
     expect(users.length).toBe(2);
     expect(users.some(u => u.whatsapp_id === 'user1@whatsapp')).toBe(true);
     expect(users.some(u => u.whatsapp_id === 'user2@whatsapp')).toBe(true);
@@ -42,7 +42,7 @@ test('getPriorityUsers should return all priority users', () => {
 
 test('getPriorityUsers should handle database errors gracefully', () => {
     // Test that it returns empty array on error (service catches errors)
-    const users = priorityService.getPriorityUsers();
+    const users = services.user.priority.getPriorityUsers();
     expect(Array.isArray(users)).toBe(true);
 });
 
@@ -57,7 +57,7 @@ test('checkPriority should return false for non-priority user', () => {
 });
 
 test('checkPriority should return true for priority user', () => {
-    dbService.addPriorityUser('vip@whatsapp', 'VIP User');
+    infrastructure.database.dbService.addPriorityUser('vip@whatsapp', 'VIP User');
     expect(priorityService.checkPriority('vip@whatsapp')).toBe(true);
 });
 
@@ -93,7 +93,7 @@ test('removePriorityUser should return false for null/undefined id', () => {
 });
 
 test('removePriorityUser should remove priority user successfully', () => {
-    dbService.addPriorityUser('vip@whatsapp', 'VIP User');
+    infrastructure.database.dbService.addPriorityUser('vip@whatsapp', 'VIP User');
     expect(priorityService.checkPriority('vip@whatsapp')).toBe(true);
     
     const result = priorityService.removePriorityUser('vip@whatsapp');
@@ -107,24 +107,24 @@ test('removePriorityUser should return false when user does not exist', () => {
 });
 
 test('updateVipName should do nothing for null/undefined name', () => {
-    dbService.addPriorityUser('vip@whatsapp', 'Old Name');
+    infrastructure.database.dbService.addPriorityUser('vip@whatsapp', 'Old Name');
     
     priorityService.updateVipName('vip@whatsapp', null);
     priorityService.updateVipName('vip@whatsapp', undefined);
     priorityService.updateVipName('vip@whatsapp', '');
     
     // Should not throw, but name might not update
-    const users = priorityService.getPriorityUsers();
+    const users = services.user.priority.getPriorityUsers();
     const user = users.find(u => u.whatsapp_id === 'vip@whatsapp');
     expect(user).toBeDefined();
 });
 
 test('updateVipName should update VIP name successfully', () => {
-    dbService.addPriorityUser('vip@whatsapp', 'Old Name');
+    infrastructure.database.dbService.addPriorityUser('vip@whatsapp', 'Old Name');
     
     priorityService.updateVipName('vip@whatsapp', 'New Name');
     
-    const users = priorityService.getPriorityUsers();
+    const users = services.user.priority.getPriorityUsers();
     const user = users.find(u => u.whatsapp_id === 'vip@whatsapp');
     expect(user).toBeDefined();
     expect(user.name).toBe('New Name');
@@ -139,7 +139,7 @@ test('savePriorityUsers should not throw (legacy compatibility function)', () =>
 });
 
 test('generateMobileToken should generate token for VIP user', () => {
-    dbService.addPriorityUser('vip@whatsapp', 'VIP User');
+    infrastructure.database.dbService.addPriorityUser('vip@whatsapp', 'VIP User');
     
     const token = priorityService.generateMobileToken('vip@whatsapp');
     
@@ -148,7 +148,7 @@ test('generateMobileToken should generate token for VIP user', () => {
     expect(token.length).toBeGreaterThan(0);
     
     // Verify token is stored in database
-    const storedToken = dbService.getMobileToken('vip@whatsapp');
+    const storedToken = infrastructure.database.dbService.getMobileToken('vip@whatsapp');
     expect(storedToken).toBe(token);
 });
 
@@ -159,7 +159,7 @@ test('generateMobileToken should return null for invalid whatsappId', () => {
 });
 
 test('regenerateMobileToken should generate new token and clear fingerprint', () => {
-    dbService.addPriorityUser('vip@whatsapp', 'VIP User');
+    infrastructure.database.dbService.addPriorityUser('vip@whatsapp', 'VIP User');
     
     // Generate initial token
     const firstToken = priorityService.generateMobileToken('vip@whatsapp');
@@ -182,7 +182,7 @@ test('regenerateMobileToken should generate new token and clear fingerprint', ()
     expect(vip.device_fingerprint).toBeNull();
     
     // Verify new token is stored
-    const storedToken = dbService.getMobileToken('vip@whatsapp');
+    const storedToken = infrastructure.database.dbService.getMobileToken('vip@whatsapp');
     expect(storedToken).toBe(newToken);
 });
 
@@ -193,7 +193,7 @@ test('regenerateMobileToken should return null for invalid whatsappId', () => {
 });
 
 test('getMobileAccessLink should return link with token', async () => {
-    dbService.addPriorityUser('vip@whatsapp', 'VIP User');
+    infrastructure.database.dbService.addPriorityUser('vip@whatsapp', 'VIP User');
     const token = priorityService.generateMobileToken('vip@whatsapp');
     
     const getLocalIPv4Stub = sinon.stub(helpersUtil, 'getLocalIPv4').resolves('192.168.1.100');
@@ -218,7 +218,7 @@ test('getMobileAccessLink should return link with token', async () => {
 });
 
 test('getMobileAccessLink should use config host if not localhost', async () => {
-    dbService.addPriorityUser('vip@whatsapp', 'VIP User');
+    infrastructure.database.dbService.addPriorityUser('vip@whatsapp', 'VIP User');
     const token = priorityService.generateMobileToken('vip@whatsapp');
     
     const originalHost = config.server.host;
@@ -239,7 +239,7 @@ test('getMobileAccessLink should use config host if not localhost', async () => 
 });
 
 test('getMobileAccessLink should return null when no token exists', async () => {
-    dbService.addPriorityUser('vip@whatsapp', 'VIP User');
+    infrastructure.database.dbService.addPriorityUser('vip@whatsapp', 'VIP User');
     // Don't generate token
     
     const link = await priorityService.getMobileAccessLink('vip@whatsapp');
@@ -248,7 +248,7 @@ test('getMobileAccessLink should return null when no token exists', async () => 
 });
 
 test('sendMobileAccessLink should send link via WhatsApp', async () => {
-    dbService.addPriorityUser('vip@whatsapp', 'VIP User');
+    infrastructure.database.dbService.addPriorityUser('vip@whatsapp', 'VIP User');
     const token = priorityService.generateMobileToken('vip@whatsapp');
     
     const mockSocket = {
@@ -281,7 +281,7 @@ test('sendMobileAccessLink should send link via WhatsApp', async () => {
 test('sendMobileAccessLink should return false when WhatsApp socket not available', async () => {
     priorityService.setWhatsAppSocket(null);
     
-    dbService.addPriorityUser('vip@whatsapp', 'VIP User');
+    infrastructure.database.dbService.addPriorityUser('vip@whatsapp', 'VIP User');
     priorityService.generateMobileToken('vip@whatsapp');
     
     const result = await priorityService.sendMobileAccessLink('vip@whatsapp');
@@ -290,7 +290,7 @@ test('sendMobileAccessLink should return false when WhatsApp socket not availabl
 });
 
 test('sendMobileAccessLink should return false when no token exists', async () => {
-    dbService.addPriorityUser('vip@whatsapp', 'VIP User');
+    infrastructure.database.dbService.addPriorityUser('vip@whatsapp', 'VIP User');
     // Don't generate token
     
     const mockSocket = {

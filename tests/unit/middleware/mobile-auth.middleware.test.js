@@ -4,7 +4,7 @@
 
 const { test, expect, beforeEach, afterEach } = require('bun:test');
 const sinon = require('sinon');
-const { authenticateMobile } = require('../../../src/api/routes/mobile-auth.middleware');
+const { authenticateMobile } = require('../../../src/api/middleware/auth.middleware');
 const dbService = require('../../../src/database/db.service');
 const { initializeDatabase, getDatabase } = require('../../../src/database/index');
 

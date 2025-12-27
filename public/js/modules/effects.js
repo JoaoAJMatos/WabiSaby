@@ -8,7 +8,7 @@ let effectsPresets = [];
 let effectsUpdateTimeout = null;
 let effectsBackend = 'ffplay';
 let effectsSeamless = false;
-let effectsPollInterval = null;
+let effectsEventSource = null;
 let effectsUpdateInProgress = false; // Flag to prevent overwriting local changes
 // Load effects mode from localStorage, default to 'simple'
 let effectsMode = localStorage.getItem('wabisaby_effects_mode') || 'simple';
@@ -47,8 +47,8 @@ async function loadEffects() {
             // Broadcast initial effects
             effectsBroadcast.postMessage({ type: 'EFFECTS_UPDATE', effects: currentEffects });
             
-            // Start periodic polling for cross-device synchronization
-            startEffectsPolling();
+            // Connect to SSE stream for cross-device synchronization
+            connectEffectsSSE();
         }
     } catch (err) {
         console.error('Failed to load effects:', err);
@@ -56,46 +56,60 @@ async function loadEffects() {
 }
 
 /**
- * Periodically poll for effects updates to sync across devices
+ * Connect to SSE stream for cross-device effects synchronization
  */
-async function pollEffects() {
-    // Don't poll if a local update is in progress
-    if (effectsUpdateInProgress) return;
+function connectEffectsSSE() {
+    if (effectsEventSource) {
+        effectsEventSource.close();
+    }
     
-    try {
-        const response = await fetch('/api/effects');
-        if (response.ok) {
-            const data = await response.json();
-            const newEffects = data.effects;
-            
-            // Only update if effects have actually changed
-            if (JSON.stringify(newEffects) !== JSON.stringify(currentEffects)) {
-                currentEffects = newEffects;
-                if (data.presets && data.presets.length > 0) {
-                    effectsPresets = data.presets;
-                }
-                updateEffectsUI(currentEffects);
-                renderEffectsPresets(effectsPresets, currentEffects.preset);
-                updateCurrentPresetDisplay(currentEffects.preset);
-                // Don't broadcast here to avoid loops - the change came from another device
+    effectsEventSource = new EventSource('/api/effects/stream');
+    
+    effectsEventSource.onopen = () => {
+        console.log('Effects SSE connection opened');
+    };
+    
+    effectsEventSource.onerror = () => {
+        console.error('Effects SSE connection error');
+        
+        // Try to reconnect after 3 seconds
+        setTimeout(() => {
+            if (effectsEventSource && effectsEventSource.readyState === EventSource.CLOSED) {
+                connectEffectsSSE();
             }
-        }
-    } catch (err) {
-        // Silently fail - polling errors shouldn't be disruptive
-    }
-}
-
-/**
- * Start periodic polling for effects updates (every 3 seconds)
- */
-function startEffectsPolling() {
-    // Clear any existing interval
-    if (effectsPollInterval) {
-        clearInterval(effectsPollInterval);
-    }
+        }, 3000);
+    };
     
-    // Poll every 3 seconds for cross-device synchronization
-    effectsPollInterval = setInterval(pollEffects, 3000);
+    effectsEventSource.onmessage = (event) => {
+        // Don't update if a local update is in progress
+        if (effectsUpdateInProgress) return;
+        
+        try {
+            const data = JSON.parse(event.data);
+            
+            if (data.type === 'EFFECTS_UPDATE' && data.effects) {
+                const newEffects = data.effects;
+                
+                // Only update if effects have actually changed
+                if (JSON.stringify(newEffects) !== JSON.stringify(currentEffects)) {
+                    currentEffects = newEffects;
+                    if (data.presets && data.presets.length > 0) {
+                        effectsPresets = data.presets;
+                    }
+                    updateEffectsUI(currentEffects);
+                    renderEffectsPresets(effectsPresets, currentEffects.preset);
+                    updateCurrentPresetDisplay(currentEffects.preset);
+                    // Don't broadcast here to avoid loops - the change came from another device
+                }
+            }
+        } catch (e) {
+            console.error('Failed to parse effects SSE data:', e);
+        }
+    };
+    
+    effectsEventSource.addEventListener('connected', () => {
+        console.log('Effects SSE connected');
+    });
 }
 
 /**

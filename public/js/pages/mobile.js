@@ -7,10 +7,10 @@
 let mobileToken = null;
 let deviceFingerprint = null;
 let isAuthenticated = false;
-let updateInterval = null;
 let currentEffects = null;
 let effectsPresets = [];
 let effectsEventSource = null;
+let mobileStatusEventSource = null;
 
 // Broadcast Channel for syncing effects across devices
 const effectsBroadcast = new BroadcastChannel('wabisaby_audio_channel');
@@ -108,10 +108,8 @@ function initializeMobileInterface() {
     fetchMobileStatus();
     loadMobileEffects();
     
-    // Set up periodic updates
-    updateInterval = setInterval(() => {
-        fetchMobileStatus();
-    }, 2000); // Update every 2 seconds
+    // Connect to SSE stream for real-time status updates
+    connectMobileStatusSSE();
     
     // Set up effects controls
     setupEffectsControls();
@@ -447,6 +445,48 @@ function setupEffectsBroadcastListener() {
     };
 }
 
+// Connect to SSE stream for real-time mobile status updates
+function connectMobileStatusSSE() {
+    if (mobileStatusEventSource) {
+        mobileStatusEventSource.close();
+    }
+    
+    if (!isAuthenticated || !mobileToken || !deviceFingerprint) return;
+    
+    // Build SSE URL with token and fingerprint for mobile authentication
+    // Note: EventSource doesn't support custom headers, so we use query params
+    const sseUrl = `/api/mobile/status/stream?token=${encodeURIComponent(mobileToken)}&fingerprint=${encodeURIComponent(deviceFingerprint)}`;
+    mobileStatusEventSource = new EventSource(sseUrl);
+    
+    mobileStatusEventSource.onopen = () => {
+        console.log('Mobile status SSE connection opened');
+    };
+    
+    mobileStatusEventSource.onerror = () => {
+        console.error('Mobile status SSE connection error');
+        
+        // Try to reconnect after 3 seconds
+        setTimeout(() => {
+            if (mobileStatusEventSource && mobileStatusEventSource.readyState === EventSource.CLOSED) {
+                connectMobileStatusSSE();
+            }
+        }, 3000);
+    };
+    
+    mobileStatusEventSource.onmessage = (event) => {
+        try {
+            const data = JSON.parse(event.data);
+            updateMobileUI(data);
+        } catch (e) {
+            console.error('Failed to parse mobile status SSE data:', e);
+        }
+    };
+    
+    mobileStatusEventSource.addEventListener('connected', () => {
+        console.log('Mobile status SSE connected');
+    });
+}
+
 // Connect to SSE stream for cross-device effects updates
 function connectEffectsSSE() {
     if (effectsEventSource) {
@@ -743,8 +783,9 @@ document.addEventListener('DOMContentLoaded', async () => {
 
 // Cleanup on page unload
 window.addEventListener('beforeunload', () => {
-    if (updateInterval) {
-        clearInterval(updateInterval);
+    if (mobileStatusEventSource) {
+        mobileStatusEventSource.close();
+        mobileStatusEventSource = null;
     }
     if (effectsEventSource) {
         effectsEventSource.close();

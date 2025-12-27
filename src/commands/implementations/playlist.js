@@ -1,6 +1,6 @@
 const { deps: defaultDeps } = require('../dependencies');
 const { getLanguageConfig } = require('../../config/languages');
-const rateLimitService = require('../../services/rate-limit.service');
+const rateLimitService = require('../../services/user/command-rate-limit.service');
 
 /**
  * !playlist command - Add all tracks from a playlist to the queue (VIP only)

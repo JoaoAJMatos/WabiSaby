@@ -1,7 +1,5 @@
 const express = require('express');
-const volumeNormalization = require('../../services/volume-normalization.service');
-const dbService = require('../../database/db.service');
-const { logger } = require('../../utils/logger.util');
+const volumeNormalizationController = require('../controllers/volume-normalization.controller');
 
 const router = express.Router();
 
@@ -14,128 +12,19 @@ const router = express.Router();
  * GET /api/volume-normalization/settings
  * Get current volume normalization settings
  */
-router.get('/volume-normalization/settings', (req, res) => {
-    try {
-        const settings = volumeNormalization.getNormalizationSettings();
-        res.json({ success: true, settings });
-    } catch (err) {
-        logger.error('Failed to get normalization settings:', err);
-        res.status(500).json({ success: false, error: 'Failed to get settings' });
-    }
-});
+router.get('/volume-normalization/settings', volumeNormalizationController.getSettings);
 
 /**
  * PUT /api/volume-normalization/settings
  * Update volume normalization settings
  */
-router.put('/volume-normalization/settings', (req, res) => {
-    try {
-        const { enabled, thresholdTooLow, thresholdTooHigh, targetLevel } = req.body;
-        
-        const currentSettings = volumeNormalization.getNormalizationSettings();
-        const newSettings = {
-            enabled: enabled !== undefined ? enabled : currentSettings.enabled,
-            thresholdTooLow: thresholdTooLow !== undefined ? thresholdTooLow : currentSettings.thresholdTooLow,
-            thresholdTooHigh: thresholdTooHigh !== undefined ? thresholdTooHigh : currentSettings.thresholdTooHigh,
-            targetLevel: targetLevel !== undefined ? targetLevel : currentSettings.targetLevel
-        };
-        
-        // Validate ranges
-        if (newSettings.thresholdTooLow >= newSettings.thresholdTooHigh) {
-            return res.status(400).json({
-                success: false,
-                error: 'Invalid thresholds: tooLow must be less than tooHigh'
-            });
-        }
-        
-        // Validate that targetLevel is reasonable (between thresholds)
-        if (newSettings.targetLevel < newSettings.thresholdTooLow ||
-            newSettings.targetLevel > newSettings.thresholdTooHigh) {
-            return res.status(400).json({
-                success: false,
-                error: 'Target level must be between tooLow and tooHigh thresholds'
-            });
-        }
-        
-        // Validate types
-        if (typeof newSettings.enabled !== 'boolean') {
-            return res.status(400).json({
-                success: false,
-                error: 'enabled must be a boolean'
-            });
-        }
-        
-        const numericFields = ['thresholdTooLow', 'thresholdTooHigh', 'targetLevel'];
-        for (const field of numericFields) {
-            if (typeof newSettings[field] !== 'number' || isNaN(newSettings[field])) {
-                return res.status(400).json({
-                    success: false,
-                    error: `${field} must be a number`
-                });
-            }
-        }
-        
-        // Save to database (thresholdOk will be removed if it exists)
-        dbService.setSetting('volumeNormalization', newSettings);
-        
-        logger.info('Volume normalization settings updated:', newSettings);
-        res.json({ success: true, settings: newSettings });
-    } catch (err) {
-        logger.error('Failed to update normalization settings:', err);
-        res.status(500).json({ success: false, error: 'Failed to update settings' });
-    }
-});
+router.put('/volume-normalization/settings', volumeNormalizationController.updateSettings);
 
 /**
  * POST /api/volume-normalization/analyze/:songId
  * Manually trigger volume analysis for an existing song
  */
-router.post('/volume-normalization/analyze/:songId', async (req, res) => {
-    try {
-        const songId = parseInt(req.params.songId, 10);
-        
-        if (isNaN(songId) || songId <= 0) {
-            return res.status(400).json({ 
-                success: false, 
-                error: 'Invalid song ID' 
-            });
-        }
-        
-        const song = dbService.getSong(songId);
-        
-        if (!song) {
-            return res.status(404).json({ 
-                success: false, 
-                error: 'Song not found' 
-            });
-        }
-        
-        // Get file path from song content (assuming content is file path)
-        const filePath = song.content;
-        
-        if (!filePath) {
-            return res.status(400).json({ 
-                success: false, 
-                error: 'Song has no file path (may not be downloaded yet)' 
-            });
-        }
-        
-        // Analyze and store gain
-        const gainDb = await volumeNormalization.analyzeAndStoreGain(songId, filePath);
-        
-        res.json({ 
-            success: true, 
-            gainDb: gainDb,
-            message: `Song analyzed: gain adjustment = ${gainDb.toFixed(2)} dB`
-        });
-    } catch (err) {
-        logger.error('Failed to analyze song:', err);
-        res.status(500).json({ 
-            success: false, 
-            error: 'Failed to analyze song: ' + err.message 
-        });
-    }
-});
+router.post('/volume-normalization/analyze/:songId', volumeNormalizationController.analyzeSong);
 
 module.exports = { router };
 

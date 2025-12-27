@@ -2,6 +2,12 @@ const express = require('express');
 const path = require('path');
 const config = require('../config');
 const { logger } = require('../utils/logger.util');
+
+// Import middleware
+const { errorHandler, notFoundHandler } = require('./middleware/error.middleware');
+const { apiRateLimit } = require('./middleware/rate-limit.middleware');
+const { localhostOnly } = require('./middleware/auth.middleware');
+const requestLogger = require('./middleware/request-logger.middleware');
 const { router: statusRouter, updateAuthStatus } = require('./routes/status.routes');
 const { router: queueRouter } = require('./routes/queue.routes');
 const { router: priorityRouter, setWhatsAppSocket: setPrioritySocket } = require('./routes/priority.routes');
@@ -18,37 +24,15 @@ const { router: mobileRouter } = require('./routes/mobile.routes');
 const { router: authRouter } = require('./routes/auth.routes');
 const { router: userRouter } = require('./routes/user.routes');
 const { router: vipAuthRouter } = require('./routes/vip-auth.routes');
-const { updateVipName, setWhatsAppSocket: setPriorityServiceSocket } = require('../services/priority.service');
+const { updateVipName, setWhatsAppSocket: setPriorityServiceSocket } = require('../services/user/priority.service');
 
 const app = express();
 const PORT = config.server.port;
 
-// Middleware to restrict access to localhost only
-function localhostOnly(req, res, next) {
-    // Check various IP sources (including proxy headers)
-    const forwardedFor = req.headers['x-forwarded-for'];
-    const realIp = req.headers['x-real-ip'];
-    const ip = realIp || 
-               (forwardedFor ? forwardedFor.split(',')[0].trim() : null) ||
-               req.ip || 
-               req.connection?.remoteAddress || 
-               req.socket?.remoteAddress;
-    
-    const isLocalhost = ip === '127.0.0.1' || 
-                       ip === '::1' || 
-                       ip === '::ffff:127.0.0.1' ||
-                       req.hostname === 'localhost' ||
-                       req.hostname === '127.0.0.1';
-    
-    if (!isLocalhost) {
-        logger.warn(`Access denied to ${req.path} from ${ip} (${req.hostname})`);
-        return res.status(403).send('Access denied. This page is only accessible from localhost.');
-    }
-    
-    next();
-}
-
 app.use(express.json());
+
+// Request logging middleware (before other middleware to capture all requests)
+app.use(requestLogger);
 
 // Serve dashboard and player pages with localhost restriction (before static middleware)
 app.get('/pages/dashboard.html', localhostOnly, (req, res) => {
@@ -69,6 +53,13 @@ app.use('/thumbnails', express.static(config.paths.thumbnails));
 // Serve locale files
 app.use('/locales', express.static(path.join(process.cwd(), 'locales')));
 
+// API middleware
+app.use('/api', apiRateLimit({
+    windowMs: 60 * 1000, // 1 minute
+    maxRequests: 100, // 100 requests per minute
+    key: 'api'
+}));
+
 app.use('/api', statusRouter);
 app.use('/api', queueRouter);
 app.use('/api', priorityRouter);
@@ -85,6 +76,13 @@ app.use('/api', mobileRouter);
 app.use('/api', authRouter);
 app.use('/api', userRouter);
 app.use('/api', vipAuthRouter);
+
+// 404 handler for API routes (catch all unmatched /api routes)
+// This will only match if no previous route matched
+app.use(/^\/api\/.*/, notFoundHandler);
+
+// Global error handler (must be last)
+app.use(errorHandler);
 
 // Serve mobile VIP page
 app.get('/mobile/vip', (req, res) => {

@@ -2176,10 +2176,10 @@ input:focus {
     background: linear-gradient(135deg, rgba(255, 255, 255, 0.04) 0%, rgba(255, 255, 255, 0.015) 100%);
     backdrop-filter: blur(12px);
     -webkit-backdrop-filter: blur(12px);
-    padding: 12px 16px;
+    padding: 14px 18px;
     display: flex;
     align-items: center;
-    gap: 12px;
+    gap: 14px;
     border-radius: 12px;
     transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
     border: 1px solid rgba(255, 255, 255, 0.06);
@@ -2191,6 +2191,7 @@ input:focus {
     -webkit-user-select: none;
     -moz-user-select: none;
     -ms-user-select: none;
+    min-height: 64px;
 }
 
 .queue-item::before {
@@ -2246,6 +2247,82 @@ input:focus {
     box-shadow: 0 0 0 2px rgba(52, 211, 153, 0.2);
 }
 
+/* ========================================
+   Loading State - Full Card Shimmer
+   ======================================== */
+.queue-item.loading {
+    --progress: 0%;
+    position: relative;
+    overflow: hidden;
+}
+
+/* Shimmer animation overlay */
+.queue-item.loading::before {
+    content: '';
+    position: absolute;
+    inset: 0;
+    background: linear-gradient(
+        90deg,
+        transparent 0%,
+        transparent calc(var(--progress) - 2%),
+        rgba(52, 211, 153, 0.15) calc(var(--progress) - 1%),
+        rgba(52, 211, 153, 0.25) var(--progress),
+        rgba(52, 211, 153, 0.15) calc(var(--progress) + 1%),
+        transparent calc(var(--progress) + 2%),
+        transparent 100%
+    );
+    background-size: 200% 100%;
+    animation: shimmer-sweep 2s ease-in-out infinite;
+    pointer-events: none;
+    z-index: 1;
+    opacity: 1;
+}
+
+/* Progress fill background */
+.queue-item.loading::after {
+    content: '';
+    position: absolute;
+    left: 0;
+    top: 0;
+    bottom: 0;
+    width: var(--progress);
+    background: linear-gradient(
+        135deg,
+        rgba(52, 211, 153, 0.12) 0%,
+        rgba(52, 211, 153, 0.08) 50%,
+        rgba(52, 211, 153, 0.12) 100%
+    );
+    border-radius: 12px 0 0 12px;
+    transition: width 0.6s cubic-bezier(0.25, 0.46, 0.45, 0.94);
+    pointer-events: none;
+    z-index: 0;
+    opacity: 1;
+    will-change: width;
+}
+
+@keyframes shimmer-sweep {
+    0% {
+        background-position: -200% 0;
+    }
+    100% {
+        background-position: 200% 0;
+    }
+}
+
+/* Dim content during loading */
+.queue-item.loading > * {
+    opacity: 0.5;
+    transition: opacity 0.3s ease;
+    position: relative;
+    z-index: 2;
+}
+
+/* Keep remove button and drag handle more visible */
+.queue-item.loading .queue-remove-btn,
+.queue-item.loading .drag-handle {
+    opacity: 0.7;
+}
+
 /* Drag Handle - Enhanced */
 .drag-handle {
     display: flex;
@@ -2292,11 +2369,11 @@ input:focus {
 
 /* Thumbnail - Enhanced */
 .queue-thumbnail {
-    width: 48px;
-    height: 48px;
+    width: 52px;
+    height: 52px;
     flex-shrink: 0;
     overflow: hidden;
-    border-radius: 8px;
+    border-radius: 10px;
     background: linear-gradient(135deg, rgba(0, 0, 0, 0.3) 0%, rgba(0, 0, 0, 0.2) 100%);
     border: 1px solid rgba(255, 255, 255, 0.08);
     position: relative;
@@ -2341,16 +2418,17 @@ input:focus {
 .song-info {
     display: flex;
     flex-direction: column;
-    gap: 4px;
+    gap: 6px;
     flex: 1;
     min-width: 0;
-    padding-right: 8px;
+    padding-right: 12px;
+    justify-content: center;
 }
 
 /* Title - Enhanced Typography */
 .song-title {
     font-family: var(--font-main);
-    font-size: 0.9rem;
+    font-size: 0.95rem;
     font-weight: 600;
     color: var(--text-main);
     display: flex;
@@ -2359,9 +2437,10 @@ input:focus {
     white-space: nowrap;
     overflow: hidden;
     text-overflow: ellipsis;
-    letter-spacing: -0.02em;
-    line-height: 1.4;
+    letter-spacing: -0.01em;
+    line-height: 1.5;
     transition: color 0.2s ease;
+    margin: 0;
 }
 
 .queue-item:hover .song-title {
@@ -2370,22 +2449,22 @@ input:focus {
 
 /* Queue Position - Standalone Badge */
 .queue-position {
-    font-size: 0.75rem;
+    font-size: 0.8rem;
     font-weight: 700;
     color: var(--primary);
     font-family: var(--font-mono);
-    min-width: 32px;
-    height: 32px;
+    min-width: 36px;
+    height: 36px;
     display: flex;
     align-items: center;
     justify-content: center;
     background: rgba(52, 211, 153, 0.12);
     border: 1px solid rgba(52, 211, 153, 0.2);
-    border-radius: 8px;
+    border-radius: 10px;
     transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
     flex-shrink: 0;
     margin-left: auto;
-    margin-right: 8px;
+    margin-right: 10px;
     box-shadow: 0 2px 6px rgba(52, 211, 153, 0.1);
 }
 
@@ -2403,16 +2482,18 @@ input:focus {
 
 /* Artist Name - Enhanced Subtitle */
 .song-artist {
-    font-size: 0.75rem !important;
+    font-size: 0.8rem !important;
     color: var(--text-secondary) !important;
     opacity: 0.85;
     margin-left: 0 !important;
     margin-bottom: 0 !important;
+    margin-top: 0 !important;
     white-space: nowrap;
     overflow: hidden;
     text-overflow: ellipsis;
     font-weight: 400;
     transition: opacity 0.2s ease;
+    line-height: 1.4;
 }
 
 .queue-item:hover .song-artist {
@@ -2421,17 +2502,19 @@ input:focus {
 
 /* Requester - Enhanced */
 .song-requester {
-    font-size: 0.65rem;
+    font-size: 0.7rem;
     color: var(--text-muted);
-    opacity: 0.7;
+    opacity: 0.75;
     display: flex;
     align-items: center;
-    gap: 5px;
+    gap: 6px;
     text-transform: uppercase;
     letter-spacing: 0.05em;
     font-weight: 600;
     margin-top: 2px;
+    margin-bottom: 0;
     transition: all 0.2s ease;
+    line-height: 1.3;
 }
 
 .queue-item:hover .song-requester {
@@ -2539,79 +2622,91 @@ input:focus {
 .status-badge-small {
     display: inline-flex;
     align-items: center;
-    gap: 5px;
-    padding: 5px 10px;
-    font-size: 0.6rem;
+    gap: 6px;
+    padding: 6px 12px;
+    font-size: 0.65rem;
     font-family: var(--font-mono);
     text-transform: uppercase;
-    letter-spacing: 0.04em;
-    border-radius: 6px;
+    letter-spacing: 0.05em;
+    border-radius: 8px;
     font-weight: 700;
     margin-left: auto;
     flex-shrink: 0;
     margin-top: 0;
-    transition: all 0.3s ease;
+    transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
     border: 1px solid transparent;
+    backdrop-filter: blur(8px);
+    -webkit-backdrop-filter: blur(8px);
+    line-height: 1.2;
 }
 
 .queue-item:hover .status-badge-small {
-    transform: scale(1.05);
+    transform: scale(1.05) translateY(-1px);
 }
 
 .status-badge-small i {
-    font-size: 0.55rem;
+    font-size: 0.6rem;
+    display: flex;
+    align-items: center;
+    justify-content: center;
 }
 
 /* Ready State - Enhanced Success */
 .status-badge-small.ready {
-    color: var(--success);
-    background: linear-gradient(135deg, rgba(34, 197, 94, 0.15) 0%, rgba(34, 197, 94, 0.08) 100%);
-    border-color: rgba(34, 197, 94, 0.2);
-    box-shadow: 0 0 8px rgba(34, 197, 94, 0.1);
+    color: #22c55e;
+    background: linear-gradient(135deg, rgba(34, 197, 94, 0.18) 0%, rgba(34, 197, 94, 0.1) 100%);
+    border-color: rgba(34, 197, 94, 0.25);
+    box-shadow: 0 2px 8px rgba(34, 197, 94, 0.15), inset 0 1px 0 rgba(255, 255, 255, 0.1);
 }
 
 .status-badge-small.ready i {
-    font-size: 0.55rem;
+    font-size: 0.65rem;
+    color: #22c55e;
 }
 
 .queue-item:hover .status-badge-small.ready {
-    background: linear-gradient(135deg, rgba(34, 197, 94, 0.2) 0%, rgba(34, 197, 94, 0.12) 100%);
-    box-shadow: 0 0 12px rgba(34, 197, 94, 0.2);
+    background: linear-gradient(135deg, rgba(34, 197, 94, 0.25) 0%, rgba(34, 197, 94, 0.15) 100%);
+    border-color: rgba(34, 197, 94, 0.35);
+    box-shadow: 0 4px 12px rgba(34, 197, 94, 0.25), inset 0 1px 0 rgba(255, 255, 255, 0.15);
 }
 
 /* Queued State - Enhanced Ghost Style */
 .status-badge-small.queued {
     color: var(--text-muted);
-    background: rgba(255, 255, 255, 0.06);
-    border-color: rgba(255, 255, 255, 0.08);
-    opacity: 0.7;
+    background: linear-gradient(135deg, rgba(255, 255, 255, 0.08) 0%, rgba(255, 255, 255, 0.04) 100%);
+    border-color: rgba(255, 255, 255, 0.12);
+    opacity: 0.75;
 }
 
 .status-badge-small.queued i {
-    font-size: 0.4rem;
+    font-size: 0.5rem;
+    color: var(--text-muted);
 }
 
 .queue-item:hover .status-badge-small.queued {
     opacity: 1;
-    background: rgba(255, 255, 255, 0.1);
-    border-color: rgba(255, 255, 255, 0.12);
+    background: linear-gradient(135deg, rgba(255, 255, 255, 0.12) 0%, rgba(255, 255, 255, 0.06) 100%);
+    border-color: rgba(255, 255, 255, 0.18);
+    box-shadow: 0 2px 8px rgba(255, 255, 255, 0.05);
 }
 
 /* Error State - Enhanced Warning */
 .status-badge-small.error {
-    color: var(--error);
-    background: linear-gradient(135deg, rgba(239, 68, 68, 0.15) 0%, rgba(239, 68, 68, 0.08) 100%);
-    border-color: rgba(239, 68, 68, 0.2);
-    box-shadow: 0 0 8px rgba(239, 68, 68, 0.1);
+    color: #ef4444;
+    background: linear-gradient(135deg, rgba(239, 68, 68, 0.18) 0%, rgba(239, 68, 68, 0.1) 100%);
+    border-color: rgba(239, 68, 68, 0.25);
+    box-shadow: 0 2px 8px rgba(239, 68, 68, 0.15), inset 0 1px 0 rgba(255, 255, 255, 0.1);
 }
 
 .status-badge-small.error i {
-    font-size: 0.55rem;
+    font-size: 0.65rem;
+    color: #ef4444;
 }
 
 .queue-item:hover .status-badge-small.error {
-    background: linear-gradient(135deg, rgba(239, 68, 68, 0.2) 0%, rgba(239, 68, 68, 0.12) 100%);
-    box-shadow: 0 0 12px rgba(239, 68, 68, 0.2);
+    background: linear-gradient(135deg, rgba(239, 68, 68, 0.25) 0%, rgba(239, 68, 68, 0.15) 100%);
+    border-color: rgba(239, 68, 68, 0.35);
+    box-shadow: 0 4px 12px rgba(239, 68, 68, 0.25), inset 0 1px 0 rgba(255, 255, 255, 0.15);
 }
 
 /* ========================================
@@ -5134,26 +5229,6 @@ input:focus {
 
     .song-requester {
         font-size: 0.58rem;
-    }
-
-    .download-status {
-        padding: 3px 6px;
-        gap: 6px;
-        max-width: 120px;
-    }
-
-    .status-text {
-        font-size: 0.5rem;
-        display: none;
-    }
-
-    .progress-bar-small {
-        min-width: 30px;
-    }
-
-    .progress-percent {
-        font-size: 0.55rem;
-        min-width: 20px;
     }
 
     .status-badge-small {

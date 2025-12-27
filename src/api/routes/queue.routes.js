@@ -1,10 +1,5 @@
 const express = require('express');
-const queueManager = require('../../core/queue');
-const playbackController = require('../../core/playback.controller');
-const metadataService = require('../../services/metadata.service');
-const searchService = require('../../services/search.service');
-const urlUtil = require('../../utils/url.util');
-const { logger } = require('../../utils/logger.util');
+const queueController = require('../controllers/queue.controller');
 
 const router = express.Router();
 
@@ -17,199 +12,64 @@ const router = express.Router();
  * Get queue
  * GET /api/queue
  */
-router.get('/queue', async (req, res) => {
-    const queue = queueManager.getQueue();
-    const currentSong = playbackController.getCurrent();
-    
-    res.json({ 
-        queue: queue,
-        currentSong 
-    });
-});
+router.get('/queue', queueController.getQueue);
 
 /**
  * Add song to queue
  * POST /api/queue/add
  * Accepts either a URL (YouTube/Spotify) or a search query
  */
-router.post('/queue/add', async (req, res) => {
-    const { url: input, requester } = req.body;
-    
-    if (!input) {
-        return res.status(400).json({ error: 'URL or search query is required' });
-    }
-
-    let url = input;
-    let title = '';
-    let artist = '';
-
-    try {
-        // Check if input is a URL
-        if (urlUtil.isSpotifyUrl(input) || urlUtil.isYouTubeUrl(input)) {
-            // Resolve info from URL
-            const info = await metadataService.getTrackInfo(input);
-            title = info.title;
-            artist = info.artist;
-            // Warn if we got a fallback title
-            if (title.includes('Unknown Track') || title.includes('YouTube Video')) {
-                logger.warn(`[API] Got fallback title for ${input}: ${title}`);
-            }
-        } else {
-            // Treat as search query
-            logger.info(`[API] Searching for: ${input}`);
-            const searchResult = await searchService.searchYouTube(input);
-            url = searchResult.url;
-            title = searchResult.title;
-            artist = searchResult.artist;
-            logger.info(`[API] Found: ${title} by ${artist} at ${url}`);
-        }
-
-        const song = {
-            type: 'url',
-            content: url,
-            title: title,
-            artist: artist,
-            requester: requester || 'Web User',
-            remoteJid: 'WEB_DASHBOARD',
-            sender: 'WEB_DASHBOARD'
-        };
-
-        const result = queueManager.add(song);
-        if (result === null) {
-            return res.status(409).json({ 
-                success: false, 
-                message: 'Song already in queue', 
-                title: title, 
-                artist: artist 
-            });
-        }
-        res.json({ success: true, message: 'Song added to queue', title: title, artist: artist });
-    } catch (error) {
-        logger.error('[API] Error adding song:', error);
-        res.status(400).json({ 
-            error: 'Failed to add song', 
-            details: error.message 
-        });
-    }
-});
+router.post('/queue/add', queueController.addSong);
 
 /**
  * Skip current song
  * POST /api/queue/skip
  */
-router.post('/queue/skip', (req, res) => {
-    if (playbackController.skip()) {
-        res.json({ success: true, message: 'Skipped current song' });
-    } else {
-        res.status(400).json({ error: 'Cannot skip (nothing playing)' });
-    }
-});
+router.post('/queue/skip', queueController.skip);
 
 /**
  * Pause current song
  * POST /api/queue/pause
  */
-router.post('/queue/pause', (req, res) => {
-    if (playbackController.pause()) {
-        res.json({ success: true, message: 'Paused current song' });
-    } else {
-        res.status(400).json({ error: 'Cannot pause (not playing or already paused)' });
-    }
-});
+router.post('/queue/pause', queueController.pause);
 
 /**
  * Resume current song
  * POST /api/queue/resume
  */
-router.post('/queue/resume', (req, res) => {
-    if (playbackController.resume()) {
-        res.json({ success: true, message: 'Resumed current song' });
-    } else {
-        res.status(400).json({ error: 'Cannot resume (not paused or not playing)' });
-    }
-});
+router.post('/queue/resume', queueController.resume);
 
 /**
  * Seek to position in current song
  * POST /api/queue/seek
  * Body: { time: number } (time in milliseconds)
  */
-router.post('/queue/seek', (req, res) => {
-    const { time } = req.body;
-    
-    if (typeof time !== 'number' || time < 0) {
-        return res.status(400).json({ error: 'Valid time (in milliseconds) is required' });
-    }
-    
-    if (playbackController.seek(time)) {
-        res.json({ success: true, message: `Seeked to ${time}ms` });
-    } else {
-        res.status(400).json({ error: 'Cannot seek (not playing or no current song)' });
-    }
-});
+router.post('/queue/seek', queueController.seek);
 
 /**
  * Remove song from queue
  * POST /api/queue/remove/:index
  */
-router.post('/queue/remove/:index', (req, res) => {
-    const index = parseInt(req.params.index, 10);
-    const removed = queueManager.remove(index);
-    
-    if (removed) {
-        res.json({ success: true, removed });
-    } else {
-        res.status(400).json({ error: 'Invalid index' });
-    }
-});
+router.post('/queue/remove/:index', queueController.remove);
 
 /**
  * Reorder queue items
  * POST /api/queue/reorder
  * Body: { fromIndex: number, toIndex: number }
  */
-router.post('/queue/reorder', (req, res) => {
-    const { fromIndex, toIndex } = req.body;
-    
-    if (typeof fromIndex !== 'number' || typeof toIndex !== 'number') {
-        return res.status(400).json({ error: 'fromIndex and toIndex are required' });
-    }
-    
-    if (queueManager.reorder(fromIndex, toIndex)) {
-        res.json({ success: true, message: 'Queue reordered' });
-    } else {
-        res.status(400).json({ error: 'Invalid indices' });
-    }
-});
+router.post('/queue/reorder', queueController.reorder);
 
 /**
  * Prefetch all songs in queue
  * POST /api/queue/prefetch
  */
-router.post('/queue/prefetch', async (req, res) => {
-    try {
-        // Trigger prefetch in background (don't wait for it to complete)
-        playbackController.prefetchAll().catch(err => logger.error('Prefetch error:', err));
-        res.json({ success: true, message: 'Prefetch started' });
-    } catch (error) {
-        logger.error('[API] Error starting prefetch:', error);
-        res.status(500).json({ error: 'Failed to start prefetch' });
-    }
-});
-
+router.post('/queue/prefetch', queueController.prefetch);
 
 /**
  * Start a new session
  * POST /api/queue/newsession
  * Clears queue and resets session state
  */
-router.post('/queue/newsession', (req, res) => {
-    queueManager.clear();
-    if (playbackController.resetSession()) {
-        res.json({ success: true, message: 'New session started' });
-    } else {
-        res.status(500).json({ error: 'Failed to start new session' });
-    }
-});
+router.post('/queue/newsession', queueController.newSession);
 
 module.exports = { router };

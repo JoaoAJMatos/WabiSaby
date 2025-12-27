@@ -600,7 +600,15 @@ function updateSongInfo(song) {
 
     if (rawTitle && rawTitle !== lastFetchedTitle) {
         lastFetchedTitle = rawTitle;
-        fetchLyrics(displayTitle, displayArtist, currentSongDuration);
+        
+        // Check if lyrics are already pre-fetched during song preparation
+        if (song.lyrics) {
+            // Use pre-fetched lyrics
+            updateLyrics(song.lyrics);
+        } else {
+            // Fallback to fetching lyrics (for backwards compatibility or if not pre-fetched)
+            fetchLyrics(displayTitle, displayArtist, currentSongDuration);
+        }
     }
 
     // Update displays

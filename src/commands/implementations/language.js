@@ -1,5 +1,5 @@
 const { deps: defaultDeps } = require('../dependencies');
-const dbService = require('../../database/db.service');
+const dbService = require('../../infrastructure/database/db.service');
 const {
     normalizeLanguageCode,
     getLanguageName,
