@@ -1032,6 +1032,10 @@ function createMorphElements() {
     const container = document.createElement('div');
     container.className = 'morph-container';
 
+    // Create morph card background (for morphing the card itself)
+    const morphCardBg = document.createElement('div');
+    morphCardBg.className = 'morph-card-bg';
+
     // Create morph album element
     const morphAlbum = document.createElement('div');
     morphAlbum.className = 'morph-album';
@@ -1052,11 +1056,12 @@ function createMorphElements() {
     morphInfo.appendChild(morphTitle);
     morphInfo.appendChild(morphArtist);
 
+    container.appendChild(morphCardBg);
     container.appendChild(morphAlbum);
     container.appendChild(morphInfo);
     document.body.appendChild(container);
 
-    return { container, morphAlbum, morphAlbumImg, morphInfo, morphTitle, morphArtist };
+    return { container, morphCardBg, morphAlbum, morphAlbumImg, morphInfo, morphTitle, morphArtist };
 }
 
 /**
@@ -1090,17 +1095,17 @@ function morphToLyrics() {
         const sourceAlbum = elements.albumArt;
         const sourceTitle = elements.songTitle;
         const sourceArtist = elements.songArtist;
+        const nowPlayingCard = document.querySelector('.now-playing-card');
 
         // Get target elements
         const targetAlbum = document.querySelector('.mini-album');
-        const targetTitle = elements.lyricsTitle;
-        const targetArtist = elements.lyricsArtist;
         const miniPlayer = document.querySelector('.mini-player');
+        const lyricsView = document.querySelector('.lyrics-view');
 
         // Ensure mini player is visible for measuring (temporarily)
-        const lyricsView = document.querySelector('.lyrics-view');
         lyricsView.style.display = 'flex';
         lyricsView.style.opacity = '0';
+        lyricsView.style.pointerEvents = 'none';
         miniPlayer.style.opacity = '1';
         miniPlayer.style.transform = 'translateY(0)';
 
@@ -1108,14 +1113,15 @@ function morphToLyrics() {
         void miniPlayer.offsetHeight;
 
         // Get bounds
+        const cardBounds = getBounds(nowPlayingCard);
         const sourceBounds = getBounds(sourceAlbum);
         const targetBounds = getBounds(targetAlbum);
         const sourceTitleBounds = getBounds(sourceTitle);
-        const sourceArtistBounds = getBounds(sourceArtist);
         const targetInfoBounds = getBounds(document.querySelector('.mini-player-info'));
+        const miniPlayerBounds = getBounds(miniPlayer);
 
         // Create morph elements
-        const { container, morphAlbum, morphAlbumImg, morphInfo, morphTitle, morphArtist } = createMorphElements();
+        const { container, morphCardBg, morphAlbum, morphAlbumImg, morphInfo, morphTitle, morphArtist } = createMorphElements();
 
         // Set initial content
         const albumSrc = elements.albumImg.src;
@@ -1125,6 +1131,15 @@ function morphToLyrics() {
         morphTitle.textContent = sourceTitle.textContent;
         morphArtist.textContent = sourceArtist.textContent;
 
+        // Set initial card background position (full card size)
+        morphCardBg.style.left = `${cardBounds.left}px`;
+        morphCardBg.style.top = `${cardBounds.top}px`;
+        morphCardBg.style.width = `${cardBounds.width}px`;
+        morphCardBg.style.height = `${cardBounds.height}px`;
+        morphCardBg.style.borderRadius = '28px';
+        morphCardBg.style.opacity = '1';
+        morphCardBg.style.transitionDuration = `${MORPH_DURATION}ms`;
+
         // Set initial album position and style (source state)
         morphAlbum.style.left = `${sourceBounds.left}px`;
         morphAlbum.style.top = `${sourceBounds.top}px`;
@@ -1133,29 +1148,27 @@ function morphToLyrics() {
         morphAlbum.style.borderRadius = '16px';
         morphAlbum.style.boxShadow = '0 20px 40px -10px rgba(0, 0, 0, 0.6), 0 0 0 1px rgba(255, 255, 255, 0.08)';
         morphAlbum.style.transitionDuration = `${MORPH_DURATION}ms`;
-        morphAlbum.style.transform = 'rotate(0deg)';
 
-        // Set initial info position (below album, centered) with slight delay
+        // Set initial info position (below album, centered)
         morphInfo.style.left = `${sourceTitleBounds.left}px`;
         morphInfo.style.top = `${sourceTitleBounds.top}px`;
         morphInfo.style.width = `${sourceTitleBounds.width}px`;
         morphInfo.style.alignItems = 'center';
         morphInfo.style.textAlign = 'center';
         morphInfo.style.gap = '4px';
-        morphInfo.style.transitionDuration = `${MORPH_DURATION * 0.9}ms`;
-        morphInfo.style.transitionDelay = '50ms';
+        morphInfo.style.transitionDuration = `${MORPH_DURATION}ms`;
         morphInfo.style.opacity = '1';
 
         // Set initial text sizes
         morphTitle.style.fontSize = '1.25rem';
         morphTitle.style.fontWeight = '600';
-        morphTitle.style.transitionDuration = `${MORPH_DURATION * 0.9}ms`;
+        morphTitle.style.transitionDuration = `${MORPH_DURATION}ms`;
 
         morphArtist.style.fontSize = '1rem';
         morphArtist.style.opacity = '1';
-        morphArtist.style.transitionDuration = `${MORPH_DURATION * 0.9}ms`;
+        morphArtist.style.transitionDuration = `${MORPH_DURATION}ms`;
 
-        // Add morphing class to body
+        // Add morphing class to body - hides source elements immediately
         document.body.classList.add('morphing', 'to-lyrics');
 
         // Force a reflow before starting animation
@@ -1163,14 +1176,21 @@ function morphToLyrics() {
 
         // Animate to target state
         requestAnimationFrame(() => {
-            // Album morphs to mini player position with subtle rotation
+            // Card background morphs to mini player shape
+            morphCardBg.style.left = `${miniPlayerBounds.left}px`;
+            morphCardBg.style.top = `${miniPlayerBounds.top}px`;
+            morphCardBg.style.width = `${miniPlayerBounds.width}px`;
+            morphCardBg.style.height = `${miniPlayerBounds.height}px`;
+            morphCardBg.style.borderRadius = '50px';
+            morphCardBg.style.opacity = '0';
+
+            // Album morphs to mini player position
             morphAlbum.style.left = `${targetBounds.left}px`;
             morphAlbum.style.top = `${targetBounds.top}px`;
             morphAlbum.style.width = `${targetBounds.width}px`;
             morphAlbum.style.height = `${targetBounds.height}px`;
             morphAlbum.style.borderRadius = '50%';
             morphAlbum.style.boxShadow = '0 2px 10px rgba(0, 0, 0, 0.3)';
-            morphAlbum.style.transform = 'rotate(360deg)';
 
             // Info morphs to mini player info position
             morphInfo.style.left = `${targetInfoBounds.left}px`;
@@ -1187,21 +1207,30 @@ function morphToLyrics() {
             morphArtist.style.fontSize = '0.75rem';
         });
 
-        // Cleanup after animation
+        // Cross-fade to final state slightly before animation ends
         setTimeout(() => {
-            // Remove morph elements
-            container.remove();
-
-            // Remove morphing classes
-            document.body.classList.remove('morphing', 'to-lyrics');
-
-            // Set final state
+            // Prepare final state - set classes before removing morph
             document.body.classList.remove('visualizer-mode');
             document.body.classList.add('lyrics-mode');
 
+            // Start fading out morph elements
+            morphAlbum.style.opacity = '0';
+            morphInfo.style.opacity = '0';
+            morphAlbum.style.transitionDuration = '150ms';
+            morphInfo.style.transitionDuration = '150ms';
+        }, MORPH_DURATION - 100);
+
+        // Final cleanup
+        setTimeout(() => {
+            container.remove();
+            document.body.classList.remove('morphing', 'to-lyrics');
+            lyricsView.style.display = '';
+            lyricsView.style.opacity = '';
+            lyricsView.style.pointerEvents = '';
+
             isMorphing = false;
             resolve();
-        }, MORPH_DURATION + 50);
+        }, MORPH_DURATION + 100);
     });
 }
 
@@ -1220,17 +1249,18 @@ function morphToVisualizer() {
         // Get source elements (mini player)
         const sourceAlbum = document.querySelector('.mini-album');
         const sourceInfo = document.querySelector('.mini-player-info');
+        const miniPlayer = document.querySelector('.mini-player');
 
         // Get target elements (now playing card)
         const targetAlbum = elements.albumArt;
         const targetTitle = elements.songTitle;
-        const targetArtist = elements.songArtist;
-
-        // Ensure visualizer view is visible for measuring (temporarily)
         const visualizerView = document.querySelector('.visualizer-view');
         const nowPlayingCard = document.querySelector('.now-playing-card');
+
+        // Ensure visualizer view is visible for measuring (temporarily)
         visualizerView.style.display = 'flex';
         visualizerView.style.opacity = '0';
+        visualizerView.style.pointerEvents = 'none';
         nowPlayingCard.style.opacity = '1';
         nowPlayingCard.style.transform = 'scale(1) translateY(0)';
 
@@ -1238,13 +1268,15 @@ function morphToVisualizer() {
         void nowPlayingCard.offsetHeight;
 
         // Get bounds
+        const miniPlayerBounds = getBounds(miniPlayer);
         const sourceBounds = getBounds(sourceAlbum);
         const targetBounds = getBounds(targetAlbum);
         const sourceInfoBounds = getBounds(sourceInfo);
         const targetTitleBounds = getBounds(targetTitle);
+        const cardBounds = getBounds(nowPlayingCard);
 
         // Create morph elements
-        const { container, morphAlbum, morphAlbumImg, morphInfo, morphTitle, morphArtist } = createMorphElements();
+        const { container, morphCardBg, morphAlbum, morphAlbumImg, morphInfo, morphTitle, morphArtist } = createMorphElements();
 
         // Set content
         const albumSrc = elements.miniAlbumImg.src;
@@ -1254,6 +1286,15 @@ function morphToVisualizer() {
         morphTitle.textContent = elements.lyricsTitle.textContent;
         morphArtist.textContent = elements.lyricsArtist.textContent;
 
+        // Set initial card background position (mini player shape)
+        morphCardBg.style.left = `${miniPlayerBounds.left}px`;
+        morphCardBg.style.top = `${miniPlayerBounds.top}px`;
+        morphCardBg.style.width = `${miniPlayerBounds.width}px`;
+        morphCardBg.style.height = `${miniPlayerBounds.height}px`;
+        morphCardBg.style.borderRadius = '50px';
+        morphCardBg.style.opacity = '0';
+        morphCardBg.style.transitionDuration = `${MORPH_DURATION}ms`;
+
         // Set initial album position (mini player state)
         morphAlbum.style.left = `${sourceBounds.left}px`;
         morphAlbum.style.top = `${sourceBounds.top}px`;
@@ -1262,29 +1303,27 @@ function morphToVisualizer() {
         morphAlbum.style.borderRadius = '50%';
         morphAlbum.style.boxShadow = '0 2px 10px rgba(0, 0, 0, 0.3)';
         morphAlbum.style.transitionDuration = `${MORPH_DURATION}ms`;
-        morphAlbum.style.transform = 'rotate(0deg)';
 
-        // Set initial info position (mini player style) with slight delay
+        // Set initial info position (mini player style)
         morphInfo.style.left = `${sourceInfoBounds.left}px`;
         morphInfo.style.top = `${sourceInfoBounds.top}px`;
         morphInfo.style.width = `${sourceInfoBounds.width}px`;
         morphInfo.style.alignItems = 'flex-start';
         morphInfo.style.textAlign = 'left';
         morphInfo.style.gap = '2px';
-        morphInfo.style.transitionDuration = `${MORPH_DURATION * 0.9}ms`;
-        morphInfo.style.transitionDelay = '50ms';
+        morphInfo.style.transitionDuration = `${MORPH_DURATION}ms`;
         morphInfo.style.opacity = '1';
 
         // Set initial text sizes (mini player style)
         morphTitle.style.fontSize = '0.85rem';
         morphTitle.style.fontWeight = '700';
-        morphTitle.style.transitionDuration = `${MORPH_DURATION * 0.9}ms`;
+        morphTitle.style.transitionDuration = `${MORPH_DURATION}ms`;
 
         morphArtist.style.fontSize = '0.75rem';
         morphArtist.style.opacity = '1';
-        morphArtist.style.transitionDuration = `${MORPH_DURATION * 0.9}ms`;
+        morphArtist.style.transitionDuration = `${MORPH_DURATION}ms`;
 
-        // Add morphing class
+        // Add morphing class - hides source elements immediately
         document.body.classList.add('morphing', 'to-visualizer');
 
         // Force reflow
@@ -1292,14 +1331,21 @@ function morphToVisualizer() {
 
         // Animate to target state (visualizer card)
         requestAnimationFrame(() => {
-            // Album morphs to card position with subtle rotation
+            // Card background morphs to full card shape
+            morphCardBg.style.left = `${cardBounds.left}px`;
+            morphCardBg.style.top = `${cardBounds.top}px`;
+            morphCardBg.style.width = `${cardBounds.width}px`;
+            morphCardBg.style.height = `${cardBounds.height}px`;
+            morphCardBg.style.borderRadius = '28px';
+            morphCardBg.style.opacity = '1';
+
+            // Album morphs to card position
             morphAlbum.style.left = `${targetBounds.left}px`;
             morphAlbum.style.top = `${targetBounds.top}px`;
             morphAlbum.style.width = `${targetBounds.width}px`;
             morphAlbum.style.height = `${targetBounds.height}px`;
             morphAlbum.style.borderRadius = '16px';
             morphAlbum.style.boxShadow = '0 20px 40px -10px rgba(0, 0, 0, 0.6), 0 0 0 1px rgba(255, 255, 255, 0.08)';
-            morphAlbum.style.transform = 'rotate(-360deg)';
 
             // Info morphs to card position
             morphInfo.style.left = `${targetTitleBounds.left}px`;
@@ -1316,27 +1362,34 @@ function morphToVisualizer() {
             morphArtist.style.fontSize = '1rem';
         });
 
-        // Cleanup after animation
+        // Cross-fade to final state slightly before animation ends
         setTimeout(() => {
-            // Remove morph elements
-            container.remove();
-
-            // Remove morphing classes
-            document.body.classList.remove('morphing', 'to-visualizer');
-
-            // Set final state
+            // Prepare final state - set classes before removing morph
             document.body.classList.remove('lyrics-mode');
             document.body.classList.add('visualizer-mode');
 
-            // Reset visualizer view styles
+            // Start fading out morph elements
+            morphAlbum.style.opacity = '0';
+            morphInfo.style.opacity = '0';
+            morphCardBg.style.opacity = '0';
+            morphAlbum.style.transitionDuration = '150ms';
+            morphInfo.style.transitionDuration = '150ms';
+            morphCardBg.style.transitionDuration = '150ms';
+        }, MORPH_DURATION - 100);
+
+        // Final cleanup
+        setTimeout(() => {
+            container.remove();
+            document.body.classList.remove('morphing', 'to-visualizer');
             visualizerView.style.display = '';
             visualizerView.style.opacity = '';
+            visualizerView.style.pointerEvents = '';
             nowPlayingCard.style.opacity = '';
             nowPlayingCard.style.transform = '';
 
             isMorphing = false;
             resolve();
-        }, MORPH_DURATION + 50);
+        }, MORPH_DURATION + 100);
     });
 }
 
