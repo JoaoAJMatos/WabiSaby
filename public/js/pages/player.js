@@ -1109,6 +1109,13 @@ function morphToLyrics() {
         miniPlayer.style.opacity = '1';
         miniPlayer.style.transform = 'translateY(0)';
 
+        // Hide the card immediately when morph starts (no transition)
+        if (nowPlayingCard) {
+            nowPlayingCard.style.transition = 'none';
+            nowPlayingCard.style.opacity = '0';
+            nowPlayingCard.style.pointerEvents = 'none';
+        }
+
         // Force layout recalc
         void miniPlayer.offsetHeight;
 
@@ -1224,9 +1231,19 @@ function morphToLyrics() {
         setTimeout(() => {
             container.remove();
             document.body.classList.remove('morphing', 'to-lyrics');
+
+            // Reset inline styles to let CSS take over
             lyricsView.style.display = '';
             lyricsView.style.opacity = '';
             lyricsView.style.pointerEvents = '';
+            miniPlayer.style.opacity = '';
+            miniPlayer.style.transform = '';
+            if (nowPlayingCard) {
+                nowPlayingCard.style.opacity = '';
+                nowPlayingCard.style.transform = '';
+                nowPlayingCard.style.transition = '';
+                nowPlayingCard.style.pointerEvents = '';
+            }
 
             isMorphing = false;
             resolve();
@@ -1261,8 +1278,14 @@ function morphToVisualizer() {
         visualizerView.style.display = 'flex';
         visualizerView.style.opacity = '0';
         visualizerView.style.pointerEvents = 'none';
-        nowPlayingCard.style.opacity = '1';
-        nowPlayingCard.style.transform = 'scale(1) translateY(0)';
+
+        // Show the card immediately when morph starts (no transition)
+        if (nowPlayingCard) {
+            nowPlayingCard.style.transition = 'none';
+            nowPlayingCard.style.opacity = '1';
+            nowPlayingCard.style.transform = 'scale(1) translateY(0)';
+            nowPlayingCard.style.pointerEvents = 'auto';
+        }
 
         // Force layout recalc
         void nowPlayingCard.offsetHeight;
@@ -1384,8 +1407,12 @@ function morphToVisualizer() {
             visualizerView.style.display = '';
             visualizerView.style.opacity = '';
             visualizerView.style.pointerEvents = '';
-            nowPlayingCard.style.opacity = '';
-            nowPlayingCard.style.transform = '';
+            if (nowPlayingCard) {
+                nowPlayingCard.style.opacity = '';
+                nowPlayingCard.style.transform = '';
+                nowPlayingCard.style.transition = '';
+                nowPlayingCard.style.pointerEvents = '';
+            }
 
             isMorphing = false;
             resolve();
