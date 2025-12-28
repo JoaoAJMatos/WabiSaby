@@ -322,7 +322,11 @@ class PlaybackOrchestrator extends EventEmitter {
                 this.isHandlingPlaybackFinished = false;
 
                 // Update current song with final state (if not already set for URL downloads)
+                const isNewSong = !this.currentSong || this.currentSong.content !== item.content;
                 if (!this.currentSong || this.currentSong.content !== item.content) {
+                    // Clear repeat tracking when starting a new song
+                    repeatModeService.clearRepeatOneTracking(null);
+                    
                     this.currentSong = {
                         ...item,
                         startTime: Date.now(),
@@ -570,7 +574,12 @@ class PlaybackOrchestrator extends EventEmitter {
             cleanupService.cleanupAfterPlayback(this.currentSong, config);
         }
 
+        // Clear repeat one tracking when song finishes (if it wasn't repeated)
+        const finishedSong = this.currentSong;
         this.currentSong = null;
+        if (finishedSong) {
+            repeatModeService.clearRepeatOneTracking(null);
+        }
         if (success) {
             this.songsPlayed++;
         }
@@ -635,6 +644,23 @@ class PlaybackOrchestrator extends EventEmitter {
     seek(timeMs) {
         if (this.isPlaying && this.currentSong && timeMs >= 0) {
             this.isSeeking = true;
+            
+            // Update startTime so elapsed calculation reflects the new position
+            // elapsed = Date.now() - startTime, so startTime = Date.now() - timeMs
+            this.currentSong.startTime = Date.now() - timeMs;
+            
+            // If paused, update pausedAt to maintain correct elapsed calculation
+            // elapsed = pausedAt - startTime, so pausedAt = startTime + timeMs = Date.now()
+            if (this.isPaused) {
+                this.currentSong.pausedAt = Date.now();
+            } else {
+                // Clear pausedAt if we're playing (not paused)
+                this.currentSong.pausedAt = null;
+            }
+            
+            // Emit state changed to update UI immediately
+            this.emitStateChanged();
+            
             eventBus.emit(PLAYBACK_SEEK, { positionMs: timeMs });
             return true;
         }

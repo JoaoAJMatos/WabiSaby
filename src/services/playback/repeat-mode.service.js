@@ -14,6 +14,7 @@ const shuffleService = require('./shuffle.service');
 class RepeatModeService {
     constructor() {
         this.playedQueue = []; // Track played songs for repeat all mode
+        this.repeatedSongId = null; // Track which song has been repeated once
     }
 
     /**
@@ -24,7 +25,13 @@ class RepeatModeService {
      * @returns {boolean} True if should restart
      */
     shouldRestartSong(repeatMode, currentSong, success) {
-        return repeatMode === 'one' && currentSong && success;
+        if (repeatMode !== 'one' || !currentSong || !success) {
+            return false;
+        }
+        
+        // Only restart if this song hasn't been repeated yet
+        const songId = currentSong.id || currentSong.content;
+        return this.repeatedSongId !== songId;
     }
 
     /**
@@ -38,6 +45,10 @@ class RepeatModeService {
     async handleRepeatOne(currentSong, emitPlaybackRequested, emitStateChanged, config) {
         const filePath = currentSong.content;
         if (filePath && require('fs').existsSync(filePath)) {
+            // Mark this song as having been repeated
+            const songId = currentSong.id || currentSong.content;
+            this.repeatedSongId = songId;
+            
             // Don't clear currentSong, don't increment songsPlayed, don't cleanup
             // Just restart playback
             logger.info(`Repeat one: restarting current song "${currentSong.title || 'Unknown'}"`);
@@ -149,6 +160,23 @@ class RepeatModeService {
      */
     clearPlayedQueue() {
         this.playedQueue = [];
+    }
+
+    /**
+     * Clear repeat one tracking (called when a new song starts)
+     * @param {Object} currentSong - The new current song
+     */
+    clearRepeatOneTracking(currentSong) {
+        if (currentSong) {
+            const songId = currentSong.id || currentSong.content;
+            // Only clear if it's a different song
+            if (this.repeatedSongId !== songId) {
+                this.repeatedSongId = null;
+            }
+        } else {
+            // No current song, clear tracking
+            this.repeatedSongId = null;
+        }
     }
 }
 
