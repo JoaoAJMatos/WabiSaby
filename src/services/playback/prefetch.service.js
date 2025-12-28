@@ -119,7 +119,7 @@ class PrefetchService {
                 try {
                     let lastSaveTime = Date.now();
                     let lastProgress = 0;
-                    const SAVE_THROTTLE_MS = 200; // Throttle saves to max once per 200ms
+                    const SAVE_THROTTLE_MS = 1000; // Throttle saves to max once per second (reduced from 200ms)
 
                     const result = await downloadTrack(originalUrl, (progress) => {
                         const newProgress = progress.percent || 0;
@@ -132,8 +132,8 @@ class PrefetchService {
                         const timeSinceLastSave = now - lastSaveTime;
                         const progressChange = Math.abs(newProgress - lastProgress);
 
-                        // Save if: enough time passed OR significant progress change (>5%)
-                        if (timeSinceLastSave >= SAVE_THROTTLE_MS || progressChange > 5) {
+                        // Save if: enough time passed OR significant progress change (>10%)
+                        if (timeSinceLastSave >= SAVE_THROTTLE_MS || progressChange > 10) {
                             queueService.saveQueue(true);
                             lastSaveTime = now;
                             lastProgress = newProgress;

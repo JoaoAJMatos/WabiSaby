@@ -20,44 +20,31 @@ class QueueManager {
         try {
             // Load queue items from database
             const dbItems = dbService.getQueueItems();
-            const fs = require('fs');
             const path = require('path');
 
             this.queue = dbItems.map(item => {
                 const content = item.content;
                 const sourceUrl = item.source_url;
 
-                // Determine type: if content is a file path, check if it exists
-                // If it doesn't exist but we have a source_url, mark for re-download
+                // Determine type based on content format (avoid blocking I/O checks)
+                // File existence will be validated lazily at playback time
                 let type = 'file';
-                let needsRedownload = false;
 
                 if (content) {
-                    // Check if content looks like a file path (contains path separators or is in temp dir)
-                    const isFilePath = content.includes(path.sep) || content.startsWith('/');
-
-                    if (isFilePath) {
-                        // Check if file exists
-                        if (!fs.existsSync(content)) {
-                            // File doesn't exist - if we have source_url, mark for re-download
-                            if (sourceUrl) {
-                                type = 'url';
-                                needsRedownload = true;
-                                logger.warn(`Queue item "${item.title}" has missing file, will re-download from source URL`);
-                            } else {
-                                logger.warn(`Queue item "${item.title}" has missing file and no source URL available`);
-                            }
-                        }
-                    } else if (content.startsWith('http://') || content.startsWith('https://')) {
+                    if (content.startsWith('http://') || content.startsWith('https://')) {
                         // Content is a URL
                         type = 'url';
+                    } else {
+                        // Assume it's a file path - existence will be checked at playback time
+                        const isFilePath = content.includes(path.sep) || content.startsWith('/');
+                        type = isFilePath ? 'file' : 'url';
                     }
                 }
 
                 return {
                     id: item.id,
                     songId: item.song_id, // Store song_id for updating song record
-                    content: needsRedownload ? sourceUrl : content,
+                    content: content,
                     sourceUrl: sourceUrl,
                     type: type,
                     title: item.title,
@@ -67,12 +54,12 @@ class QueueManager {
                     sender: item.sender_id || item.requester_whatsapp_id,
                     remoteJid: item.group_id,
                     isPriority: item.is_priority === 1,
-                    downloadStatus: needsRedownload ? 'pending' : item.download_status,
-                    downloadProgress: needsRedownload ? 0 : item.download_progress,
-                    downloading: needsRedownload ? false : (item.download_status === 'downloading'),
+                    downloadStatus: item.download_status,
+                    downloadProgress: item.download_progress,
+                    downloading: item.download_status === 'downloading',
                     thumbnail: item.thumbnail_path,
                     thumbnailUrl: item.thumbnail_url,
-                    prefetched: needsRedownload ? false : (item.prefetched === 1),
+                    prefetched: item.prefetched === 1,
                     duration: item.duration
                 };
             });
@@ -86,6 +73,11 @@ class QueueManager {
             });
 
             this._queueLoaded = true;
+
+            // Defer file existence validation to background task (non-blocking)
+            this._validateQueueFilesAsync().catch(err => {
+                logger.debug('Background queue file validation error:', err.message);
+            });
         } catch (e) {
             // If database isn't ready yet, that's okay - will retry later
             if (e.message && e.message.includes('not initialized')) {
@@ -93,6 +85,31 @@ class QueueManager {
                 return;
             }
             console.error('Failed to load queue:', e);
+        }
+    }
+
+    /**
+     * Asynchronously validate file existence for queue items (background task)
+     * Marks items for re-download if file is missing but source URL is available
+     */
+    async _validateQueueFilesAsync() {
+        const fs = require('fs').promises;
+
+        for (const item of this.queue) {
+            if (item.type === 'file' && item.content && item.sourceUrl) {
+                try {
+                    await fs.access(item.content);
+                    // File exists, no action needed
+                } catch (err) {
+                    // File doesn't exist - mark for re-download
+                    logger.warn(`Queue item "${item.title}" has missing file, marking for re-download`);
+                    item.type = 'url';
+                    item.content = item.sourceUrl;
+                    item.downloadStatus = 'pending';
+                    item.downloadProgress = 0;
+                    item.prefetched = false;
+                }
+            }
         }
     }
 
@@ -207,15 +224,17 @@ class QueueManager {
             isPriority
         };
         this.queue.splice(insertIndex, 0, queueItem);
-        this.queueItemIds.set(insertIndex, queueItemId);
 
-        // Rebuild position mappings after insertion
-        this.queueItemIds.clear();
-        this.queue.forEach((item, i) => {
-            if (item.id) {
-                this.queueItemIds.set(i, item.id);
+        // Update position mappings incrementally instead of rebuilding entire map
+        // Shift positions for items at insertIndex and after
+        for (let i = this.queue.length - 1; i > insertIndex; i--) {
+            const prevId = this.queueItemIds.get(i - 1);
+            if (prevId) {
+                this.queueItemIds.set(i, prevId);
             }
-        });
+        }
+        // Set the new item's position
+        this.queueItemIds.set(insertIndex, queueItemId);
 
         this.saveQueue();
         eventBus.emit(QUEUE_UPDATED);
@@ -249,15 +268,16 @@ class QueueManager {
             }
 
             const removed = this.queue.splice(index, 1);
-            this.queueItemIds.delete(index);
 
-            // Update positions for remaining items
-            this.queueItemIds.clear();
-            this.queue.forEach((item, i) => {
-                if (item.id) {
-                    this.queueItemIds.set(i, item.id);
+            // Update positions incrementally: shift items after removed index down by 1
+            for (let i = index; i < this.queue.length; i++) {
+                const nextId = this.queueItemIds.get(i + 1);
+                if (nextId) {
+                    this.queueItemIds.set(i, nextId);
                 }
-            });
+            }
+            // Delete the last position (which is now empty after shifting)
+            this.queueItemIds.delete(this.queue.length);
 
             this.saveQueue();
             eventBus.emit(QUEUE_UPDATED);
@@ -300,13 +320,27 @@ class QueueManager {
             const [movedItem] = this.queue.splice(fromIndex, 1);
             this.queue.splice(toIndex, 0, movedItem);
 
-            // Update position mappings
-            this.queueItemIds.clear();
-            this.queue.forEach((item, i) => {
-                if (item.id) {
-                    this.queueItemIds.set(i, item.id);
+            // Update position mappings incrementally
+            const movedId = movedItem.id;
+            if (fromIndex < toIndex) {
+                // Moving down: shift items between fromIndex and toIndex
+                for (let i = fromIndex; i < toIndex; i++) {
+                    const nextId = this.queueItemIds.get(i + 1);
+                    if (nextId) {
+                        this.queueItemIds.set(i, nextId);
+                    }
                 }
-            });
+            } else {
+                // Moving up: shift items between toIndex and fromIndex
+                for (let i = fromIndex; i > toIndex; i--) {
+                    const prevId = this.queueItemIds.get(i - 1);
+                    if (prevId) {
+                        this.queueItemIds.set(i, prevId);
+                    }
+                }
+            }
+            // Set moved item to its new position
+            this.queueItemIds.set(toIndex, movedId);
 
             this.saveQueue();
             eventBus.emit(QUEUE_UPDATED);

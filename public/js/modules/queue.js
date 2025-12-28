@@ -139,10 +139,16 @@ let draggedIndex = null;
 let isDragging = false;
 let dragOffset = { x: 0, y: 0 };
 let dropTarget = null;
+let dragAbortController = null; // For guaranteed cleanup
 
 // Mouse-based drag handlers
 function startMouseDrag(e, element) {
     console.log('Starting mouse drag on element:', element.dataset.index);
+
+    // Clean up any previous drag state
+    if (dragAbortController) {
+        dragAbortController.abort();
+    }
 
     draggedElement = element;
     draggedIndex = parseInt(element.dataset.index);
@@ -157,9 +163,13 @@ function startMouseDrag(e, element) {
     element.style.opacity = '0.5';
     element.style.transform = 'rotate(2deg)';
 
-    // Add global mouse event listeners
-    document.addEventListener('mousemove', handleMouseMove);
-    document.addEventListener('mouseup', handleMouseUp);
+    // Create AbortController for guaranteed cleanup
+    dragAbortController = new AbortController();
+    const signal = dragAbortController.signal;
+
+    // Add global mouse event listeners with AbortSignal
+    document.addEventListener('mousemove', handleMouseMove, { signal });
+    document.addEventListener('mouseup', handleMouseUp, { signal });
 
     // Prevent text selection
     document.body.style.userSelect = 'none';
@@ -260,8 +270,11 @@ function handleMouseUp(e) {
     document.body.style.webkitUserSelect = '';
     document.body.style.mozUserSelect = '';
 
-    document.removeEventListener('mousemove', handleMouseMove);
-    document.removeEventListener('mouseup', handleMouseUp);
+    // Clean up event listeners using AbortController
+    if (dragAbortController) {
+        dragAbortController.abort();
+        dragAbortController = null;
+    }
 
     draggedElement = null;
     draggedIndex = null;
