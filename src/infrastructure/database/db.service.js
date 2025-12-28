@@ -11,6 +11,77 @@ const {
  */
 
 // ============================================
+// Prepared Statement Cache
+// Reusing prepared statements improves performance
+// ============================================
+
+let preparedStatements = null;
+
+function getPreparedStatements() {
+    if (!preparedStatements) {
+        const db = getDatabase();
+        preparedStatements = {
+            // Songs
+            getSongById: db.prepare('SELECT * FROM songs WHERE id = ?'),
+            getSongByContent: db.prepare('SELECT id FROM songs WHERE content = ?'),
+            getSongLyrics: db.prepare('SELECT lyrics_data FROM songs WHERE id = ?'),
+            updateSongVolumeGain: db.prepare('UPDATE songs SET volume_gain_db = ? WHERE id = ?'),
+
+            // Requesters
+            getRequesterByName: db.prepare('SELECT id FROM requesters WHERE name = ?'),
+            getRequesterByWhatsappId: db.prepare('SELECT id FROM requesters WHERE whatsapp_id = ?'),
+            getAllRequesters: db.prepare('SELECT * FROM requesters ORDER BY name'),
+            updateRequesterWhatsappId: db.prepare('UPDATE requesters SET whatsapp_id = ? WHERE id = ?'),
+            updateRequesterName: db.prepare('UPDATE requesters SET name = ? WHERE id = ?'),
+
+            // Queue
+            getQueueItems: db.prepare(`
+                SELECT
+                    qi.*,
+                    s.content, s.title, s.artist, s.channel, s.duration, s.thumbnail_path, s.thumbnail_url, s.source_url,
+                    r.name as requester_name, r.whatsapp_id as requester_whatsapp_id
+                FROM queue_items qi
+                JOIN songs s ON qi.song_id = s.id
+                JOIN requesters r ON qi.requester_id = r.id
+                ORDER BY qi.position ASC
+            `),
+            getQueueItemPosition: db.prepare('SELECT position FROM queue_items WHERE id = ?'),
+            getQueueItemByPosition: db.prepare('SELECT id FROM queue_items WHERE position = ?'),
+            removeQueueItem: db.prepare('DELETE FROM queue_items WHERE id = ?'),
+            clearQueue: db.prepare('DELETE FROM queue_items'),
+            getMaxQueuePosition: db.prepare('SELECT COALESCE(MAX(position), -1) + 1 as next_pos FROM queue_items'),
+            getQueueCount: db.prepare('SELECT COUNT(*) as count FROM queue_items'),
+
+            // Playback State
+            getPlaybackState: db.prepare('SELECT * FROM playback_state WHERE id = 1'),
+
+            // Settings
+            getSetting: db.prepare('SELECT value FROM settings WHERE key = ?'),
+            getAllSettings: db.prepare('SELECT key, value FROM settings'),
+
+            // Priority Users
+            getPriorityUser: db.prepare('SELECT 1 FROM priority_users WHERE whatsapp_id = ?'),
+            getPriorityUserByToken: db.prepare('SELECT whatsapp_id, name, device_fingerprint, fingerprint_created_at FROM priority_users WHERE mobile_token = ?'),
+            getMobileToken: db.prepare('SELECT mobile_token FROM priority_users WHERE whatsapp_id = ?'),
+            getDeviceFingerprint: db.prepare('SELECT device_fingerprint FROM priority_users WHERE mobile_token = ?'),
+
+            // Groups
+            getGroups: db.prepare('SELECT * FROM groups ORDER BY added_at DESC'),
+            getGroup: db.prepare('SELECT id FROM groups WHERE id = ?'),
+            removeGroup: db.prepare('DELETE FROM groups WHERE id = ?'),
+            updateGroupName: db.prepare('UPDATE groups SET name = ? WHERE id = ?'),
+
+            // Effects
+            getEffects: db.prepare('SELECT * FROM effects WHERE id = 1'),
+
+            // Admin Settings
+            getVipPasswordHash: db.prepare('SELECT value FROM admin_settings WHERE key = ?')
+        };
+    }
+    return preparedStatements;
+}
+
+// ============================================
 // Songs Operations
 // ============================================
 
@@ -86,8 +157,8 @@ function getOrCreateSong(songData) {
  * @returns {Object|null} Song data
  */
 function getSong(songId) {
-    const db = getDatabase();
-    const song = db.prepare('SELECT * FROM songs WHERE id = ?').get(songId);
+    const stmts = getPreparedStatements();
+    const song = stmts.getSongById.get(songId);
     if (song && song.lyrics_data) {
         try {
             song.lyrics_data = JSON.parse(song.lyrics_data);
@@ -105,8 +176,8 @@ function getSong(songId) {
  * @returns {Object|null} Lyrics data or null
  */
 function getSongLyrics(songId) {
-    const db = getDatabase();
-    const song = db.prepare('SELECT lyrics_data FROM songs WHERE id = ?').get(songId);
+    const stmts = getPreparedStatements();
+    const song = stmts.getSongLyrics.get(songId);
     if (!song || !song.lyrics_data) {
         return null;
     }
@@ -184,9 +255,8 @@ function updateSong(songId, updates) {
  * @param {number} gainDb - Gain adjustment in dB
  */
 function updateSongVolumeGain(songId, gainDb) {
-    const db = getDatabase();
-    db.prepare('UPDATE songs SET volume_gain_db = ? WHERE id = ?')
-        .run(gainDb, songId);
+    const stmts = getPreparedStatements();
+    stmts.updateSongVolumeGain.run(gainDb, songId);
 }
 
 // ============================================
@@ -357,25 +427,39 @@ function removeQueueItem(itemId) {
  */
 function reorderQueue(fromIndex, toIndex) {
     const db = getDatabase();
-    
-    // Get all items
-    const items = db.prepare('SELECT id, position FROM queue_items ORDER BY position').all();
-    if (fromIndex < 0 || fromIndex >= items.length || toIndex < 0 || toIndex >= items.length) {
+
+    // Validate indices without fetching all items
+    const count = db.prepare('SELECT COUNT(*) as count FROM queue_items').get().count;
+    if (fromIndex < 0 || fromIndex >= count || toIndex < 0 || toIndex >= count || fromIndex === toIndex) {
         return false;
     }
-    
+
     const transaction = db.transaction(() => {
-        // Remove item from old position
-        const [movedItem] = items.splice(fromIndex, 1);
-        // Insert at new position
-        items.splice(toIndex, 0, movedItem);
-        
-        // Update all positions
-        items.forEach((item, index) => {
-            db.prepare('UPDATE queue_items SET position = ? WHERE id = ?').run(index, item.id);
-        });
+        // Get the ID of the item being moved
+        const movedItem = db.prepare('SELECT id FROM queue_items WHERE position = ?').get(fromIndex);
+        if (!movedItem) return;
+
+        // Optimized position updates: only update items in the affected range
+        if (fromIndex < toIndex) {
+            // Moving down: shift items between fromIndex+1 and toIndex up by 1
+            db.prepare(`
+                UPDATE queue_items
+                SET position = position - 1
+                WHERE position > ? AND position <= ?
+            `).run(fromIndex, toIndex);
+        } else {
+            // Moving up: shift items between toIndex and fromIndex-1 down by 1
+            db.prepare(`
+                UPDATE queue_items
+                SET position = position + 1
+                WHERE position >= ? AND position < ?
+            `).run(toIndex, fromIndex);
+        }
+
+        // Set the moved item to its new position
+        db.prepare('UPDATE queue_items SET position = ? WHERE id = ?').run(toIndex, movedItem.id);
     });
-    
+
     transaction();
     return true;
 }
@@ -900,21 +984,62 @@ function verifyDeviceFingerprint(token, fingerprint) {
  */
 function getPlaylists() {
     const db = getDatabase();
-    const playlists = db.prepare('SELECT * FROM playlists ORDER BY updated_at DESC').all();
-    
-    // Load items for each playlist
-    return playlists.map(playlist => {
-        const items = db.prepare(`
-            SELECT * FROM playlist_items 
-            WHERE playlist_id = ? 
-            ORDER BY position ASC
-        `).all(playlist.id);
-        
-        return {
-            ...playlist,
-            songs: items
-        };
-    });
+
+    // Use a single JOIN query to fetch all playlists and their items at once
+    // This eliminates the N+1 query problem
+    const rows = db.prepare(`
+        SELECT
+            p.id as playlist_id,
+            p.name as playlist_name,
+            p.source as playlist_source,
+            p.source_url as playlist_source_url,
+            p.created_at as playlist_created_at,
+            p.updated_at as playlist_updated_at,
+            pi.id as item_id,
+            pi.title as item_title,
+            pi.artist as item_artist,
+            pi.url as item_url,
+            pi.search_query as item_search_query,
+            pi.position as item_position
+        FROM playlists p
+        LEFT JOIN playlist_items pi ON p.id = pi.playlist_id
+        ORDER BY p.updated_at DESC, pi.position ASC
+    `).all();
+
+    // Group rows by playlist ID
+    const playlistsMap = new Map();
+
+    for (const row of rows) {
+        const playlistId = row.playlist_id;
+
+        // Initialize playlist if not already in map
+        if (!playlistsMap.has(playlistId)) {
+            playlistsMap.set(playlistId, {
+                id: row.playlist_id,
+                name: row.playlist_name,
+                source: row.playlist_source,
+                source_url: row.playlist_source_url,
+                created_at: row.playlist_created_at,
+                updated_at: row.playlist_updated_at,
+                songs: []
+            });
+        }
+
+        // Add item to playlist if it exists (LEFT JOIN may have NULL items)
+        if (row.item_id !== null) {
+            playlistsMap.get(playlistId).songs.push({
+                id: row.item_id,
+                title: row.item_title,
+                artist: row.item_artist,
+                url: row.item_url,
+                search_query: row.item_search_query,
+                position: row.item_position
+            });
+        }
+    }
+
+    // Convert map to array (already sorted by updated_at DESC from query)
+    return Array.from(playlistsMap.values());
 }
 
 /**

@@ -1,6 +1,6 @@
 /**
  * Generic Cache Utility
- * Provides a reusable cache manager with TTL and size limits
+ * Provides a reusable cache manager with TTL and LRU eviction
  */
 
 class CacheManager {
@@ -18,6 +18,7 @@ class CacheManager {
 
     /**
      * Get cached value or null if expired/missing
+     * Implements LRU: moves accessed item to end of Map
      * @param {string} key - Cache key
      * @returns {*} Cached value or null
      */
@@ -33,21 +34,32 @@ class CacheManager {
             return null;
         }
 
+        // LRU: Move to end (most recently used)
+        this.cache.delete(key);
+        this.cache.set(key, cached);
+
         return cached.data;
     }
 
     /**
      * Set a value in the cache
+     * Implements LRU eviction: removes least recently used item when at capacity
      * @param {string} key - Cache key
      * @param {*} data - Data to cache
      */
     set(key, data) {
-        // Remove oldest entry if at max size
-        if (this.cache.size >= this.maxSize && !this.cache.has(key)) {
-            const firstKey = this.cache.keys().next().value;
-            this.cache.delete(firstKey);
+        // If key exists, delete it first (will be re-added at end)
+        if (this.cache.has(key)) {
+            this.cache.delete(key);
+        }
+        // Evict least recently used entry if at max size
+        else if (this.cache.size >= this.maxSize) {
+            // First key in Map is least recently used (LRU)
+            const lruKey = this.cache.keys().next().value;
+            this.cache.delete(lruKey);
         }
 
+        // Add to end (most recently used)
         this.cache.set(key, {
             data,
             timestamp: Date.now()
@@ -96,6 +108,25 @@ class CacheManager {
      */
     size() {
         return this.cache.size;
+    }
+
+    /**
+     * Clean up expired entries (optional periodic cleanup)
+     * Call this periodically to reclaim memory from expired entries
+     * @returns {number} Number of entries removed
+     */
+    cleanExpired() {
+        const now = Date.now();
+        let removed = 0;
+
+        for (const [key, value] of this.cache.entries()) {
+            if (now - value.timestamp >= this.ttl) {
+                this.cache.delete(key);
+                removed++;
+            }
+        }
+
+        return removed;
     }
 }
 
