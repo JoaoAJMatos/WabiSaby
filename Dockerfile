@@ -7,6 +7,7 @@ RUN apt-get update && \
     apt-get install -y --no-install-recommends \
     ffmpeg \
     mpv \
+    yt-dlp \
     && rm -rf /var/lib/apt/lists/*
 
 # Copy dependency files first for better layer caching
@@ -15,7 +16,8 @@ COPY package.json bun.lock* ./
 # Install dependencies using Bun's optimized install
 # --frozen-lockfile ensures reproducible builds
 # --production installs only production dependencies (if any)
-RUN bun install --frozen-lockfile --production
+# --ignore-scripts skips postinstall (system deps already installed via apt-get)
+RUN bun install --frozen-lockfile --production --ignore-scripts
 
 # Copy application code
 # This layer will be rebuilt only when code changes
