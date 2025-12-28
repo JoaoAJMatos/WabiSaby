@@ -1,5 +1,5 @@
 const axios = require('axios');
-const { exec } = require('child_process');
+const { execFile } = require('child_process');
 const { logger } = require('../../utils/logger.util');
 const { getSpotifyAccessToken, clearToken } = require('../spotify/auth.service');
 const { isSpotifyPlaylist, isYouTubePlaylist, isPlaylistUrl } = require('../../utils/url.util');
@@ -123,19 +123,24 @@ async function getSpotifyPlaylistTracks(url) {
 async function getYouTubePlaylistTracks(url) {
     try {
         logger.info(`Fetching YouTube playlist: ${url}`);
-        
+
         return new Promise((resolve, reject) => {
             // Use yt-dlp to get playlist info
-            const cmd = `yt-dlp --flat-playlist --print "%(url)s|%(title)s" "${url}"`;
-            
-            exec(cmd, { maxBuffer: 10 * 1024 * 1024 }, (error, stdout, stderr) => {
+            // Using execFile instead of exec to prevent command injection
+            const args = [
+                '--flat-playlist',
+                '--print', '%(url)s|%(title)s',
+                url
+            ];
+
+            execFile('yt-dlp', args, { maxBuffer: 10 * 1024 * 1024 }, (error, stdout, stderr) => {
                 if (error) {
                     logger.error(`Error fetching YouTube playlist: ${error.message}`);
                     logger.error(`stderr: ${stderr}`);
                     reject(new Error(`Failed to fetch YouTube playlist: ${error.message}`));
                     return;
                 }
-                
+
                 const lines = stdout.trim().split('\n').filter(line => line.trim());
                 const tracks = lines.map(line => {
                     const [videoId, title] = line.split('|');
@@ -144,7 +149,7 @@ async function getYouTubePlaylistTracks(url) {
                         title: title || 'Unknown Title'
                     };
                 }).filter(track => track.url && track.title);
-                
+
                 logger.info(`Found ${tracks.length} videos in YouTube playlist`);
                 resolve(tracks);
             });
