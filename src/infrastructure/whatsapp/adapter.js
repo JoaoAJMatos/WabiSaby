@@ -1,4 +1,6 @@
 const EventEmitter = require('events');
+const fs = require('fs');
+const path = require('path');
 const { default: makeWASocket, useMultiFileAuthState, DisconnectReason } = require('@whiskeysockets/baileys');
 const { pino } = require('pino');
 const config = require('../../config');
@@ -40,6 +42,42 @@ class WhatsAppAdapter extends EventEmitter {
         this.updateAuthStatus = updateAuthStatusFn;
         this.updateVipName = updateVipNameFn;
         this.setWhatsAppSocket = setWhatsAppSocketFn;
+    }
+
+    /**
+     * Delete auth state files (used when logged out)
+     * @returns {Promise<void>}
+     */
+    async deleteAuthStateFiles() {
+        const authDir = config.paths.auth;
+        if (fs.existsSync(authDir)) {
+            try {
+                const files = fs.readdirSync(authDir);
+                let deletedCount = 0;
+
+                for (const file of files) {
+                    const filePath = path.join(authDir, file);
+                    try {
+                        const stat = fs.statSync(filePath);
+                        if (stat.isFile()) {
+                            fs.unlinkSync(filePath);
+                            deletedCount++;
+                        } else if (stat.isDirectory()) {
+                            // Recursively delete directory contents
+                            fs.rmSync(filePath, { recursive: true, force: true });
+                            deletedCount++;
+                        }
+                    } catch (fileError) {
+                        logger.warn(`Failed to delete auth file ${file}:`, fileError.message);
+                    }
+                }
+
+                logger.info(`Deleted ${deletedCount} auth state file(s) after logout`);
+            } catch (dirError) {
+                logger.error('Error reading auth directory:', dirError);
+                throw dirError;
+            }
+        }
     }
 
     /**
@@ -137,7 +175,31 @@ class WhatsAppAdapter extends EventEmitter {
                                 event: 'logged_out',
                                 reason: 'User logged out from another device'
                             }
-                        }, 'WhatsApp logged out - manual reconnection required');
+                        }, 'WhatsApp logged out - clearing auth state and generating new QR code');
+                        
+                        // Clear invalid auth state files
+                        this.deleteAuthStateFiles().then(() => {
+                            // Wait a bit for file system to sync, then reconnect to generate new QR
+                            setTimeout(() => {
+                                logger.info({
+                                    component: 'whatsapp',
+                                    context: { event: 'reconnecting_after_logout' }
+                                }, 'Reconnecting to WhatsApp after logout to generate new QR code...');
+                                this.connectToWhatsApp();
+                            }, 500);
+                        }).catch((error) => {
+                            logger.error({
+                                component: 'whatsapp',
+                                context: {
+                                    event: 'auth_cleanup_error',
+                                    error: error.message
+                                }
+                            }, 'Error cleaning up auth state, attempting reconnect anyway:', error);
+                            // Still try to reconnect even if cleanup failed
+                            setTimeout(() => {
+                                this.connectToWhatsApp();
+                            }, 500);
+                        });
                     }
                 } else if (connection === 'open') {
                     this.isConnected = true;

@@ -7,147 +7,97 @@
 (function() {
     'use strict';
     
+    const SESSION_STORAGE_KEY = 'wabisaby_startup_sound_played';
+    
     let startupSoundPlayed = false;
-    let startupAudio = null;
     let soundFinished = false;
     let soundDuration = null;
     let onSoundEndCallbacks = [];
     
     /**
+     * Check if startup sound has already been played in this session
+     * @returns {boolean}
+     */
+    function hasSoundBeenPlayed() {
+        try {
+            return sessionStorage.getItem(SESSION_STORAGE_KEY) === 'true';
+        } catch (e) {
+            return false;
+        }
+    }
+    
+    /**
+     * Mark startup sound as played in session storage
+     */
+    function markSoundAsPlayed() {
+        try {
+            sessionStorage.setItem(SESSION_STORAGE_KEY, 'true');
+        } catch (e) {
+            // Ignore errors (e.g., private browsing mode)
+        }
+    }
+    
+    /**
      * Initialize and start the startup sound
-     * @param {string} soundPath - Path to the startup sound file
+     * @param {string} soundPath - Path to the startup sound file (not used for backend playback)
      * @param {boolean} waitForCompletion - Whether to track completion for redirect delays
      */
     function initStartupSound(soundPath, waitForCompletion = false) {
-        if (startupAudio) return; // Already initialized
-        
-        try {
-            startupAudio = new Audio(soundPath);
-            startupAudio.volume = 0.5; // Set volume to 50% to avoid being too loud
-            startupAudio.preload = 'auto'; // Aggressive preloading
-            
-            // Track when sound starts playing
-            startupAudio.addEventListener('play', () => {
-                startupSoundPlayed = true;
-                console.log('✓ Startup sound started playing');
-            }, { once: true });
-            
-            // Track when sound ends - for redirect delays
-            if (waitForCompletion) {
-                startupAudio.addEventListener('ended', () => {
-                    soundFinished = true;
-                    console.log('✓ Startup sound finished playing');
-                    // Notify all callbacks that sound has ended
-                    onSoundEndCallbacks.forEach(callback => {
-                        try {
-                            callback();
-                        } catch (e) {
-                            console.error('Error in sound end callback:', e);
-                        }
-                    });
-                    onSoundEndCallbacks = []; // Clear callbacks
-                }, { once: true });
-                
-                // Get duration when metadata loads (fires very early)
-                startupAudio.addEventListener('loadedmetadata', () => {
-                    soundDuration = startupAudio.duration;
-                    console.log(`Startup sound duration: ${soundDuration.toFixed(2)}s`);
-                }, { once: true });
-            }
-            
-            // Try to play immediately - browser will buffer automatically
-            // This is the fastest way to start playback
-            playStartupSound();
-            
-            // Also try when loadstart fires (fires immediately when loading begins)
-            startupAudio.addEventListener('loadstart', () => {
-                console.log('Startup sound loading started - attempting to play');
-                playStartupSound();
-            }, { once: true });
-            
-            // Try when we have enough data to start (fires early, before full load)
-            startupAudio.addEventListener('canplay', () => {
-                console.log('Startup sound can play - attempting to start');
-                playStartupSound();
-            }, { once: true });
-            
-            // Also try when loadeddata fires (backup)
-            startupAudio.addEventListener('loadeddata', () => {
-                console.log('Startup sound data loaded - attempting to start');
-                playStartupSound();
-            }, { once: true });
-            
-            // Handle errors
-            startupAudio.addEventListener('error', (e) => {
-                console.error('Startup sound error:', e);
-                console.error('Audio error details:', startupAudio.error);
-                if (waitForCompletion) {
-                    soundFinished = true; // Don't block redirect on error
-                }
-            });
-            
-            // Load the audio immediately (triggers loadstart)
-            startupAudio.load();
-        } catch (error) {
-            console.error('Failed to create startup sound:', error);
-            if (waitForCompletion) {
-                soundFinished = true; // Don't block redirect on error
-            }
-        }
-    }
-    
-    /**
-     * Attempt to play the startup sound
-     */
-    function playStartupSound() {
-        // Only play once
-        if (startupSoundPlayed || !startupAudio) {
+        // Check if sound has already been played in this session
+        if (hasSoundBeenPlayed()) {
+            console.log('Startup sound already played in this session - skipping');
+            startupSoundPlayed = true;
+            soundFinished = true;
             return;
         }
         
-        try {
-            // Try to play immediately
-            const playPromise = startupAudio.play();
-            
-            if (playPromise !== undefined) {
-                playPromise
-                    .then(() => {
-                        console.log('✓ Startup sound playing successfully');
-                        startupSoundPlayed = true;
-                    })
-                    .catch(err => {
-                        // Autoplay was blocked - will play on user interaction
-                        console.log('⚠ Startup sound autoplay blocked:', err.message);
-                        console.log('   Sound will play on first user interaction');
-                    });
+        fetch('/api/startup-sound/play', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json'
             }
-        } catch (error) {
-            console.error('Startup sound play error:', error);
-        }
-    }
-    
-    /**
-     * Setup user interaction fallback for autoplay restrictions
-     */
-    function setupInteractionFallback() {
-        const playOnInteraction = (event) => {
-            if (!startupSoundPlayed) {
-                console.log('User interaction detected, playing startup sound...');
-                playStartupSound();
+        })
+        .then(response => response.json())
+        .then(data => {
+            if (data.success) {
+                console.log('✓ Startup sound playing on backend');
+                startupSoundPlayed = true;
+                markSoundAsPlayed();
+                
+                // If we need to wait for completion, estimate duration
+                // (we can't track backend playback completion easily, so just mark as finished after a delay)
+                if (waitForCompletion) {
+                    // Estimate sound duration (you can adjust this based on your actual sound file)
+                    const estimatedDuration = 2000; // 2 seconds default
+                    soundDuration = estimatedDuration / 1000;
+                    setTimeout(() => {
+                        soundFinished = true;
+                        console.log('✓ Startup sound finished playing');
+                        onSoundEndCallbacks.forEach(callback => {
+                            try {
+                                callback();
+                            } catch (e) {
+                                console.error('Error in sound end callback:', e);
+                            }
+                        });
+                        onSoundEndCallbacks = [];
+                    }, estimatedDuration);
+                } else {
+                    soundFinished = true;
+                }
+            } else {
+                console.warn('Failed to play startup sound:', data.error);
+                startupSoundPlayed = true;
+                soundFinished = true;
+                markSoundAsPlayed();
             }
-        };
-        
-        // Listen for various user interactions
-        ['click', 'touchstart', 'keydown', 'mousedown'].forEach(event => {
-            document.addEventListener(event, playOnInteraction, { once: true, passive: true });
+        })
+        .catch(error => {
+            console.error('Error playing startup sound:', error);
+            startupSoundPlayed = true;
+            soundFinished = true;
+            markSoundAsPlayed();
         });
-        
-        // Also make the loading overlay clickable
-        const loadingOverlay = document.getElementById('loading-overlay');
-        if (loadingOverlay) {
-            loadingOverlay.addEventListener('click', playOnInteraction, { once: true, passive: true });
-            loadingOverlay.style.cursor = 'pointer'; // Show it's clickable
-        }
     }
     
     /**
@@ -199,7 +149,6 @@
         init: function(soundPath, options = {}) {
             const waitForCompletion = options.waitForCompletion || false;
             initStartupSound(soundPath, waitForCompletion);
-            setupInteractionFallback();
         },
         
         /**
