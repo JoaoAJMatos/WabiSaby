@@ -15,6 +15,7 @@ class NotificationService {
         this.isEnabled = config.notifications.enabled;
         this.notifyAtPosition = config.notifications.notifyAtPosition;
         this.notifiedSongs = new Set(); // Track songs we've already notified about
+        this.isChecking = false; // Lock to prevent concurrent execution
     }
 
     /**
@@ -45,63 +46,79 @@ class NotificationService {
 
     /**
      * Check the queue and notify users whose songs are coming up
+     * Uses locking to prevent duplicate notifications from concurrent calls
      */
     async checkAndNotifyUpcomingSongs() {
         if (!this.sock || !this.isEnabled) {
             return;
         }
 
-        // Access services lazily to avoid circular dependency issues
-        const servicesRef = require('../');
-        if (!servicesRef.playback || !servicesRef.playback.queue || !servicesRef.playback.orchestrator) {
+        // Lock to prevent concurrent execution - if already checking, skip this call
+        if (this.isChecking) {
             return;
         }
 
-        const queue = servicesRef.playback.queue.getQueue();
-        const currentSong = servicesRef.playback.orchestrator.getCurrent();
+        this.isChecking = true;
 
-        // Only proceed if there's a current song playing
-        if (!currentSong) {
-            return;
-        }
+        try {
+            // Access services lazily to avoid circular dependency issues
+            const servicesRef = require('../');
+            if (!servicesRef.playback || !servicesRef.playback.queue || !servicesRef.playback.orchestrator) {
+                return;
+            }
 
-        // Calculate which position to notify at (0-indexed)
-        const notifyIndex = Math.max(0, this.notifyAtPosition - 1);
-        
-        // Check if we have a song at the notify position
-        if (queue.length > notifyIndex) {
-            const songToNotify = queue[notifyIndex];
+            const queue = servicesRef.playback.queue.getQueue();
+            const currentSong = servicesRef.playback.orchestrator.getCurrent();
+
+            // Only proceed if there's a current song playing
+            if (!currentSong) {
+                return;
+            }
+
+            // Calculate which position to notify at (0-indexed)
+            const notifyIndex = Math.max(0, this.notifyAtPosition - 1);
             
-            // Create a unique identifier for this notification
-            const notificationId = `${songToNotify.requester}_${songToNotify.title}_${songToNotify.content}`;
-            
-            // Only notify if we haven't already notified about this song and it's not from the web dashboard
-            if (!this.notifiedSongs.has(notificationId) && songToNotify.remoteJid !== 'WEB_DASHBOARD') {
-                // Check if notifications are enabled for this specific user
-                const userWhatsappId = songToNotify.sender;
-                if (!this.isUserNotificationEnabled(userWhatsappId)) {
-                    return; // User has disabled notifications, skip
-                }
+            // Check if we have a song at the notify position
+            if (queue.length > notifyIndex) {
+                const songToNotify = queue[notifyIndex];
                 
-                try {
-                    const positionInQueue = notifyIndex + 1;
-                    const message = this.formatUpcomingMessage(songToNotify, positionInQueue);
-                    const userJid = songToNotify.sender;
-                    await helpersUtil.sendMessageWithMention(this.sock, userJid, message);
-                    
-                    // Mark this song as notified
-                    this.notifiedSongs.add(notificationId);
-                    logger.info(`[Notification Service] Notified ${songToNotify.requester} about upcoming song (position ${positionInQueue}): ${songToNotify.title}`);
-                    
-                    // Clean up old notifications (keep only last 50)
-                    if (this.notifiedSongs.size > 50) {
-                        const toDelete = Array.from(this.notifiedSongs).slice(0, 10);
-                        toDelete.forEach(id => this.notifiedSongs.delete(id));
+                // Create a unique identifier for this notification
+                const notificationId = `${songToNotify.requester}_${songToNotify.title}_${songToNotify.content}`;
+                
+                // Only notify if we haven't already notified about this song and it's not from the web dashboard
+                if (!this.notifiedSongs.has(notificationId) && songToNotify.remoteJid !== 'WEB_DASHBOARD') {
+                    // Check if notifications are enabled for this specific user
+                    const userWhatsappId = songToNotify.sender;
+                    if (!this.isUserNotificationEnabled(userWhatsappId)) {
+                        return; // User has disabled notifications, skip
                     }
-                } catch (error) {
-                    logger.error('[Notification Service] Failed to send notification:', error.message);
+                    
+                    // Mark as notified BEFORE sending to prevent race conditions
+                    // This ensures that concurrent calls will see this song as already notified
+                    this.notifiedSongs.add(notificationId);
+                    
+                    try {
+                        const positionInQueue = notifyIndex + 1;
+                        const message = this.formatUpcomingMessage(songToNotify, positionInQueue);
+                        const userJid = songToNotify.sender;
+                        await helpersUtil.sendMessageWithMention(this.sock, userJid, message);
+                        
+                        logger.info(`[Notification Service] Notified ${songToNotify.requester} about upcoming song (position ${positionInQueue}): ${songToNotify.title}`);
+                        
+                        // Clean up old notifications (keep only last 50)
+                        if (this.notifiedSongs.size > 50) {
+                            const toDelete = Array.from(this.notifiedSongs).slice(0, 10);
+                            toDelete.forEach(id => this.notifiedSongs.delete(id));
+                        }
+                    } catch (error) {
+                        // If sending failed, remove from notified set so we can retry on next check
+                        this.notifiedSongs.delete(notificationId);
+                        logger.error('[Notification Service] Failed to send notification:', error.message);
+                    }
                 }
             }
+        } finally {
+            this.isChecking = false;
         }
     }
 

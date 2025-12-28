@@ -216,10 +216,6 @@ class EventListenerRegistry {
     registerNotificationListeners() {
         const services = require('../../services');
 
-        this.on(PLAYBACK_STARTED, async () => {
-            await services.system.notification.checkAndNotifyUpcomingSongs();
-        });
-
         this.on(QUEUE_UPDATED, async () => {
             await services.system.notification.checkAndNotifyUpcomingSongs();
         });
