@@ -1096,6 +1096,7 @@ function morphToLyrics() {
         const targetTitle = elements.lyricsTitle;
         const targetArtist = elements.lyricsArtist;
         const miniPlayer = document.querySelector('.mini-player');
+        const nowPlayingCard = document.querySelector('.now-playing-card');
 
         // Ensure mini player is visible for measuring (temporarily)
         const lyricsView = document.querySelector('.lyrics-view');
@@ -1103,6 +1104,13 @@ function morphToLyrics() {
         lyricsView.style.opacity = '0';
         miniPlayer.style.opacity = '1';
         miniPlayer.style.transform = 'translateY(0)';
+
+        // Hide the card immediately when morph starts (no transition)
+        if (nowPlayingCard) {
+            nowPlayingCard.style.transition = 'none';
+            nowPlayingCard.style.opacity = '0';
+            nowPlayingCard.style.pointerEvents = 'none';
+        }
 
         // Force layout recalc
         void miniPlayer.offsetHeight;
@@ -1199,6 +1207,18 @@ function morphToLyrics() {
             document.body.classList.remove('visualizer-mode');
             document.body.classList.add('lyrics-mode');
 
+            // Reset inline styles to let CSS take over
+            lyricsView.style.display = '';
+            lyricsView.style.opacity = '';
+            miniPlayer.style.opacity = '';
+            miniPlayer.style.transform = '';
+            if (nowPlayingCard) {
+                nowPlayingCard.style.opacity = '';
+                nowPlayingCard.style.transform = '';
+                nowPlayingCard.style.transition = '';
+                nowPlayingCard.style.pointerEvents = '';
+            }
+
             isMorphing = false;
             resolve();
         }, MORPH_DURATION + 50);
@@ -1231,8 +1251,14 @@ function morphToVisualizer() {
         const nowPlayingCard = document.querySelector('.now-playing-card');
         visualizerView.style.display = 'flex';
         visualizerView.style.opacity = '0';
-        nowPlayingCard.style.opacity = '1';
-        nowPlayingCard.style.transform = 'scale(1) translateY(0)';
+        
+        // Show the card immediately when morph starts (no transition)
+        if (nowPlayingCard) {
+            nowPlayingCard.style.transition = 'none';
+            nowPlayingCard.style.opacity = '1';
+            nowPlayingCard.style.transform = 'scale(1) translateY(0)';
+            nowPlayingCard.style.pointerEvents = 'auto';
+        }
 
         // Force layout recalc
         void nowPlayingCard.offsetHeight;
@@ -1331,8 +1357,12 @@ function morphToVisualizer() {
             // Reset visualizer view styles
             visualizerView.style.display = '';
             visualizerView.style.opacity = '';
-            nowPlayingCard.style.opacity = '';
-            nowPlayingCard.style.transform = '';
+            if (nowPlayingCard) {
+                nowPlayingCard.style.opacity = '';
+                nowPlayingCard.style.transform = '';
+                nowPlayingCard.style.transition = '';
+                nowPlayingCard.style.pointerEvents = '';
+            }
 
             isMorphing = false;
             resolve();
