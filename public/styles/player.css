@@ -1093,3 +1093,236 @@
             z-index: 2;
             position: relative;
         }
+
+        /* ============================================
+           MORPH TRANSITION ANIMATION
+           ============================================ */
+
+        /* Morph container - fixed positioned overlay for animation */
+        .morph-container {
+            position: fixed;
+            inset: 0;
+            z-index: 1000;
+            pointer-events: none;
+            overflow: hidden;
+        }
+
+        /* The morphing album art clone */
+        .morph-album {
+            position: absolute;
+            background: linear-gradient(135deg, rgba(52, 211, 153, 0.08) 0%, rgba(20, 20, 30, 0.9) 100%);
+            overflow: hidden;
+            will-change: transform, border-radius, width, height, left, top;
+            transition-property: transform, border-radius, width, height, left, top, box-shadow, filter;
+            /* Spring-like easing for organic feel */
+            transition-timing-function: cubic-bezier(0.34, 1.56, 0.64, 1);
+            backface-visibility: hidden;
+            transform-origin: center center;
+            /* Subtle glow during animation */
+            filter: drop-shadow(0 0 20px rgba(52, 211, 153, 0.15));
+        }
+
+        .morph-album.animating {
+            filter: drop-shadow(0 0 30px rgba(52, 211, 153, 0.3));
+        }
+
+        .morph-album img {
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+        }
+
+        /* Morphing song info container */
+        .morph-info {
+            position: absolute;
+            display: flex;
+            flex-direction: column;
+            will-change: transform, opacity, left, top, width;
+            transition-property: transform, opacity, left, top, width, gap;
+            transition-timing-function: cubic-bezier(0.4, 0, 0.1, 1);
+            backface-visibility: hidden;
+            pointer-events: none;
+        }
+
+        .morph-title {
+            font-weight: 700;
+            color: #fff;
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+            will-change: font-size, transform;
+            transition-property: font-size, transform;
+            transition-timing-function: cubic-bezier(0.4, 0, 0.1, 1);
+        }
+
+        .morph-artist {
+            color: rgba(255, 255, 255, 0.7);
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+            will-change: font-size, transform, opacity;
+            transition-property: font-size, transform, opacity;
+            transition-timing-function: cubic-bezier(0.4, 0, 0.1, 1);
+        }
+
+        /* Hide source elements during morph */
+        body.morphing .now-playing-card .album-art,
+        body.morphing .now-playing-card .song-info {
+            opacity: 0 !important;
+            transition: opacity 0.05s ease-out;
+        }
+
+        body.morphing .mini-player .mini-album,
+        body.morphing .mini-player .mini-player-info {
+            opacity: 0 !important;
+            transition: opacity 0.05s ease-out;
+        }
+
+        /* Override default transitions during morph */
+        body.morphing .now-playing-card {
+            opacity: 1 !important;
+            transform: none !important;
+            transition: none !important;
+        }
+
+        body.morphing .mini-player {
+            opacity: 1 !important;
+            transform: none !important;
+            transition: none !important;
+        }
+
+        body.morphing.lyrics-mode .visualizer-view {
+            opacity: 1 !important;
+            pointer-events: none;
+            transition: none !important;
+        }
+
+        body.morphing.visualizer-mode .lyrics-view {
+            opacity: 1 !important;
+            pointer-events: none;
+            transition: none !important;
+            display: flex !important;
+        }
+
+        /* Fade the backgrounds during morph */
+        body.morphing .bg-blur {
+            transition: filter 0.5s cubic-bezier(0.4, 0, 0.1, 1),
+                        transform 0.5s cubic-bezier(0.4, 0, 0.1, 1);
+        }
+
+        /* Smooth lyrics container fade during morph */
+        body.morphing .lyrics-container {
+            transition: opacity 0.4s cubic-bezier(0.4, 0, 0.1, 1) !important;
+        }
+
+        body.morphing.to-lyrics .lyrics-container {
+            opacity: 0;
+        }
+
+        /* Fade in lyrics footer/header during morph to lyrics */
+        body.morphing.to-lyrics .lyrics-footer,
+        body.morphing.to-lyrics .lyrics-header {
+            opacity: 0;
+            transition: opacity 0.3s ease-out 0.3s;
+        }
+
+        /* Canvas fade during morph */
+        body.morphing #wave-canvas,
+        body.morphing #shadow-canvas {
+            transition: opacity 0.4s cubic-bezier(0.4, 0, 0.1, 1);
+        }
+
+        /* Card background fade for smooth transition */
+        .now-playing-card-bg {
+            position: absolute;
+            inset: 0;
+            background: rgba(30, 30, 35, 0.65);
+            backdrop-filter: blur(40px) saturate(1.4);
+            -webkit-backdrop-filter: blur(40px) saturate(1.4);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            border-radius: 28px;
+            z-index: -1;
+            transition: opacity 0.4s cubic-bezier(0.4, 0, 0.1, 1);
+        }
+
+        body.morphing.to-lyrics .now-playing-card-bg,
+        body.morphing.to-lyrics .now-playing-card::before {
+            opacity: 0;
+        }
+
+        /* Mini player background morph helper */
+        .mini-player-bg-morph {
+            position: absolute;
+            inset: 0;
+            background: rgba(40, 40, 45, 0.4);
+            backdrop-filter: blur(20px);
+            -webkit-backdrop-filter: blur(20px);
+            border: 1px solid rgba(255, 255, 255, 0.05);
+            border-radius: 50px;
+            z-index: -1;
+            opacity: 0;
+            transform: scale(0.8);
+            transition: opacity 0.4s cubic-bezier(0.4, 0, 0.1, 1),
+                        transform 0.4s cubic-bezier(0.4, 0, 0.1, 1);
+        }
+
+        body.morphing.to-lyrics .mini-player-bg-morph {
+            opacity: 1;
+            transform: scale(1);
+            transition-delay: 0.2s;
+        }
+
+        /* Morph to visualizer specific styles */
+        body.morphing.to-visualizer .lyrics-view {
+            opacity: 1 !important;
+            pointer-events: none;
+        }
+
+        body.morphing.to-visualizer .lyrics-container {
+            opacity: 0 !important;
+            transition: opacity 0.2s ease-out !important;
+        }
+
+        body.morphing.to-visualizer .lyrics-footer {
+            opacity: 0 !important;
+            transition: opacity 0.2s ease-out !important;
+        }
+
+        body.morphing.to-visualizer .visualizer-view {
+            opacity: 0 !important;
+            pointer-events: none;
+        }
+
+        /* Progress section fade during morph */
+        body.morphing .now-playing-card .progress-section,
+        body.morphing .now-playing-card .song-requester,
+        body.morphing .now-playing-card .active-effects {
+            opacity: 0 !important;
+            transition: opacity 0.15s ease-out;
+        }
+
+        /* Ensure smooth appearance after morph */
+        body:not(.morphing) .now-playing-card .album-art,
+        body:not(.morphing) .now-playing-card .song-info,
+        body:not(.morphing) .mini-player .mini-album,
+        body:not(.morphing) .mini-player .mini-player-info {
+            opacity: 1;
+            transition: opacity 0.2s ease-in 0.05s;
+        }
+
+        /* Add subtle scale animation to card during morph */
+        body.morphing.to-lyrics .now-playing-card {
+            transform: scale(0.98) !important;
+            transition: transform 0.3s cubic-bezier(0.4, 0, 0.1, 1) !important;
+        }
+
+        body.morphing.to-visualizer .now-playing-card {
+            transform: scale(1.02) !important;
+            transition: transform 0.3s cubic-bezier(0.4, 0, 0.1, 1) !important;
+        }
+
+        /* Lyrics header gradient fade during morph to visualizer */
+        body.morphing.to-visualizer .lyrics-header {
+            opacity: 0 !important;
+            transition: opacity 0.2s ease-out !important;
+        }
