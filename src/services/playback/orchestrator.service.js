@@ -384,17 +384,78 @@ class PlaybackOrchestrator extends EventEmitter {
                 // Reset flags since we're not actually playing
                 this.isPlaying = false;
                 this.isProcessing = false;
-                if (item.remoteJid) {
-                    await notificationService.sendPlaybackNotification(
-                        item.remoteJid,
-                        '❌ *Playback Failed*\n\nCouldn\'t play this song.\n\n💡 The file may be corrupted or unavailable.',
-                        item.sender
-                    );
+                
+                // Determine if we should remove the item or mark for re-download
+                const hasSourceUrl = item.sourceUrl && (item.sourceUrl.startsWith('http://') || item.sourceUrl.startsWith('https://'));
+                const isFileType = item.type === 'file';
+                
+                if (isFileType && hasSourceUrl) {
+                    // File is missing but we have a source URL - mark for re-download
+                    playbackLogger.warn({
+                        context: {
+                            event: 'marking_for_redownload',
+                            songTitle: item.title || item.content,
+                            songId: item.id,
+                            sourceUrl: item.sourceUrl
+                        }
+                    }, `File missing, marking for re-download: "${item.title || item.content}"`);
+                    
+                    item.type = 'url';
+                    item.content = item.sourceUrl;
+                    item.downloadStatus = 'pending';
+                    item.downloadProgress = 0;
+                    item.prefetched = false;
+                    queueService.saveQueue(true);
+                    
+                    if (item.remoteJid) {
+                        await notificationService.sendPlaybackNotification(
+                            item.remoteJid,
+                            '⏳ *Re-downloading*\n\nFile was missing, attempting to download again.',
+                            item.sender
+                        );
+                    }
+                } else {
+                    // No source URL or already a URL type - remove from queue to prevent infinite retry loop
+                    playbackLogger.warn({
+                        context: {
+                            event: 'removing_failed_song',
+                            songTitle: item.title || item.content,
+                            songId: item.id,
+                            reason: hasSourceUrl ? 'Download failed' : 'File missing and no source URL'
+                        }
+                    }, `Removing song from queue: "${item.title || item.content}" - File not found or download failed`);
+                    
+                    // Remove the item from the queue
+                    if (item.id) {
+                        queueService.removeById(item.id);
+                    } else if (itemIndex !== null) {
+                        queueService.remove(itemIndex);
+                    } else {
+                        // Fallback: find and remove by content/title
+                        const queue = queueService.getQueue();
+                        const indexToRemove = queue.findIndex(qItem => 
+                            (qItem.id === item.id) ||
+                            (qItem.content === item.content && qItem.type === item.type) ||
+                            (qItem.title === item.title && qItem.artist === item.artist)
+                        );
+                        if (indexToRemove !== -1) {
+                            queueService.remove(indexToRemove);
+                        }
+                    }
+                    
+                    if (item.remoteJid) {
+                        await notificationService.sendPlaybackNotification(
+                            item.remoteJid,
+                            '❌ *Playback Failed*\n\nCouldn\'t play this song.\n\n💡 The file may be corrupted or unavailable.',
+                            item.sender
+                        );
+                    }
                 }
-                // Wait before retrying to prevent immediate retry loop
+                
+                // Wait before processing next to prevent immediate retry loop
                 await new Promise(resolve => setTimeout(resolve, config.playback.songTransitionDelay));
                 
-                // Only retry if queue still has items
+                // Process next item if available
                 const updatedQueue = queueService.getQueue();
                 if (updatedQueue.length > 0 && !this.isProcessing) {
                     this.handlePlaybackFinished(false);
