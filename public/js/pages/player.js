@@ -125,6 +125,9 @@ broadcast.onmessage = (event) => {
                 renderActiveEffects(msg.effects);
             }
             break;
+        case 'LYRICS_TOGGLE':
+            handleLyricsToggle(msg.action);
+            break;
     }
 };
 
@@ -1479,6 +1482,34 @@ function setLyricsMode() {
             scrollToLyricLine(currentLineIndex >= 0 ? currentLineIndex : 0, true);
         }, 50);
     });
+}
+
+function handleLyricsToggle(action) {
+    if (!hasLyrics) return;
+
+    switch(action) {
+        case 'toggle':
+            if (showLyricsMode) {
+                setVisualizerMode();
+            } else {
+                setLyricsMode();
+            }
+            break;
+        case 'show':
+        case 'on':
+        case 'enable':
+            if (!showLyricsMode) {
+                setLyricsMode();
+            }
+            break;
+        case 'hide':
+        case 'off':
+        case 'disable':
+            if (showLyricsMode) {
+                setVisualizerMode();
+            }
+            break;
+    }
 }
 
 elements.btnVisualizer.addEventListener('click', setVisualizerMode);

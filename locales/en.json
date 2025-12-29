@@ -52,6 +52,11 @@
         "title": "🌐 *Language*\n",
         "usage": "`!language [en|pt]`\n",
         "description": "Set your language preference"
+      },
+      "lyrics": {
+        "title": "🎤 *Lyrics*\n",
+        "usage": "`!lyrics [on|off|toggle]`\n",
+        "description": "Toggle lyrics display in player"
       }
     },
     "play": {
@@ -108,6 +113,12 @@
       "alreadyMonitored": "This group is already being monitored.",
       "pending": "A request to add this group is already pending. Please check the web dashboard to confirm.",
       "requestSent": "Request to add this group has been sent. Please check the web dashboard to confirm."
+    },
+    "lyrics": {
+      "usage": "🎤 *Usage*\n\n`!lyrics [on|off|toggle]`\n\n✨ *Options:*\n• `on` or `show` - Show lyrics\n• `off` or `hide` - Hide lyrics\n• `toggle` - Toggle lyrics (default)",
+      "toggled": "🎤 *Lyrics Toggled*\n\nThe lyrics display has been toggled in the player.",
+      "enabled": "✅ *Lyrics Enabled*\n\nLyrics are now displayed in the player.",
+      "disabled": "❌ *Lyrics Disabled*\n\nLyrics are now hidden in the player."
     },
     "rateLimit": {
       "exceeded": "⏱️ *Rate Limit Exceeded*\n\nYou've made too many requests. Please wait *{seconds}* seconds before trying again.\n\n💡 VIP users have unlimited requests."

@@ -30,7 +30,9 @@ const {
     // WhatsApp events
     COMMAND_RECEIVED,
     MEDIA_RECEIVED,
-    CONNECTION_CHANGED
+    CONNECTION_CHANGED,
+    // Player events
+    LYRICS_TOGGLE
 } = require('../');
 
 class EventListenerRegistry {
@@ -57,6 +59,7 @@ class EventListenerRegistry {
         this.registerWhatsAppListeners();
         this.registerNotificationListeners();
         this.registerEffectsListeners();
+        this.registerPlayerListeners();
 
         this.initialized = true;
         logger.info(`Registered ${this.listeners.length} event listeners`);
@@ -223,6 +226,30 @@ class EventListenerRegistry {
 
     registerEffectsListeners() {
         // Effects service will emit to bus, listeners already registered above
+    }
+
+    registerPlayerListeners() {
+        const services = require('../../services');
+        const statusService = services.system.status;
+
+        // Listen for lyrics toggle events and broadcast via status service
+        this.on(LYRICS_TOGGLE, ({ action }) => {
+            logger.info(`Lyrics toggle requested: ${action}`);
+            // Broadcast via status service SSE to reach dashboard
+            if (statusService && statusService.clients) {
+                const data = JSON.stringify({
+                    type: 'LYRICS_TOGGLE',
+                    action: action
+                });
+                statusService.clients.forEach(client => {
+                    try {
+                        client.write(`data: ${data}\n\n`);
+                    } catch (err) {
+                        // Client disconnected, will be removed automatically
+                    }
+                });
+            }
+        });
     }
 
     /**

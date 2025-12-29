@@ -52,6 +52,11 @@
         "title": "🌐 *Idioma*\n",
         "usage": "`!language [en|pt]`\n",
         "description": "Definir a tua preferência de idioma"
+      },
+      "lyrics": {
+        "title": "🎤 *Letras*\n",
+        "usage": "`!lyrics [on|off|toggle]`\n",
+        "description": "Liga/Desliga exibição de letras no player"
       }
     },
     "play": {
@@ -116,6 +121,12 @@
       "alreadyMonitored": "Este grupo já está a ser monitorizado.",
       "pending": "Um pedido para adicionar este grupo já está pendente. Por favor, verifica o painel web para confirmar.",
       "requestSent": "Pedido para adicionar este grupo foi enviado. Por favor, verifica o painel web para confirmar."
+    },
+    "lyrics": {
+      "usage": "🎤 *Uso*\n\n`!lyrics [on|off|toggle]`\n\n✨ *Opções:*\n• `on` ou `show` - Mostrar letras\n• `off` ou `hide` - Ocultar letras\n• `toggle` - Alternar letras (padrão)",
+      "toggled": "🎤 *Letras Alternadas*\n\nA exibição de letras foi alternada no player.",
+      "enabled": "✅ *Letras Activadas*\n\nAs letras estão agora a ser exibidas no player.",
+      "disabled": "❌ *Letras Desactivadas*\n\nAs letras estão agora ocultas no player."
     },
     "rateLimit": {
       "exceeded": "⏱️ *Limite de Pedidos Excedido*\n\nFizeste demasiados pedidos. Por favor, espera *{seconds}* segundos antes de tentares novamente.\n\n💡 Os utilizadores VIP têm pedidos ilimitados."

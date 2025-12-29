@@ -13,6 +13,7 @@ const notificationsCommand = require('./implementations/notifications');
 const playlistCommand = require('./implementations/playlist');
 const { pingCommand } = require('./implementations/ping');
 const languageCommand = require('./implementations/language');
+const lyricsCommand = require('./implementations/lyrics');
 
 /**
  * Command Handler
@@ -30,7 +31,8 @@ const COMMANDS = {
     PLAYLIST: '!playlist',
     PING: '!ping',
     LANGUAGE: '!language',
-    LANG: '!lang'
+    LANG: '!lang',
+    LYRICS: '!lyrics'
 };
 
 /**
@@ -106,6 +108,10 @@ async function handleCommand(sock, msg, text) {
             case COMMANDS.LANGUAGE:
             case COMMANDS.LANG:
                 await languageCommand(sock, msg, args, depsWithLang);
+                break;
+                
+            case COMMANDS.LYRICS:
+                await lyricsCommand(sock, msg, args, depsWithLang);
                 break;
                 
             default:

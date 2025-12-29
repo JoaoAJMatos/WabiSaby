@@ -1493,6 +1493,19 @@ function connectStatusSSE() {
     statusEventSource.onmessage = (event) => {
         try {
             const data = JSON.parse(event.data);
+            
+            // Handle lyrics toggle messages separately
+            if (data.type === 'LYRICS_TOGGLE') {
+                // Broadcast to player via BroadcastChannel
+                if (typeof broadcast !== 'undefined') {
+                    broadcast.postMessage({
+                        type: 'LYRICS_TOGGLE',
+                        action: data.action
+                    });
+                }
+                return;
+            }
+            
             // Reuse existing fetchData logic to update UI
             handleStatusUpdate(data);
         } catch (e) {

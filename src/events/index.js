@@ -141,6 +141,12 @@ const MEDIA_RECEIVED = 'media_received';
  */
 const CONNECTION_CHANGED = 'connection_changed';
 
+/**
+ * Emitted when lyrics should be toggled in the player
+ * Payload: { action: 'toggle' | 'show' | 'hide' }
+ */
+const LYRICS_TOGGLE = 'lyrics_toggle';
+
 // ============================================
 // EXPORTS
 // ============================================
@@ -177,6 +183,9 @@ module.exports = {
     // WhatsApp events
     COMMAND_RECEIVED,
     MEDIA_RECEIVED,
-    CONNECTION_CHANGED
+    CONNECTION_CHANGED,
+    
+    // Player events
+    LYRICS_TOGGLE
 };
 

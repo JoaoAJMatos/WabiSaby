@@ -43,7 +43,10 @@ async function helpCommand(sock, msg, args, deps = defaultDeps) {
         i18n('commands.help.help.description', userLang) + '\n\n' +
         i18n('commands.help.language.title', userLang) +
         i18n('commands.help.language.usage', userLang) +
-        i18n('commands.help.language.description', userLang);
+        i18n('commands.help.language.description', userLang) + '\n\n' +
+        i18n('commands.help.lyrics.title', userLang) +
+        i18n('commands.help.lyrics.usage', userLang) +
+        i18n('commands.help.lyrics.description', userLang);
     
     await sendMessageWithMention(sock, remoteJid, helpText, sender);
 }
