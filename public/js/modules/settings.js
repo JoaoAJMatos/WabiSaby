@@ -114,6 +114,10 @@ async function loadSettings() {
             if (countdownSkipBufferEl) {
                 countdownSkipBufferEl.value = settings.countdown.skipBuffer || 5000;
             }
+            const countdownMessageEl = document.getElementById('setting-countdownMessage');
+            if (countdownMessageEl) {
+                countdownMessageEl.value = settings.countdown.message || 'Happy New Year!';
+            }
             // Song configuration
             const countdownSongUrlEl = document.getElementById('setting-countdownSongUrl');
             if (countdownSongUrlEl && settings.countdown.song) {

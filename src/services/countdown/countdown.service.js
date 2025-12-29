@@ -93,6 +93,7 @@ class CountdownService {
             formattedTime: timeRemaining !== null ? this.formatTimeRemaining(timeRemaining) : null,
             showInPlayer: config.countdown.showInPlayer,
             showThreshold: config.countdown.showThreshold,
+            message: config.countdown.message || 'Happy New Year!',
             song: {
                 url: config.countdown.song?.url || null,
                 timestamp: config.countdown.song?.timestamp || 0,
@@ -115,6 +116,7 @@ class CountdownService {
         if (newConfig.showInPlayer !== undefined) config.countdown.showInPlayer = newConfig.showInPlayer;
         if (newConfig.showThreshold !== undefined) config.countdown.showThreshold = newConfig.showThreshold;
         if (newConfig.skipBuffer !== undefined) config.countdown.skipBuffer = newConfig.skipBuffer;
+        if (newConfig.message !== undefined) config.countdown.message = newConfig.message;
 
         if (newConfig.song) {
             if (newConfig.song.url !== undefined) config.countdown.song.url = newConfig.song.url;
