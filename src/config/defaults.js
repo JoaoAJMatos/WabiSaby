@@ -76,6 +76,17 @@ class DefaultsConfig {
             privacy: {
                 demoMode: false,
             },
+            countdown: {
+                enabled: false,
+                targetDate: null, // ISO 8601 format: "2025-12-31T23:59:59"
+                showInPlayer: true,
+                showThreshold: 300, // seconds - show countdown when X seconds remaining
+                song: {
+                    url: null, // YouTube/Spotify URL or search query
+                    timestamp: 0, // seconds - where in song to be at countdown zero
+                },
+                skipBuffer: 5000, // milliseconds - buffer before start time
+            },
         };
     }
 

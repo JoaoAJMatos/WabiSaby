@@ -88,7 +88,46 @@ async function loadSettings() {
                 rateLimitWindowSecondsEl.value = settings.rateLimit.windowSeconds || 60;
             }
         }
-        
+
+        // Populate countdown settings
+        if (settings.countdown) {
+            const countdownEnabledEl = document.getElementById('setting-countdownEnabled');
+            if (countdownEnabledEl) {
+                countdownEnabledEl.checked = settings.countdown.enabled || false;
+            }
+            const countdownTargetDateEl = document.getElementById('setting-countdownTargetDate');
+            if (countdownTargetDateEl && settings.countdown.targetDate) {
+                // Convert ISO string to datetime-local format
+                const date = new Date(settings.countdown.targetDate);
+                const localDate = new Date(date.getTime() - date.getTimezoneOffset() * 60000);
+                countdownTargetDateEl.value = localDate.toISOString().slice(0, 16);
+            }
+            const countdownShowInPlayerEl = document.getElementById('setting-countdownShowInPlayer');
+            if (countdownShowInPlayerEl) {
+                countdownShowInPlayerEl.checked = settings.countdown.showInPlayer !== false;
+            }
+            const countdownShowThresholdEl = document.getElementById('setting-countdownShowThreshold');
+            if (countdownShowThresholdEl) {
+                countdownShowThresholdEl.value = settings.countdown.showThreshold || 300;
+            }
+            const countdownSkipBufferEl = document.getElementById('setting-countdownSkipBuffer');
+            if (countdownSkipBufferEl) {
+                countdownSkipBufferEl.value = settings.countdown.skipBuffer || 5000;
+            }
+            // Song configuration
+            const countdownSongUrlEl = document.getElementById('setting-countdownSongUrl');
+            if (countdownSongUrlEl && settings.countdown.song) {
+                countdownSongUrlEl.value = settings.countdown.song.url || '';
+            }
+            const countdownSongTimestampEl = document.getElementById('setting-countdownSongTimestamp');
+            if (countdownSongTimestampEl && settings.countdown.song) {
+                countdownSongTimestampEl.value = settings.countdown.song.timestamp || 0;
+            }
+        }
+
+        // Start countdown status updates
+        startCountdownStatusUpdates();
+
     } catch (err) {
         console.error('Failed to load settings:', err);
     }
@@ -883,5 +922,129 @@ function initSettingsListeners() {
             closeConfirmationModal();
         }
     });
+
+    // Initialize countdown settings handlers
+    initCountdownSettingsHandlers();
+}
+
+// ============================================
+// COUNTDOWN SETTINGS
+// ============================================
+
+let countdownStatusInterval = null;
+
+/**
+ * Initialize countdown-specific event handlers
+ */
+function initCountdownSettingsHandlers() {
+    // Handle target date changes
+    const targetDateEl = document.getElementById('setting-countdownTargetDate');
+    if (targetDateEl) {
+        targetDateEl.addEventListener('change', async (e) => {
+            const localDate = e.target.value;
+            if (localDate) {
+                // Convert local datetime to ISO string
+                const isoDate = new Date(localDate).toISOString();
+                await updateSettingsValue('countdown', 'targetDate', isoDate);
+            } else {
+                await updateSettingsValue('countdown', 'targetDate', null);
+            }
+        });
+    }
+
+    // Handle save song configuration button
+    const saveSongBtn = document.getElementById('btn-save-countdown-song');
+    if (saveSongBtn) {
+        saveSongBtn.addEventListener('click', async () => {
+            const songUrl = document.getElementById('setting-countdownSongUrl')?.value || null;
+            const songTimestamp = parseInt(document.getElementById('setting-countdownSongTimestamp')?.value || 0, 10);
+
+            try {
+                saveSongBtn.disabled = true;
+                saveSongBtn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> <span>Saving...</span>';
+
+                const res = await fetch('/api/countdown', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                        song: {
+                            url: songUrl,
+                            timestamp: songTimestamp
+                        }
+                    })
+                });
+
+                const data = await res.json();
+
+                if (data.success) {
+                    saveSongBtn.innerHTML = '<i class="fas fa-check"></i> <span>Saved!</span>';
+                    showSaveIndicator();
+                } else {
+                    throw new Error(data.error || 'Failed to save');
+                }
+            } catch (err) {
+                console.error('Failed to save countdown song:', err);
+                saveSongBtn.innerHTML = '<i class="fas fa-times"></i> <span>Error</span>';
+            } finally {
+                setTimeout(() => {
+                    saveSongBtn.disabled = false;
+                    saveSongBtn.innerHTML = '<i class="fas fa-save"></i> <span>Save Song</span>';
+                }, 2000);
+            }
+        });
+    }
+}
+
+/**
+ * Start periodic countdown status updates
+ */
+function startCountdownStatusUpdates() {
+    // Clear existing interval
+    if (countdownStatusInterval) {
+        clearInterval(countdownStatusInterval);
+    }
+
+    // Update immediately
+    updateCountdownStatus();
+
+    // Update every second
+    countdownStatusInterval = setInterval(updateCountdownStatus, 1000);
+}
+
+/**
+ * Update countdown status display
+ */
+async function updateCountdownStatus() {
+    try {
+        const res = await fetch('/api/countdown');
+        if (!res.ok) return;
+
+        const data = await res.json();
+        if (!data.success || !data.countdown) return;
+
+        const countdown = data.countdown;
+        const statusText = document.getElementById('countdown-status-text');
+        const timeRemaining = document.getElementById('countdown-time-remaining');
+
+        if (statusText && timeRemaining) {
+            if (!countdown.enabled) {
+                statusText.textContent = 'Countdown is disabled';
+                timeRemaining.textContent = '--:--:--';
+            } else if (!countdown.targetDate) {
+                statusText.textContent = 'No target date configured';
+                timeRemaining.textContent = '--:--:--';
+            } else if (countdown.timeRemaining !== null && countdown.timeRemaining > 0) {
+                statusText.textContent = 'Countdown is active';
+                timeRemaining.textContent = countdown.formattedTime || '--:--:--';
+                timeRemaining.classList.add('active');
+            } else {
+                statusText.textContent = 'Countdown has completed';
+                timeRemaining.textContent = '00:00:00';
+                timeRemaining.classList.remove('active');
+            }
+        }
+    } catch (err) {
+        // Silently fail - don't spam console
+    }
 }
 

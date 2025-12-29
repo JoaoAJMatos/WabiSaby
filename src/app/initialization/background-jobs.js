@@ -7,6 +7,7 @@
 const { logger } = require('../../utils/logger.util');
 const dbService = require('../../infrastructure/database/db.service');
 const rateLimitService = require('../../services/user/command-rate-limit.service');
+const countdownService = require('../../services/countdown/countdown.service');
 
 /**
  * Set up background jobs
@@ -43,7 +44,10 @@ function setupBackgroundJobs() {
             logger.error('Error during initial rate limit cleanup:', error);
         }
     }, 5 * 60 * 1000); // 5 minutes
-    
+
+    // Start countdown checking (runs every second when enabled)
+    countdownService.startChecking();
+
     logger.info('Background jobs set up');
 }
 

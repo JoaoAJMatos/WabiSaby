@@ -310,6 +310,12 @@ class StatusService extends EventEmitter {
             // Get QR code from status controller
             const latestQR = this.statusController?.latestQR || null;
 
+            // Get countdown status if service is available
+            let countdownStatus = null;
+            if (services.countdown) {
+                countdownStatus = services.countdown.getStatus();
+            }
+
             return {
                 auth: {
                     isConnected: !!isConnected,
@@ -328,7 +334,8 @@ class StatusService extends EventEmitter {
                     queueLength: queue.length
                 },
                 shuffleEnabled: config.playback.shuffleEnabled,
-                repeatMode: config.playback.repeatMode
+                repeatMode: config.playback.repeatMode,
+                countdown: countdownStatus
             };
         } catch (error) {
             const errorMsg = error?.message || String(error) || 'Unknown error';
@@ -363,7 +370,8 @@ class StatusService extends EventEmitter {
                 queueLength: 0
             },
             shuffleEnabled: false,
-            repeatMode: 'off'
+            repeatMode: 'off',
+            countdown: null
         };
     }
 

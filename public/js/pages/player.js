@@ -38,6 +38,13 @@ const barHeights = new Array(CONFIG.BAR_COUNT).fill(0);
 // Animation
 let animationFrame = null;
 
+// Countdown state
+let countdownEnabled = false;
+let countdownShowInPlayer = true;
+let countdownShowThreshold = 300; // seconds
+let countdownTimeRemaining = null;
+let countdownSSE = null;
+
 // DOM elements
 const elements = {
     bgBlur: document.getElementById('bg-blur'),
@@ -67,6 +74,9 @@ const elements = {
     lyricsCurrentTime: document.getElementById('lyrics-current-time'),
     lyricsTotalTime: document.getElementById('lyrics-total-time'),
     activeEffects: document.getElementById('active-effects'),
+    // Countdown elements
+    countdownOverlay: document.getElementById('countdown-overlay'),
+    countdownTime: document.getElementById('countdown-time'),
 };
 
 // Canvas contexts
@@ -1643,6 +1653,97 @@ async function loadSettings() {
 }
 
 // ============================================
+// COUNTDOWN FUNCTIONALITY
+// ============================================
+
+/**
+ * Update countdown display based on current status
+ */
+function updateCountdownDisplay(countdown) {
+    if (!countdown || !elements.countdownOverlay) return;
+
+    countdownEnabled = countdown.enabled;
+    countdownShowInPlayer = countdown.showInPlayer;
+    countdownShowThreshold = countdown.showThreshold || 300;
+    countdownTimeRemaining = countdown.timeRemaining;
+
+    // Determine if we should show the countdown overlay
+    const shouldShow = countdownEnabled &&
+                      countdownShowInPlayer &&
+                      countdownTimeRemaining !== null &&
+                      countdownTimeRemaining > 0 &&
+                      (countdownTimeRemaining / 1000) <= countdownShowThreshold;
+
+    if (shouldShow) {
+        // Show countdown overlay
+        elements.countdownOverlay.classList.add('visible');
+        document.body.classList.add('countdown-mode');
+
+        // Update countdown time display
+        if (elements.countdownTime && countdown.formattedTime) {
+            elements.countdownTime.textContent = countdown.formattedTime;
+        }
+    } else {
+        // Hide countdown overlay
+        elements.countdownOverlay.classList.remove('visible');
+        document.body.classList.remove('countdown-mode');
+    }
+}
+
+/**
+ * Connect to SSE for real-time countdown updates
+ */
+function connectCountdownSSE() {
+    if (countdownSSE) {
+        countdownSSE.close();
+    }
+
+    countdownSSE = new EventSource('/api/status/stream');
+
+    countdownSSE.onopen = () => {
+        console.log('Countdown SSE connected');
+    };
+
+    countdownSSE.onmessage = (event) => {
+        try {
+            const data = JSON.parse(event.data);
+            if (data.countdown) {
+                updateCountdownDisplay(data.countdown);
+            }
+        } catch (err) {
+            // Ignore parse errors (heartbeats, etc.)
+        }
+    };
+
+    countdownSSE.onerror = (error) => {
+        console.warn('Countdown SSE error, will reconnect...');
+        // Close and reconnect after delay
+        if (countdownSSE) {
+            countdownSSE.close();
+            countdownSSE = null;
+        }
+        setTimeout(connectCountdownSSE, 5000);
+    };
+}
+
+/**
+ * Fetch initial countdown status
+ */
+async function fetchCountdownStatus() {
+    try {
+        const res = await fetch('/api/countdown');
+        if (!res.ok) throw new Error('Failed to fetch countdown');
+
+        const data = await res.json();
+        if (data.success && data.countdown) {
+            updateCountdownDisplay(data.countdown);
+        }
+    } catch (err) {
+        console.error('Failed to fetch countdown status:', err);
+    }
+}
+
+// ============================================
 // INITIALIZATION
 // ============================================
 
@@ -1654,6 +1755,10 @@ loadSettings();
 showIdleState();
 renderLyrics(null);
 drawVisualizer();
+
+// Connect to SSE for countdown updates
+connectCountdownSSE();
+fetchCountdownStatus();
 
 // Add resize listener to recalculate title scrolling
 let resizeTimeout;

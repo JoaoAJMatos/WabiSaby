@@ -844,6 +844,11 @@
                             <span data-i18n="ui.dashboard.settings.notifications.title">Notifications</span>
                             <span class="nav-indicator"></span>
                         </li>
+                        <li class="settings-nav-item" data-category="countdown">
+                            <i class="fas fa-hourglass-half"></i>
+                            <span>Countdown</span>
+                            <span class="nav-indicator"></span>
+                        </li>
                         <li class="settings-nav-item" data-category="system">
                             <i class="fas fa-server"></i>
                             <span data-i18n="ui.dashboard.settings.system.title">System</span>
@@ -1705,6 +1710,177 @@
                                         <i class="fas fa-spinner fa-spin"></i>
                                         <span data-i18n="ui.dashboard.settings.system.loadingDiskUsage">Loading disk
                                             usage...</span>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Countdown Settings Panel -->
+                        <div class="settings-panel" data-panel="countdown">
+                            <div class="panel-header">
+                                <div class="panel-icon countdown">
+                                    <i class="fas fa-hourglass-half"></i>
+                                </div>
+                                <div class="panel-title">
+                                    <h3>Countdown</h3>
+                                    <p>Configure countdown timer with song synchronization</p>
+                                </div>
+                            </div>
+
+                            <div class="settings-group">
+                                <div class="setting-row" data-searchable="countdown enable disable timer">
+                                    <div class="setting-info">
+                                        <label for="setting-countdownEnabled">Enable Countdown</label>
+                                        <p class="setting-description">Enable the countdown timer feature</p>
+                                    </div>
+                                    <div class="setting-control">
+                                        <label class="toggle-switch-v2">
+                                            <input type="checkbox" id="setting-countdownEnabled"
+                                                data-category="countdown" data-key="enabled">
+                                            <span class="toggle-track">
+                                                <span class="toggle-thumb"></span>
+                                            </span>
+                                        </label>
+                                    </div>
+                                </div>
+
+                                <div class="setting-row" data-searchable="target date time countdown">
+                                    <div class="setting-info">
+                                        <label for="setting-countdownTargetDate">Target Date & Time</label>
+                                        <p class="setting-description">Set the date and time for countdown zero (local time)</p>
+                                    </div>
+                                    <div class="setting-control">
+                                        <input type="datetime-local" id="setting-countdownTargetDate"
+                                            class="text-input datetime-input"
+                                            data-category="countdown" data-key="targetDate">
+                                    </div>
+                                </div>
+
+                                <div class="setting-row" data-searchable="show player display countdown overlay">
+                                    <div class="setting-info">
+                                        <label for="setting-countdownShowInPlayer">Show in Player</label>
+                                        <p class="setting-description">Display countdown overlay in the fullscreen player</p>
+                                    </div>
+                                    <div class="setting-control">
+                                        <label class="toggle-switch-v2">
+                                            <input type="checkbox" id="setting-countdownShowInPlayer"
+                                                data-category="countdown" data-key="showInPlayer" checked>
+                                            <span class="toggle-track">
+                                                <span class="toggle-thumb"></span>
+                                            </span>
+                                        </label>
+                                    </div>
+                                </div>
+
+                                <div class="setting-row" data-searchable="show threshold countdown seconds">
+                                    <div class="setting-info">
+                                        <label for="setting-countdownShowThreshold">Show Threshold</label>
+                                        <p class="setting-description">Seconds remaining before showing countdown in player</p>
+                                    </div>
+                                    <div class="setting-control">
+                                        <div class="number-input-wrapper">
+                                            <button type="button" class="number-btn minus">
+                                                <i class="fas fa-minus"></i>
+                                            </button>
+                                            <input type="number" id="setting-countdownShowThreshold"
+                                                data-category="countdown" data-key="showThreshold"
+                                                value="300" min="10" max="3600" step="10">
+                                            <button type="button" class="number-btn plus">
+                                                <i class="fas fa-plus"></i>
+                                            </button>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <!-- Song Configuration -->
+                            <div class="settings-group-header">
+                                <i class="fas fa-music"></i>
+                                <span>Song Configuration</span>
+                            </div>
+
+                            <div class="settings-group">
+                                <div class="setting-row" data-searchable="song url youtube spotify countdown music">
+                                    <div class="setting-info">
+                                        <label for="setting-countdownSongUrl">Song URL</label>
+                                        <p class="setting-description">YouTube or Spotify URL of the song to play</p>
+                                    </div>
+                                    <div class="setting-control" style="min-width: 200px;">
+                                        <input type="text" id="setting-countdownSongUrl"
+                                            class="text-input"
+                                            placeholder="https://www.youtube.com/watch?v=..."
+                                            style="width: 100%;">
+                                    </div>
+                                </div>
+
+                                <div class="setting-row" data-searchable="song timestamp position seconds countdown">
+                                    <div class="setting-info">
+                                        <label for="setting-countdownSongTimestamp">Song Timestamp</label>
+                                        <p class="setting-description">Seconds into the song where countdown should hit zero</p>
+                                    </div>
+                                    <div class="setting-control">
+                                        <div class="number-input-wrapper">
+                                            <button type="button" class="number-btn minus">
+                                                <i class="fas fa-minus"></i>
+                                            </button>
+                                            <input type="number" id="setting-countdownSongTimestamp"
+                                                value="0" min="0" max="600" step="1">
+                                            <button type="button" class="number-btn plus">
+                                                <i class="fas fa-plus"></i>
+                                            </button>
+                                        </div>
+                                    </div>
+                                </div>
+
+                                <div class="setting-row" data-searchable="skip buffer milliseconds countdown">
+                                    <div class="setting-info">
+                                        <label for="setting-countdownSkipBuffer">Skip Buffer</label>
+                                        <p class="setting-description">Milliseconds before song start time to skip current song</p>
+                                    </div>
+                                    <div class="setting-control">
+                                        <div class="number-input-wrapper">
+                                            <button type="button" class="number-btn minus">
+                                                <i class="fas fa-minus"></i>
+                                            </button>
+                                            <input type="number" id="setting-countdownSkipBuffer"
+                                                data-category="countdown" data-key="skipBuffer"
+                                                value="5000" min="1000" max="30000" step="1000">
+                                            <button type="button" class="number-btn plus">
+                                                <i class="fas fa-plus"></i>
+                                            </button>
+                                        </div>
+                                    </div>
+                                </div>
+
+                                <!-- Save Song Config Button -->
+                                <div class="setting-row" style="border-top: 1px solid rgba(255,255,255,0.1); padding-top: 16px;">
+                                    <div class="setting-info">
+                                        <label>Save Song Configuration</label>
+                                        <p class="setting-description">Apply the song URL and timestamp settings</p>
+                                    </div>
+                                    <div class="setting-control">
+                                        <button type="button" id="btn-save-countdown-song" class="settings-action-btn">
+                                            <i class="fas fa-save"></i>
+                                            <span>Save Song</span>
+                                        </button>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <!-- Countdown Status -->
+                            <div class="settings-group-header">
+                                <i class="fas fa-info-circle"></i>
+                                <span>Status</span>
+                            </div>
+
+                            <div class="settings-group">
+                                <div class="setting-row">
+                                    <div class="setting-info">
+                                        <label>Time Remaining</label>
+                                        <p class="setting-description" id="countdown-status-text">Countdown not configured</p>
+                                    </div>
+                                    <div class="setting-control">
+                                        <span id="countdown-time-remaining" class="countdown-status-value">--:--:--</span>
                                     </div>
                                 </div>
                             </div>
