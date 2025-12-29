@@ -90,7 +90,7 @@ class Config {
 
         // Try to load from database first
         try {
-            const dbService = require('./infrastructure/database/db.service');
+            const dbService = require('../infrastructure/database/db.service');
             const dbSettings = dbService.getAllSettings();
 
             // Convert flat key-value to nested structure
@@ -163,7 +163,7 @@ class Config {
      */
     saveSettings() {
         try {
-            const dbService = require('./infrastructure/database/db.service');
+            const dbService = require('../infrastructure/database/db.service');
 
             // Build server settings object - only include PORT/HOST if not set via .env
             const serverSettings = {};

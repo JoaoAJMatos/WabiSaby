@@ -438,10 +438,6 @@ class StatusService extends EventEmitter {
                         logger.debug(`Removed disconnected SSE client: ${err.message}`);
                     }
                 });
-
-                if (successCount > 0) {
-                    logger.debug(`Broadcast status to ${successCount} client(s) (${errorCount} errors)`);
-                }
             } catch (error) {
                 logger.error('Error broadcasting status:', error);
             } finally {
