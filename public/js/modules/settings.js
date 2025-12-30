@@ -148,6 +148,15 @@ async function loadSettings() {
                 const secs = seconds % 60;
                 countdownSongTimestampEl.value = `${minutes}:${secs.toString().padStart(2, '0')}`;
             }
+
+            // Initialize waveform if song URL is set
+            if (settings.countdown.song?.url && window.countdownWaveform) {
+                // Small delay to ensure DOM is ready
+                setTimeout(() => {
+                    window.countdownWaveform.init();
+                    window.countdownWaveform.triggerLoad();
+                }, 200);
+            }
         }
 
         // Start countdown status updates (always running, regardless of panel visibility)
@@ -382,6 +391,21 @@ window.switchSettingsPanel = function switchSettingsPanel(category) {
             searchInput.value = '';
             const clearBtn = document.getElementById('settings-search-clear');
             if (clearBtn) clearBtn.classList.add('hidden');
+        }
+    }
+
+    // Initialize waveform when switching to countdown panel
+    if (category === 'countdown') {
+        const songUrl = document.getElementById('setting-countdownSongUrl')?.value?.trim();
+        if (songUrl && window.countdownWaveform) {
+            window.countdownWaveform.init();
+            // Only trigger load if not already ready
+            if (!window.countdownWaveform.isReady()) {
+                window.countdownWaveform.triggerLoad();
+            } else {
+                // Re-render in case of resize
+                window.countdownWaveform.render();
+            }
         }
     }
 }
@@ -1058,59 +1082,42 @@ function initCountdownSettingsHandlers() {
     const songUrlEl = document.getElementById('setting-countdownSongUrl');
     if (songUrlEl) {
         let saveTimeout;
+        let lastSavedUrl = songUrlEl.value;
+
         songUrlEl.addEventListener('input', () => {
             clearTimeout(saveTimeout);
             saveTimeout = setTimeout(async () => {
-                await saveCountdownSong();
+                const currentUrl = songUrlEl.value.trim();
+                const urlChanged = currentUrl !== lastSavedUrl;
+                lastSavedUrl = currentUrl;
+
+                // Pass true to trigger waveform loading if URL changed
+                await saveCountdownSong(urlChanged);
             }, 1000); // Debounce 1 second
+        });
+
+        // On blur, also check if we should load waveform
+        songUrlEl.addEventListener('blur', () => {
+            const currentUrl = songUrlEl.value.trim();
+            if (currentUrl && currentUrl !== lastSavedUrl) {
+                lastSavedUrl = currentUrl;
+                saveCountdownSong(true);
+            }
         });
     }
 
     // Handle song timestamp changes (auto-save)
+    // The timestamp input is now hidden and updated by the waveform module
     const songTimestampEl = document.getElementById('setting-countdownSongTimestamp');
     if (songTimestampEl) {
         let saveTimeout;
-        
-        // Format input as user types (MM:SS)
-        songTimestampEl.addEventListener('input', (e) => {
-            let value = e.target.value.replace(/[^\d:]/g, ''); // Remove non-digits and colons
-            const parts = value.split(':');
-            
-            // Auto-format as MM:SS
-            if (parts.length === 1 && parts[0].length > 2) {
-                const totalSeconds = parseInt(parts[0], 10);
-                if (!isNaN(totalSeconds)) {
-                    const minutes = Math.floor(totalSeconds / 60);
-                    const seconds = totalSeconds % 60;
-                    value = `${minutes}:${seconds.toString().padStart(2, '0')}`;
-                    e.target.value = value;
-                }
-            } else if (parts.length === 2) {
-                // Ensure seconds are 2 digits
-                if (parts[1].length > 2) {
-                    parts[1] = parts[1].slice(0, 2);
-                }
-                value = `${parts[0]}:${parts[1].padStart(2, '0')}`;
-                e.target.value = value;
-            }
-            
+
+        // Listen for changes from waveform module
+        songTimestampEl.addEventListener('input', () => {
             clearTimeout(saveTimeout);
             saveTimeout = setTimeout(async () => {
-                await saveCountdownSong();
-            }, 1000); // Debounce 1 second
-        });
-        
-        // Validate on blur
-        songTimestampEl.addEventListener('blur', (e) => {
-            const value = e.target.value;
-            if (value && !value.match(/^\d+:\d{2}$/)) {
-                // Try to fix it
-                const seconds = parseTimestamp(value);
-                const minutes = Math.floor(seconds / 60);
-                const secs = seconds % 60;
-                e.target.value = `${minutes}:${secs.toString().padStart(2, '0')}`;
-                saveCountdownSong();
-            }
+                await saveCountdownSong(false); // Don't reload waveform
+            }, 500); // Debounce 500ms
         });
     }
 
@@ -1147,8 +1154,9 @@ function initCountdownSettingsHandlers() {
 
 /**
  * Save countdown song configuration
+ * @param {boolean} triggerWaveform - Whether to trigger waveform loading after save
  */
-async function saveCountdownSong() {
+async function saveCountdownSong(triggerWaveform = false) {
     const songUrl = document.getElementById('setting-countdownSongUrl')?.value?.trim() || null;
     const songTimestampStr = document.getElementById('setting-countdownSongTimestamp')?.value || '0:00';
     const songTimestamp = parseTimestamp(songTimestampStr);
@@ -1168,8 +1176,8 @@ async function saveCountdownSong() {
         const data = await res.json();
         if (data.success) {
             showSaveIndicator();
-            
-            // If a song URL was provided, trigger background prefetch
+
+            // If a song URL was provided, trigger background prefetch and waveform
             if (songUrl) {
                 try {
                     await fetch('/api/countdown/prefetch', {
@@ -1180,6 +1188,16 @@ async function saveCountdownSong() {
                 } catch (err) {
                     // Silently fail - prefetch is non-critical
                     console.debug('Prefetch initiation failed (non-critical):', err);
+                }
+
+                // Trigger waveform loading if requested
+                if (triggerWaveform && window.countdownWaveform) {
+                    window.countdownWaveform.triggerLoad();
+                }
+            } else {
+                // No song URL - reset waveform
+                if (window.countdownWaveform) {
+                    window.countdownWaveform.reset();
                 }
             }
         } else {

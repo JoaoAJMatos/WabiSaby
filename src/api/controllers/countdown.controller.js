@@ -190,8 +190,8 @@ class CountdownController {
 
             res.json({
                 success: initiated,
-                message: initiated 
-                    ? 'Countdown song prefetch initiated' 
+                message: initiated
+                    ? 'Countdown song prefetch initiated'
                     : 'Failed to initiate countdown song prefetch',
                 countdown: status
             });
@@ -200,6 +200,86 @@ class CountdownController {
             res.status(500).json({
                 success: false,
                 error: 'Failed to prefetch countdown song'
+            });
+        }
+    }
+
+    /**
+     * Get waveform data for countdown song
+     * @param {Object} req - Express request
+     * @param {Object} res - Express response
+     */
+    async getWaveform(req, res) {
+        try {
+            const status = countdownService.getStatus();
+
+            // Check if song is prefetched
+            if (!status.songPrefetched) {
+                // If prefetch is in progress, return status
+                if (status.prefetchInProgress) {
+                    return res.json({
+                        success: true,
+                        status: 'prefetching',
+                        message: 'Song is being downloaded'
+                    });
+                }
+
+                // If no song URL configured
+                if (!status.song?.url) {
+                    return res.status(400).json({
+                        success: false,
+                        error: 'No countdown song configured'
+                    });
+                }
+
+                // Song not prefetched yet - trigger prefetch
+                return res.json({
+                    success: true,
+                    status: 'not_prefetched',
+                    message: 'Song not yet downloaded. Trigger prefetch first.'
+                });
+            }
+
+            // Check if waveform is ready
+            if (status.waveformReady) {
+                const waveformData = await countdownService.getWaveformData();
+                return res.json({
+                    success: true,
+                    status: 'ready',
+                    waveform: waveformData
+                });
+            }
+
+            // Check if waveform generation is in progress
+            if (status.waveformInProgress) {
+                return res.json({
+                    success: true,
+                    status: 'generating',
+                    message: 'Waveform is being generated'
+                });
+            }
+
+            // Waveform not generated yet - trigger generation
+            const waveformData = await countdownService.getWaveformData();
+            if (waveformData) {
+                return res.json({
+                    success: true,
+                    status: 'ready',
+                    waveform: waveformData
+                });
+            }
+
+            // Generation started
+            return res.json({
+                success: true,
+                status: 'generating',
+                message: 'Waveform generation started'
+            });
+        } catch (error) {
+            logger.error('Failed to get waveform:', error);
+            res.status(500).json({
+                success: false,
+                error: 'Failed to get waveform data'
             });
         }
     }

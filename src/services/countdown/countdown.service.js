@@ -15,6 +15,8 @@ class CountdownService {
         this.lastCheck = 0;
         this.prefetchedSong = null; // Store pre-fetched song data
         this.prefetchInProgress = false;
+        this.waveformData = null; // Store waveform data for prefetched song
+        this.waveformInProgress = false;
 
         // Listen to playback events to track song state
         eventBus.on(PLAYBACK_STARTED, () => {
@@ -104,6 +106,8 @@ class CountdownService {
             songStarted: this.songStarted,
             songPrefetched: this.prefetchedSong !== null,
             prefetchInProgress: this.prefetchInProgress,
+            waveformReady: this.waveformData !== null,
+            waveformInProgress: this.waveformInProgress,
         };
     }
 
@@ -126,10 +130,12 @@ class CountdownService {
             const oldUrl = config.countdown.song?.url;
             if (newConfig.song.url !== undefined) {
                 config.countdown.song.url = newConfig.song.url;
-                // If URL changed, clear prefetched song
+                // If URL changed, clear prefetched song and waveform
                 if (oldUrl !== newConfig.song.url) {
                     this.prefetchedSong = null;
                     this.prefetchInProgress = false;
+                    this.waveformData = null;
+                    this.waveformInProgress = false;
                 }
             }
             if (newConfig.song.timestamp !== undefined) config.countdown.song.timestamp = newConfig.song.timestamp;
@@ -221,7 +227,7 @@ class CountdownService {
             
             // Download in background (don't await - let it run async)
             downloadTrack(songUrl, null, null)
-                .then((result) => {
+                .then(async (result) => {
                     this.prefetchedSong = {
                         filePath: result.filePath,
                         sourceUrl: songUrl,
@@ -235,6 +241,9 @@ class CountdownService {
                         title: result.title,
                         filePath: result.filePath
                     });
+
+                    // Generate waveform in background after prefetch
+                    this.generateWaveformForPrefetched();
                 })
                 .catch((error) => {
                     this.prefetchInProgress = false;
@@ -247,6 +256,70 @@ class CountdownService {
             logger.error('Failed to initiate countdown song prefetch:', error);
             return false;
         }
+    }
+
+    /**
+     * Generate waveform for prefetched song
+     * Called automatically after prefetch completes
+     */
+    async generateWaveformForPrefetched() {
+        if (!this.prefetchedSong?.filePath) {
+            logger.warn('Cannot generate waveform: no prefetched song');
+            return null;
+        }
+
+        if (this.waveformInProgress) {
+            logger.debug('Waveform generation already in progress');
+            return null;
+        }
+
+        this.waveformInProgress = true;
+
+        try {
+            const { generateWaveform } = require('../audio/waveform.service');
+            const waveformData = await generateWaveform(this.prefetchedSong.filePath, {
+                samplesPerSecond: 100 // 100 samples per second for smooth visualization
+            });
+
+            this.waveformData = waveformData;
+            this.waveformInProgress = false;
+
+            logger.info('Waveform generated for countdown song:', {
+                duration: waveformData.duration,
+                samples: waveformData.samples.length
+            });
+
+            return waveformData;
+        } catch (error) {
+            this.waveformInProgress = false;
+            logger.error('Failed to generate waveform:', error);
+            return null;
+        }
+    }
+
+    /**
+     * Get waveform data for the countdown song
+     * If song is prefetched but waveform not generated, generates it
+     * @returns {Promise<Object|null>} Waveform data or null
+     */
+    async getWaveformData() {
+        // If we already have waveform data, return it
+        if (this.waveformData) {
+            return this.waveformData;
+        }
+
+        // If song is prefetched but waveform not generated, generate it
+        if (this.prefetchedSong?.filePath && !this.waveformInProgress) {
+            return await this.generateWaveformForPrefetched();
+        }
+
+        // If waveform generation is in progress, wait a bit and check again
+        if (this.waveformInProgress) {
+            // Return null - client should poll
+            return null;
+        }
+
+        return null;
     }
 
     /**

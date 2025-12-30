@@ -58,3 +58,330 @@
 .settings-nav-item[data-category="countdown"].active .fa-hourglass-half {
     color: #f97316;
 }
+
+/* ========================================
+   Waveform Timestamp Selector
+   ======================================== */
+
+/* Container */
+.countdown-waveform-container {
+    background: var(--glass-bg);
+    border: 1px solid var(--glass-border);
+    border-radius: var(--card-radius-sm);
+    padding: 20px;
+    margin: 16px 0;
+    backdrop-filter: blur(10px);
+    transition: all 0.3s ease;
+}
+
+.countdown-waveform-container:hover {
+    border-color: var(--glass-border-hover);
+    background: rgba(18, 18, 28, 0.75);
+}
+
+.countdown-waveform-container.ready {
+    border-color: rgba(52, 211, 153, 0.2);
+}
+
+.countdown-waveform-container.error {
+    border-color: rgba(239, 68, 68, 0.3);
+}
+
+/* Header */
+.waveform-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 16px;
+}
+
+.waveform-header label {
+    font-size: 0.8rem;
+    font-weight: 600;
+    color: var(--text-secondary);
+    text-transform: uppercase;
+    letter-spacing: 0.08em;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+}
+
+.waveform-header label::before {
+    content: '';
+    width: 3px;
+    height: 12px;
+    background: linear-gradient(135deg, var(--primary), var(--secondary));
+    border-radius: 2px;
+}
+
+.timestamp-display {
+    font-family: var(--font-mono);
+    font-size: 1.1rem;
+    font-weight: 700;
+    color: var(--primary);
+    padding: 8px 16px;
+    background: rgba(52, 211, 153, 0.1);
+    border: 1px solid rgba(52, 211, 153, 0.2);
+    border-radius: 8px;
+    min-width: 80px;
+    text-align: center;
+    transition: all 0.2s ease;
+}
+
+.countdown-waveform-container:hover .timestamp-display {
+    background: rgba(52, 211, 153, 0.15);
+    border-color: rgba(52, 211, 153, 0.3);
+}
+
+/* Waveform Visual Area */
+.waveform-visual {
+    position: relative;
+    width: 100%;
+    height: 100px;
+    background: rgba(0, 0, 0, 0.25);
+    border-radius: 12px;
+    overflow: hidden;
+    border: 1px solid rgba(255, 255, 255, 0.04);
+    box-shadow: inset 0 2px 8px rgba(0, 0, 0, 0.3);
+}
+
+/* Canvas */
+#countdown-waveform-canvas {
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    cursor: crosshair;
+}
+
+.countdown-waveform-container.ready #countdown-waveform-canvas {
+    cursor: pointer;
+}
+
+/* Waveform Marker */
+.waveform-marker {
+    position: absolute;
+    top: 0;
+    bottom: 0;
+    left: 0;
+    width: 0;
+    transform: translateX(-50%);
+    z-index: 10;
+    pointer-events: auto;
+    cursor: grab;
+    touch-action: none;
+    padding: 0 16px;
+    margin: 0 -16px;
+    transition: left 0.15s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.waveform-marker.dragging {
+    cursor: grabbing;
+    transition: none;
+}
+
+/* Marker Line */
+.waveform-marker .marker-line {
+    position: absolute;
+    top: 0;
+    left: 50%;
+    transform: translateX(-50%);
+    width: 2px;
+    height: 100%;
+    background: linear-gradient(180deg,
+        rgba(52, 211, 153, 0.9) 0%,
+        rgba(52, 211, 153, 0.4) 100%);
+    box-shadow: 0 0 12px rgba(52, 211, 153, 0.5);
+    transition: all 0.2s ease;
+}
+
+.waveform-marker:hover .marker-line,
+.waveform-marker.dragging .marker-line {
+    width: 3px;
+    box-shadow: 0 0 20px rgba(52, 211, 153, 0.7);
+}
+
+/* Marker Handle */
+.waveform-marker .marker-handle {
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    width: 24px;
+    height: 24px;
+    border-radius: 50%;
+    background: radial-gradient(circle at center,
+        rgba(52, 211, 153, 0.3) 0%,
+        #1a1a2e 60%);
+    border: 2px solid var(--primary);
+    box-shadow: 0 2px 12px rgba(52, 211, 153, 0.4),
+                0 0 0 4px rgba(52, 211, 153, 0.1);
+    transition: all 0.2s ease;
+    cursor: grab;
+}
+
+.waveform-marker:hover .marker-handle {
+    transform: translate(-50%, -50%) scale(1.15);
+    box-shadow: 0 4px 20px rgba(52, 211, 153, 0.5),
+                0 0 0 6px rgba(52, 211, 153, 0.15);
+}
+
+.waveform-marker.dragging .marker-handle {
+    transform: translate(-50%, -50%) scale(1.25);
+    cursor: grabbing;
+    box-shadow: 0 6px 24px rgba(52, 211, 153, 0.6),
+                0 0 0 8px rgba(52, 211, 153, 0.2);
+}
+
+/* Loading State */
+.waveform-loading {
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    display: none;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    gap: 12px;
+    background: rgba(10, 10, 15, 0.8);
+    backdrop-filter: blur(4px);
+    border-radius: 12px;
+    z-index: 20;
+}
+
+.countdown-waveform-container.loading .waveform-loading {
+    display: flex;
+}
+
+.waveform-loading i {
+    font-size: 1.5rem;
+    color: var(--primary);
+}
+
+.waveform-loading-text {
+    font-size: 0.85rem;
+    color: var(--text-secondary);
+    text-align: center;
+}
+
+/* Error State */
+.waveform-error {
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    display: none;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    gap: 12px;
+    background: rgba(239, 68, 68, 0.05);
+    backdrop-filter: blur(4px);
+    border-radius: 12px;
+    z-index: 20;
+}
+
+.countdown-waveform-container.error .waveform-error {
+    display: flex;
+}
+
+.waveform-error i {
+    font-size: 1.5rem;
+    color: var(--error);
+}
+
+.waveform-error-text {
+    font-size: 0.85rem;
+    color: var(--error);
+    text-align: center;
+}
+
+/* Time Axis */
+.waveform-time-axis {
+    position: relative;
+    width: 100%;
+    height: 24px;
+    margin-top: 12px;
+}
+
+.waveform-time-tick {
+    position: absolute;
+    top: 0;
+    transform: translateX(-50%);
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+}
+
+.waveform-time-tick::before {
+    content: '';
+    width: 1px;
+    height: 6px;
+    background: rgba(255, 255, 255, 0.2);
+    margin-bottom: 4px;
+}
+
+.waveform-time-label {
+    font-size: 0.65rem;
+    font-family: var(--font-mono);
+    color: var(--text-muted);
+    white-space: nowrap;
+    letter-spacing: -0.02em;
+}
+
+/* Hide marker and axis when not ready */
+.countdown-waveform-container:not(.ready) .waveform-marker,
+.countdown-waveform-container:not(.ready) .waveform-time-axis {
+    opacity: 0;
+    pointer-events: none;
+}
+
+.countdown-waveform-container.ready .waveform-marker,
+.countdown-waveform-container.ready .waveform-time-axis {
+    opacity: 1;
+    pointer-events: auto;
+    transition: opacity 0.3s ease;
+}
+
+/* Setting row for waveform info */
+.setting-row-waveform {
+    border-bottom: none;
+    padding-bottom: 0;
+}
+
+.setting-info-waveform {
+    width: 100%;
+}
+
+/* Responsive */
+@media (max-width: 768px) {
+    .countdown-waveform-container {
+        padding: 16px;
+    }
+
+    .waveform-visual {
+        height: 80px;
+    }
+
+    .waveform-header label {
+        font-size: 0.75rem;
+    }
+
+    .timestamp-display {
+        font-size: 0.95rem;
+        padding: 6px 12px;
+    }
+
+    .waveform-marker .marker-handle {
+        width: 20px;
+        height: 20px;
+    }
+
+    .waveform-time-label {
+        font-size: 0.6rem;
+    }
+}
