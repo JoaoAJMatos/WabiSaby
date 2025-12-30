@@ -57,6 +57,9 @@ const statsService = require('./system/stats.service');
 const playbackStateService = require('./system/playback-state.service');
 const statusService = require('./system/status.service');
 
+// Countdown service
+const countdownService = require('./countdown/countdown.service');
+
 module.exports = {
     // Playback
     playback: playbackServices,
@@ -115,4 +118,7 @@ module.exports = {
         playbackState: playbackStateService,
         status: statusService,
     },
+
+    // Countdown
+    countdown: countdownService,
 };

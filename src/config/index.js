@@ -55,6 +55,7 @@ class Config {
         this.performance = { ...defaults.performance };
         this.notifications = { ...defaults.notifications };
         this.privacy = { ...defaults.privacy };
+        this.countdown = { ...defaults.countdown };
 
         this.storageConfig.initializeStorage();
         // Don't load settings in constructor to avoid circular dependency
@@ -89,7 +90,7 @@ class Config {
 
         // Try to load from database first
         try {
-            const dbService = require('./infrastructure/database/db.service');
+            const dbService = require('../infrastructure/database/db.service');
             const dbSettings = dbService.getAllSettings();
 
             // Convert flat key-value to nested structure
@@ -101,6 +102,7 @@ class Config {
             if (dbSettings.performance) loadedSettings.performance = dbSettings.performance;
             if (dbSettings.notifications) loadedSettings.notifications = dbSettings.notifications;
             if (dbSettings.privacy) loadedSettings.privacy = dbSettings.privacy;
+            if (dbSettings.countdown) loadedSettings.countdown = dbSettings.countdown;
         } catch (err) {
             // Database not initialized yet or no settings - try JSON file as fallback
             const settingsFile = this.files.settings;
@@ -134,6 +136,15 @@ class Config {
         this.performance = { ...defaults.performance, ...loadedSettings.performance };
         this.notifications = { ...defaults.notifications, ...loadedSettings.notifications };
         this.privacy = { ...defaults.privacy, ...(loadedSettings.privacy || {}) };
+        // Deep merge countdown settings to preserve nested song object
+        this.countdown = {
+            ...defaults.countdown,
+            ...(loadedSettings.countdown || {}),
+            song: {
+                ...defaults.countdown.song,
+                ...(loadedSettings.countdown?.song || {}),
+            },
+        };
 
         this._settingsLoaded = true;
     }
@@ -152,7 +163,7 @@ class Config {
      */
     saveSettings() {
         try {
-            const dbService = require('./infrastructure/database/db.service');
+            const dbService = require('../infrastructure/database/db.service');
 
             // Build server settings object - only include PORT/HOST if not set via .env
             const serverSettings = {};
@@ -177,6 +188,7 @@ class Config {
                 performance: this.performance,
                 notifications: this.notifications,
                 privacy: this.privacy,
+                countdown: this.countdown,
             };
 
             // Save each section as a separate setting

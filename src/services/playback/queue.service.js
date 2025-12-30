@@ -430,6 +430,130 @@ class QueueManager {
 
         return null;
     }
+
+    /**
+     * Add a song to the front of the queue (position 0)
+     * @param {Object} song - Song object to add
+     * @returns {Object|null} The added queue item or null if failed
+     */
+    addFirst(song) {
+        const queueLogger = logger.child({ component: 'queue' });
+
+        // Check for duplicate URL in queue
+        if (song.content && song.type === 'url') {
+            const existingIndex = this.queue.findIndex(item =>
+                item.content === song.content && item.type === 'url'
+            );
+
+            if (existingIndex !== -1) {
+                // If already in queue, move to front
+                return this.move(existingIndex, 0);
+            }
+        }
+
+        // Determine source URL
+        const sourceUrl = (song.content && (song.content.startsWith('http://') || song.content.startsWith('https://')))
+            ? song.content
+            : (song.sourceUrl || null);
+
+        // Add to database at position 0
+        const queueItemId = dbService.addQueueItem({
+            content: song.content,
+            title: song.title || 'Unknown',
+            artist: song.artist || null,
+            channel: song.channel || null,
+            duration: song.duration || null,
+            thumbnail_path: song.thumbnail || null,
+            thumbnail_url: song.thumbnailUrl || null,
+            source_url: sourceUrl,
+            requester: song.requester || song.sender || 'Unknown',
+            sender_id: song.sender || song.remoteJid || null,
+            group_id: song.remoteJid || null,
+            is_priority: song.isPriority || false,
+            download_status: song.downloadStatus || 'pending',
+            download_progress: song.downloadProgress || 0,
+            prefetched: song.prefetched || false,
+            position: 0
+        });
+
+        // Add to front of in-memory queue
+        const queueItem = {
+            id: queueItemId,
+            ...song,
+        };
+        this.queue.unshift(queueItem);
+
+        // Update position mappings - shift all existing items up by 1
+        const newMap = new Map();
+        newMap.set(0, queueItemId);
+        for (const [pos, id] of this.queueItemIds) {
+            newMap.set(pos + 1, id);
+        }
+        this.queueItemIds = newMap;
+
+        this.saveQueue();
+        eventBus.emit(QUEUE_UPDATED);
+        eventBus.emit(QUEUE_ITEM_ADDED, { item: queueItem });
+
+        queueLogger.info({
+            context: {
+                event: 'queue_item_added_first',
+                songTitle: song.title || song.content,
+                songId: queueItemId,
+                queueSize: this.queue.length,
+            }
+        }, `Added to front of queue: "${song.title || song.content}"`);
+
+        return queueItem;
+    }
+
+    /**
+     * Move a queue item from one position to another
+     * @param {number} fromIndex - Current position
+     * @param {number} toIndex - Target position
+     * @returns {Object|null} The moved item or null if failed
+     */
+    move(fromIndex, toIndex) {
+        const queueLogger = logger.child({ component: 'queue' });
+
+        if (fromIndex < 0 || fromIndex >= this.queue.length ||
+            toIndex < 0 || toIndex >= this.queue.length) {
+            return null;
+        }
+
+        if (fromIndex === toIndex) {
+            return this.queue[fromIndex];
+        }
+
+        // Remove item from original position
+        const [item] = this.queue.splice(fromIndex, 1);
+
+        // Insert at new position
+        this.queue.splice(toIndex, 0, item);
+
+        // Rebuild position mappings
+        this.queueItemIds.clear();
+        this.queue.forEach((queueItem, index) => {
+            if (queueItem.id) {
+                this.queueItemIds.set(index, queueItem.id);
+            }
+        });
+
+        this.saveQueue();
+        eventBus.emit(QUEUE_UPDATED);
+        eventBus.emit(QUEUE_REORDERED, { fromIndex, toIndex, item });
+
+        queueLogger.info({
+            context: {
+                event: 'queue_item_moved',
+                songTitle: item.title || item.content,
+                fromPosition: fromIndex + 1,
+                toPosition: toIndex + 1,
+            }
+        }, `Moved queue item: "${item.title || item.content}" from ${fromIndex + 1} to ${toIndex + 1}`);
+
+        return item;
+    }
 }
 
 module.exports = new QueueManager();

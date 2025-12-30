@@ -18,7 +18,8 @@ const EDITABLE_SETTINGS = {
     performance: ['prefetchNext', 'prefetchCount'],
     notifications: ['enabled', 'notifyAtPosition'],
     privacy: ['demoMode'],
-    rateLimit: ['enabled', 'maxRequests', 'windowSeconds']
+    rateLimit: ['enabled', 'maxRequests', 'windowSeconds'],
+    countdown: ['enabled', 'targetDate', 'showInPlayer', 'showThreshold', 'skipBuffer']
 };
 
 /**
@@ -60,6 +61,17 @@ const DEFAULT_SETTINGS = {
         enabled: true,
         maxRequests: 3,
         windowSeconds: 60
+    },
+    countdown: {
+        enabled: false,
+        targetDate: null,
+        showInPlayer: true,
+        showThreshold: 300,
+        skipBuffer: 5000,
+        song: {
+            url: null,
+            timestamp: 0
+        }
     }
 };
 
@@ -105,7 +117,18 @@ class SettingsController {
             privacy: {
                 demoMode: config.privacy?.demoMode || false
             },
-            rateLimit: rateLimitService.getRateLimitConfig()
+            rateLimit: rateLimitService.getRateLimitConfig(),
+            countdown: {
+                enabled: config.countdown?.enabled || false,
+                targetDate: config.countdown?.targetDate || null,
+                showInPlayer: config.countdown?.showInPlayer !== false,
+                showThreshold: config.countdown?.showThreshold || 300,
+                skipBuffer: config.countdown?.skipBuffer || 5000,
+                song: {
+                    url: config.countdown?.song?.url || null,
+                    timestamp: config.countdown?.song?.timestamp || 0
+                }
+            }
         };
 
         res.json({
@@ -153,7 +176,7 @@ class SettingsController {
         let parsedValue = value;
         
         // Boolean fields
-        if (['downloadThumbnails', 'cleanupAfterPlay', 'prefetchNext', 'enabled', 'confirmSkip', 'showRequesterName', 'demoMode'].includes(key)) {
+        if (['downloadThumbnails', 'cleanupAfterPlay', 'prefetchNext', 'enabled', 'confirmSkip', 'showRequesterName', 'demoMode', 'showInPlayer'].includes(key)) {
             if (typeof value !== 'boolean') {
                 return res.status(400).json({
                     success: false,
@@ -161,9 +184,27 @@ class SettingsController {
                 });
             }
         }
-        
+
+        // String fields (for countdown targetDate)
+        if (key === 'targetDate' && value !== null) {
+            if (typeof value !== 'string') {
+                return res.status(400).json({
+                    success: false,
+                    error: `${key} must be a string (ISO 8601 date format) or null`
+                });
+            }
+            // Validate date format
+            const parsedDate = new Date(value);
+            if (isNaN(parsedDate.getTime())) {
+                return res.status(400).json({
+                    success: false,
+                    error: `${key} must be a valid date in ISO 8601 format`
+                });
+            }
+        }
+
         // Integer fields
-        if (['songTransitionDelay', 'prefetchCount', 'notifyAtPosition', 'maxRequests', 'windowSeconds'].includes(key)) {
+        if (['songTransitionDelay', 'prefetchCount', 'notifyAtPosition', 'maxRequests', 'windowSeconds', 'showThreshold', 'skipBuffer'].includes(key)) {
             parsedValue = parseInt(value, 10);
             if (isNaN(parsedValue) || parsedValue < 0) {
                 return res.status(400).json({

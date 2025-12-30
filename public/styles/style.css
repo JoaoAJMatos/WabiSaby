@@ -6051,6 +6051,21 @@ input:focus {
     /* Moved to main header */
 }
 
+/* Countdown panel specific header */
+.settings-panel[data-panel="countdown"] .panel-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 18px;
+    margin-bottom: 24px;
+    padding-bottom: 20px;
+    border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+}
+
+.panel-toggle {
+    flex-shrink: 0;
+}
+
 .panel-icon {
     width: 52px;
     height: 52px;
@@ -9979,4 +9994,65 @@ input:focus {
     font-size: 0.9em;
     opacity: 0.7;
     pointer-events: auto;
+}
+
+/* ========================================
+   Countdown Settings
+   ======================================== */
+
+.settings-action-btn {
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    padding: 10px 16px;
+    background: rgba(52, 211, 153, 0.15);
+    border: 1px solid rgba(52, 211, 153, 0.3);
+    border-radius: 10px;
+    color: var(--primary);
+    font-size: 0.85rem;
+    font-weight: 500;
+    cursor: pointer;
+    transition: all 0.2s ease;
+}
+
+.settings-action-btn:hover {
+    background: rgba(52, 211, 153, 0.25);
+    border-color: rgba(52, 211, 153, 0.5);
+}
+
+.settings-action-btn:disabled {
+    opacity: 0.6;
+    cursor: not-allowed;
+}
+
+.countdown-status-value {
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 1.1rem;
+    font-weight: 500;
+    color: var(--text-muted);
+    padding: 8px 12px;
+    background: rgba(255, 255, 255, 0.02);
+    border: 1px solid rgba(255, 255, 255, 0.04);
+    border-radius: 8px;
+}
+
+.countdown-status-value.active {
+    color: var(--primary);
+    background: rgba(52, 211, 153, 0.1);
+    border-color: rgba(52, 211, 153, 0.2);
+}
+
+/* Datetime input styling */
+.datetime-input {
+    color-scheme: dark;
+    min-width: 200px;
+}
+
+/* Countdown panel icon */
+.panel-icon.countdown {
+    background: linear-gradient(135deg, #f97316, #ea580c);
+}
+
+.settings-nav-item[data-category="countdown"].active .fa-hourglass-half {
+    color: #f97316;
 }

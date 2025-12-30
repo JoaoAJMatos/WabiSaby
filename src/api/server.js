@@ -25,6 +25,7 @@ const { router: authRouter } = require('./routes/auth.routes');
 const { router: userRouter } = require('./routes/user.routes');
 const { router: vipAuthRouter } = require('./routes/vip-auth.routes');
 const { router: startupSoundRouter } = require('./routes/startup-sound.routes');
+const { router: countdownRouter } = require('./routes/countdown.routes');
 const { updateVipName, setWhatsAppSocket: setPriorityServiceSocket } = require('../services/user/priority.service');
 
 const app = express();
@@ -78,6 +79,7 @@ app.use('/api', authRouter);
 app.use('/api', userRouter);
 app.use('/api', vipAuthRouter);
 app.use('/api', startupSoundRouter);
+app.use('/api', countdownRouter);
 
 // 404 handler for API routes (catch all unmatched /api routes)
 // This will only match if no previous route matched

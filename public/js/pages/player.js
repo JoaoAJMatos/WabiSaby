@@ -38,6 +38,13 @@ const barHeights = new Array(CONFIG.BAR_COUNT).fill(0);
 // Animation
 let animationFrame = null;
 
+// Countdown state
+let countdownEnabled = false;
+let countdownShowInPlayer = true;
+let countdownShowThreshold = 300; // seconds
+let countdownTimeRemaining = null;
+let countdownSSE = null;
+
 // DOM elements
 const elements = {
     bgBlur: document.getElementById('bg-blur'),
@@ -67,6 +74,12 @@ const elements = {
     lyricsCurrentTime: document.getElementById('lyrics-current-time'),
     lyricsTotalTime: document.getElementById('lyrics-total-time'),
     activeEffects: document.getElementById('active-effects'),
+    // Countdown elements
+    countdownOverlay: document.getElementById('countdown-overlay'),
+    countdownNumber: document.getElementById('countdown-number'),
+    countdownTime: document.getElementById('countdown-time'),
+    countdownMessage: document.getElementById('countdown-message'),
+    countdownParticles: document.getElementById('countdown-particles'),
 };
 
 // Canvas contexts
@@ -1643,6 +1656,240 @@ async function loadSettings() {
 }
 
 // ============================================
+// COUNTDOWN FUNCTIONALITY
+// ============================================
+
+let lastCountdownNumber = null;
+let celebrationTriggered = false;
+const BIG_NUMBER_THRESHOLD = 60; // Show big number for last 60 seconds
+
+/**
+ * Update countdown display based on current status
+ */
+function updateCountdownDisplay(countdown) {
+    if (!countdown || !elements.countdownOverlay) return;
+
+    countdownEnabled = countdown.enabled;
+    countdownShowInPlayer = countdown.showInPlayer;
+    countdownShowThreshold = countdown.showThreshold || 300;
+    countdownTimeRemaining = countdown.timeRemaining;
+
+    // Determine if we should show the countdown overlay
+    const shouldShow = countdownEnabled &&
+                      countdownShowInPlayer &&
+                      countdownTimeRemaining !== null &&
+                      (countdownTimeRemaining / 1000) <= countdownShowThreshold;
+
+    // Check if countdown has reached zero (within 500ms tolerance)
+    const isAtZero = countdownTimeRemaining !== null && countdownTimeRemaining <= 500;
+    const secondsRemaining = Math.ceil(countdownTimeRemaining / 1000);
+
+    if (isAtZero && !celebrationTriggered) {
+        // Trigger celebration!
+        triggerCelebration(countdown.message || 'Happy New Year!');
+        celebrationTriggered = true;
+        return;
+    }
+
+    if (shouldShow && countdownTimeRemaining > 0) {
+        // Show countdown overlay
+        elements.countdownOverlay.classList.add('visible');
+        elements.countdownOverlay.classList.remove('celebration');
+        document.body.classList.add('countdown-mode');
+
+        // Decide which display mode: big number or time format
+        const showBigNumber = secondsRemaining <= BIG_NUMBER_THRESHOLD;
+
+        if (showBigNumber) {
+            // Show big dramatic number for final seconds
+            if (elements.countdownNumber) {
+                elements.countdownNumber.style.display = 'block';
+
+                // Only update and animate if number changed
+                if (secondsRemaining !== lastCountdownNumber) {
+                    elements.countdownNumber.classList.remove('pulse');
+                    void elements.countdownNumber.offsetWidth; // Force reflow
+                    elements.countdownNumber.classList.add('pulse');
+                    elements.countdownNumber.textContent = secondsRemaining;
+                    lastCountdownNumber = secondsRemaining;
+                }
+            }
+            if (elements.countdownTime) {
+                elements.countdownTime.style.display = 'none';
+            }
+        } else {
+            // Show HH:MM:SS format for longer countdowns
+            if (elements.countdownNumber) {
+                elements.countdownNumber.style.display = 'none';
+            }
+            if (elements.countdownTime) {
+                elements.countdownTime.style.display = 'block';
+                elements.countdownTime.textContent = countdown.formattedTime || formatCountdownTime(countdownTimeRemaining);
+            }
+        }
+
+        // Hide message during countdown
+        if (elements.countdownMessage) {
+            elements.countdownMessage.style.display = 'none';
+        }
+    } else if (!isAtZero) {
+        // Hide countdown overlay (but not during celebration)
+        if (!celebrationTriggered) {
+            elements.countdownOverlay.classList.remove('visible');
+            document.body.classList.remove('countdown-mode');
+            lastCountdownNumber = null;
+        }
+    }
+
+    // Reset celebration flag when countdown is disabled or reset
+    if (!countdownEnabled || (countdownTimeRemaining !== null && countdownTimeRemaining > countdownShowThreshold * 1000)) {
+        celebrationTriggered = false;
+    }
+}
+
+/**
+ * Format milliseconds as HH:MM:SS
+ */
+function formatCountdownTime(ms) {
+    if (ms <= 0) return '00:00:00';
+    const totalSeconds = Math.floor(ms / 1000);
+    const hours = Math.floor(totalSeconds / 3600);
+    const minutes = Math.floor((totalSeconds % 3600) / 60);
+    const seconds = totalSeconds % 60;
+    return [hours, minutes, seconds].map(n => n.toString().padStart(2, '0')).join(':');
+}
+
+/**
+ * Trigger celebration when countdown reaches zero
+ */
+function triggerCelebration(message) {
+    console.log('🎉 Countdown reached zero! Triggering celebration...');
+
+    // Show celebration state
+    if (elements.countdownOverlay) {
+        elements.countdownOverlay.classList.add('visible', 'celebration');
+    }
+
+    // Hide number and time, show message
+    if (elements.countdownNumber) {
+        elements.countdownNumber.style.display = 'none';
+    }
+    if (elements.countdownTime) {
+        elements.countdownTime.style.display = 'none';
+    }
+    if (elements.countdownMessage) {
+        elements.countdownMessage.style.display = 'block';
+        elements.countdownMessage.textContent = message;
+    }
+
+    // Create confetti particles
+    createConfetti();
+
+    // Hide celebration after 30 seconds (increased from 15 seconds)
+    setTimeout(() => {
+        if (elements.countdownOverlay) {
+            elements.countdownOverlay.classList.remove('visible', 'celebration');
+        }
+        document.body.classList.remove('countdown-mode');
+        // Clear particles
+        if (elements.countdownParticles) {
+            elements.countdownParticles.innerHTML = '';
+        }
+    }, 30000);
+}
+
+/**
+ * Create confetti particles for celebration
+ */
+function createConfetti() {
+    if (!elements.countdownParticles) return;
+
+    elements.countdownParticles.innerHTML = '';
+    const colors = ['#ff0', '#f0f', '#0ff', '#0f0', '#f00', '#00f', '#fff', '#34d399'];
+    const particleCount = 150;
+
+    for (let i = 0; i < particleCount; i++) {
+        const particle = document.createElement('div');
+        particle.className = 'countdown-particle';
+
+        const color = colors[Math.floor(Math.random() * colors.length)];
+        const size = Math.random() * 12 + 4;
+        const left = Math.random() * 100;
+        const delay = Math.random() * 3;
+        const duration = Math.random() * 4 + 3;
+        const rotation = Math.random() * 720;
+
+        particle.style.cssText = `
+            position: absolute;
+            width: ${size}px;
+            height: ${size}px;
+            background: ${color};
+            left: ${left}%;
+            top: -20px;
+            border-radius: ${Math.random() > 0.5 ? '50%' : '2px'};
+            animation: confetti-fall ${duration}s ease-out ${delay}s forwards;
+            transform: rotate(${rotation}deg);
+            box-shadow: 0 0 ${size}px ${color};
+        `;
+
+        elements.countdownParticles.appendChild(particle);
+    }
+}
+
+/**
+ * Connect to SSE for real-time countdown updates
+ */
+function connectCountdownSSE() {
+    if (countdownSSE) {
+        countdownSSE.close();
+    }
+
+    countdownSSE = new EventSource('/api/status/stream');
+
+    countdownSSE.onopen = () => {
+        console.log('Countdown SSE connected');
+    };
+
+    countdownSSE.onmessage = (event) => {
+        try {
+            const data = JSON.parse(event.data);
+            if (data.countdown) {
+                updateCountdownDisplay(data.countdown);
+            }
+        } catch (err) {
+            // Ignore parse errors (heartbeats, etc.)
+        }
+    };
+
+    countdownSSE.onerror = (error) => {
+        console.warn('Countdown SSE error, will reconnect...');
+        // Close and reconnect after delay
+        if (countdownSSE) {
+            countdownSSE.close();
+            countdownSSE = null;
+        }
+        setTimeout(connectCountdownSSE, 5000);
+    };
+}
+
+/**
+ * Fetch initial countdown status
+ */
+async function fetchCountdownStatus() {
+    try {
+        const res = await fetch('/api/countdown');
+        if (!res.ok) throw new Error('Failed to fetch countdown');
+
+        const data = await res.json();
+        if (data.success && data.countdown) {
+            updateCountdownDisplay(data.countdown);
+        }
+    } catch (err) {
+        console.error('Failed to fetch countdown status:', err);
+    }
+}
+
+// ============================================
 // INITIALIZATION
 // ============================================
 
@@ -1654,6 +1901,10 @@ loadSettings();
 showIdleState();
 renderLyrics(null);
 drawVisualizer();
+
+// Connect to SSE for countdown updates
+connectCountdownSSE();
+fetchCountdownStatus();
 
 // Add resize listener to recalculate title scrolling
 let resizeTimeout;
