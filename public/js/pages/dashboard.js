@@ -311,75 +311,78 @@ function updateQueueUI(data, shuffleEnabled = false) {
             if (lastPlayedSong !== songId) {
                 lastPlayedSong = songId;
                 
-                // Initialize audio context if not ready (will start on user interaction)
-                if (!audioContext) {
-                    initVisualizer();
-                }
-                
-                // Stop idle animation when we have real audio
-                isShowingIdle = false;
-                
-                // Clean up previous audio properly
-                if (currentAudio) {
-                    currentAudio.pause();
-                    currentAudio.src = ''; // Release the resource
-                    currentAudio = null;
-                }
-                if (source) {
-                    source.disconnect();
-                    source = null;
-                }
-                
-                const audio = new Audio(currentSong.streamUrl);
-                audio.crossOrigin = "anonymous";
-                
-                // CRITICAL: Connect to Web Audio API FIRST, before playing
-                // Once MediaElementSource is created, ALL audio routing goes through Web Audio graph
-                if (audioContext) {
-                    source = audioContext.createMediaElementSource(audio);
-                    source.connect(analyser);
-                    // IMPORTANT: analyser is NOT connected to audioContext.destination
-                    // This means the audio will be analyzed but NOT sent to speakers
-                    console.log('🔇 SILENT MODE: Audio connected to analyser only (no speaker output)');
-                    console.log('   Song:', currentSong.title || currentSong.content);
-                }
-                
-                // Set volume (only affects the Web Audio graph, which isn't connected to speakers)
-                audio.volume = 1.0;
-                
-                // Sync Logic: Seek to server's position
-                const serverElapsed = currentSong.elapsed || 0;
-                audio.currentTime = (serverElapsed / 1000);
-                
-                currentAudio = audio;
-
-                // Handle initial state - Start playing if not paused
-                if (!currentSong.isPaused) {
-                    startAudioPlayback();
-                }
-                
-                // Add event listeners for better state management
-                audio.addEventListener('canplaythrough', () => {
-                    console.log('Audio can play through');
-                    if (localCurrentSong && !localCurrentSong.isPaused && audio.paused) {
-                        // Check if audio has actually ended before restarting
-                        const hasEnded = audio.ended || (audio.duration > 0 && audio.currentTime >= audio.duration - 0.1);
-                        if (!hasEnded) {
-                            startAudioPlayback();
-                        }
+                // Defer audio visualizer setup to avoid blocking UI updates
+                requestAnimationFrame(() => {
+                    // Initialize audio context if not ready (will start on user interaction)
+                    if (!audioContext) {
+                        initVisualizer();
                     }
-                });
-                
-                audio.addEventListener('playing', () => {
-                    console.log('Audio is now playing - stopping idle animation');
+                    
+                    // Stop idle animation when we have real audio
                     isShowingIdle = false;
-                });
-                
-                audio.addEventListener('error', (e) => {
-                    console.error('Audio error:', e);
-                    // On error, show idle animation
-                    isShowingIdle = true;
-                    initIdleAnimation();
+                    
+                    // Clean up previous audio properly
+                    if (currentAudio) {
+                        currentAudio.pause();
+                        currentAudio.src = ''; // Release the resource
+                        currentAudio = null;
+                    }
+                    if (source) {
+                        source.disconnect();
+                        source = null;
+                    }
+                    
+                    const audio = new Audio(currentSong.streamUrl);
+                    audio.crossOrigin = "anonymous";
+                    
+                    // CRITICAL: Connect to Web Audio API FIRST, before playing
+                    // Once MediaElementSource is created, ALL audio routing goes through Web Audio graph
+                    if (audioContext) {
+                        source = audioContext.createMediaElementSource(audio);
+                        source.connect(analyser);
+                        // IMPORTANT: analyser is NOT connected to audioContext.destination
+                        // This means the audio will be analyzed but NOT sent to speakers
+                        console.log('🔇 SILENT MODE: Audio connected to analyser only (no speaker output)');
+                        console.log('   Song:', currentSong.title || currentSong.content);
+                    }
+                    
+                    // Set volume (only affects the Web Audio graph, which isn't connected to speakers)
+                    audio.volume = 1.0;
+                    
+                    // Sync Logic: Seek to server's position
+                    const serverElapsed = currentSong.elapsed || 0;
+                    audio.currentTime = (serverElapsed / 1000);
+                    
+                    currentAudio = audio;
+
+                    // Handle initial state - Start playing if not paused
+                    if (!currentSong.isPaused) {
+                        startAudioPlayback();
+                    }
+                    
+                    // Add event listeners for better state management
+                    audio.addEventListener('canplaythrough', () => {
+                        console.log('Audio can play through');
+                        if (localCurrentSong && !localCurrentSong.isPaused && audio.paused) {
+                            // Check if audio has actually ended before restarting
+                            const hasEnded = audio.ended || (audio.duration > 0 && audio.currentTime >= audio.duration - 0.1);
+                            if (!hasEnded) {
+                                startAudioPlayback();
+                            }
+                        }
+                    });
+                    
+                    audio.addEventListener('playing', () => {
+                        console.log('Audio is now playing - stopping idle animation');
+                        isShowingIdle = false;
+                    });
+                    
+                    audio.addEventListener('error', (e) => {
+                        console.error('Audio error:', e);
+                        // On error, show idle animation
+                        isShowingIdle = true;
+                        initIdleAnimation();
+                    });
                 });
             } else if (currentAudio && lastPlayedSong === songId) {
                 // Sync pause state if song is same

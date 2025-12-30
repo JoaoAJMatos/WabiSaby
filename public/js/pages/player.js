@@ -614,65 +614,76 @@ function updateSongInfo(song) {
 
     if (song.duration) currentSongDuration = song.duration;
 
+    // Batch critical DOM updates first using requestAnimationFrame
+    requestAnimationFrame(() => {
+        // Update displays
+        elements.songTitle.textContent = displayTitle;
+        elements.lyricsTitle.textContent = displayTitle;
+
+        if (displayArtist) {
+            elements.songArtist.textContent = displayArtist;
+            elements.songArtist.style.display = 'block';
+            elements.lyricsArtist.textContent = displayArtist;
+            document.title = `${displayTitle} • ${displayArtist}`;
+        } else {
+            elements.songArtist.style.display = 'none';
+            elements.lyricsArtist.textContent = '';
+            document.title = displayTitle;
+        }
+
+        const requester = song.requester || 'Unknown';
+        if (showRequesterNameEnabled) {
+            elements.songRequester.innerHTML = `<i class="fas fa-user-circle"></i> <span>Requested by ${requester}</span>`;
+            elements.songRequester.style.display = 'block';
+        } else {
+            elements.songRequester.style.display = 'none';
+        }
+
+        // Preload thumbnail before setting it to avoid blocking
+        if (song.thumbnailUrl) {
+            if (elements.albumImg.src !== song.thumbnailUrl) {
+                // Preload image first
+                const img = new Image();
+                img.onload = () => {
+                    // Now set the actual image sources after preload
+                    elements.albumImg.src = song.thumbnailUrl;
+                    elements.miniAlbumImg.src = song.thumbnailUrl;
+                    elements.albumImg.classList.add('visible');
+                    elements.albumPlaceholder.style.display = 'none';
+
+                    // Set blurred background
+                    elements.bgBlur.style.backgroundImage = `url(${song.thumbnailUrl})`;
+                    elements.bgBlur.classList.add('active');
+                };
+                img.src = song.thumbnailUrl;
+            }
+        } else {
+            elements.albumImg.classList.remove('visible');
+            elements.albumPlaceholder.style.display = 'flex';
+            elements.bgBlur.classList.remove('active');
+        }
+
+        // Check if title needs scrolling (use setTimeout to ensure DOM is updated)
+        setTimeout(() => {
+            checkTitleOverflow();
+        }, 0);
+    });
+
+    // Defer lyrics fetching/updating to avoid blocking UI updates
     if (rawTitle && rawTitle !== lastFetchedTitle) {
         lastFetchedTitle = rawTitle;
         
-        // Check if lyrics are already pre-fetched during song preparation
-        if (song.lyrics) {
-            // Use pre-fetched lyrics
-            updateLyrics(song.lyrics);
-        } else {
-            // Fallback to fetching lyrics (for backwards compatibility or if not pre-fetched)
-            fetchLyrics(displayTitle, displayArtist, currentSongDuration);
-        }
-    }
-
-    // Update displays
-    elements.songTitle.textContent = displayTitle;
-    elements.lyricsTitle.textContent = displayTitle;
-
-    // Check if title needs scrolling (use setTimeout to ensure DOM is updated)
-    setTimeout(() => {
-        checkTitleOverflow();
-    }, 0);
-
-    if (displayArtist) {
-        elements.songArtist.textContent = displayArtist;
-        elements.songArtist.style.display = 'block';
-        elements.lyricsArtist.textContent = displayArtist;
-        document.title = `${displayTitle} • ${displayArtist}`;
-    } else {
-        elements.songArtist.style.display = 'none';
-        elements.lyricsArtist.textContent = '';
-        document.title = displayTitle;
-    }
-
-    const requester = song.requester || 'Unknown';
-    if (showRequesterNameEnabled) {
-        elements.songRequester.innerHTML = `<i class="fas fa-user-circle"></i> <span>Requested by ${requester}</span>`;
-        elements.songRequester.style.display = 'block';
-    } else {
-        elements.songRequester.style.display = 'none';
-    }
-
-    // Update album art
-    if (song.thumbnailUrl) {
-        if (elements.albumImg.src !== song.thumbnailUrl) {
-            elements.albumImg.src = song.thumbnailUrl;
-            elements.miniAlbumImg.src = song.thumbnailUrl;
-            elements.albumImg.onload = () => {
-                elements.albumImg.classList.add('visible');
-                elements.albumPlaceholder.style.display = 'none';
-
-                // Set blurred background
-                elements.bgBlur.style.backgroundImage = `url(${song.thumbnailUrl})`;
-                elements.bgBlur.classList.add('active');
-            };
-        }
-    } else {
-        elements.albumImg.classList.remove('visible');
-        elements.albumPlaceholder.style.display = 'flex';
-        elements.bgBlur.classList.remove('active');
+        // Use setTimeout to defer lyrics processing
+        setTimeout(() => {
+            // Check if lyrics are already pre-fetched during song preparation
+            if (song.lyrics) {
+                // Use pre-fetched lyrics
+                updateLyrics(song.lyrics);
+            } else {
+                // Fallback to fetching lyrics (for backwards compatibility or if not pre-fetched)
+                fetchLyrics(displayTitle, displayArtist, currentSongDuration);
+            }
+        }, 0);
     }
 }
 
@@ -768,13 +779,16 @@ function renderLyrics(lyrics, statusMsg = null) {
         return;
     }
 
+    // Use DocumentFragment for better performance - batch DOM operations
+    const fragment = document.createDocumentFragment();
+    
     // Add top spacer for better centering (additional to CSS padding)
     const topSpacer = document.createElement('div');
     topSpacer.className = 'lyrics-spacer';
     topSpacer.style.height = '60px'; // Additional top spacing
-    container.appendChild(topSpacer);
+    fragment.appendChild(topSpacer);
 
-    // Add lyrics lines
+    // Batch create lyrics lines using DocumentFragment (single DOM operation)
     lyrics.forEach((line, index) => {
         const div = document.createElement('div');
         div.className = 'lyric-line';
@@ -790,53 +804,59 @@ function renderLyrics(lyrics, statusMsg = null) {
             broadcast.postMessage({ type: 'SEEK_REQUEST', time: timeInMs });
         };
 
-        container.appendChild(div);
+        fragment.appendChild(div);
     });
     
-    // Ensure proper spacing - add a small delay to let CSS transitions work
-    setTimeout(() => {
-        const lines = container.querySelectorAll('.lyric-line');
-        lines.forEach((line, i) => {
-            // Add smooth transitions for size changes
-            line.style.transition = 'font-size 0.5s cubic-bezier(0.33, 1, 0.68, 1), opacity 0.5s cubic-bezier(0.33, 1, 0.68, 1), color 0.5s cubic-bezier(0.33, 1, 0.68, 1)';
-        });
-    }, 50);
-
-    // Add bottom spacer for better centering
-    const bottomSpacer = document.createElement('div');
-    bottomSpacer.className = 'lyrics-spacer';
-    bottomSpacer.style.height = '60px'; // Additional bottom spacing
-    container.appendChild(bottomSpacer);
-
-    // Add Sync Controls
-    const controls = document.createElement('div');
-    controls.className = 'lyrics-controls';
-    controls.innerHTML = `
-                <div class="sync-btn" onclick="adjustLyricsOffset(-0.5)" title="Earlier (-0.5s)">
-                    <i class="fas fa-minus"></i>
-                </div>
-                <div class="sync-display" id="sync-offset-display">
-                    0.0s
-                </div>
-                <div class="sync-btn" onclick="adjustLyricsOffset(0.5)" title="Later (+0.5s)">
-                    <i class="fas fa-plus"></i>
-                </div>
-            `;
-    elements.lyricsContainer.appendChild(controls);
-
-    // Make helper global so HTML onclick works
-    window.adjustLyricsOffset = adjustLyricsOffset;
-
-    // Reset scroll target tracking when lyrics are re-rendered
-    lastScrollTarget = null;
+    // Single DOM operation instead of many - much faster!
+    container.appendChild(fragment);
     
-    // If at song start (no active line yet), position first line at center
-    if (currentLineIndex < 0) {
-        setTimeout(() => scrollToLyricLine(-1, true), 100);
-    } else {
-        // If we already have an active line, scroll to it
-        setTimeout(() => scrollToLyricLine(currentLineIndex, true), 100);
-    }
+    // Defer non-critical operations to avoid blocking
+    requestAnimationFrame(() => {
+        // Ensure proper spacing - add a small delay to let CSS transitions work
+        setTimeout(() => {
+            const lines = container.querySelectorAll('.lyric-line');
+            lines.forEach((line, i) => {
+                // Add smooth transitions for size changes
+                line.style.transition = 'font-size 0.5s cubic-bezier(0.33, 1, 0.68, 1), opacity 0.5s cubic-bezier(0.33, 1, 0.68, 1), color 0.5s cubic-bezier(0.33, 1, 0.68, 1)';
+            });
+        }, 50);
+
+        // Add bottom spacer for better centering
+        const bottomSpacer = document.createElement('div');
+        bottomSpacer.className = 'lyrics-spacer';
+        bottomSpacer.style.height = '60px'; // Additional bottom spacing
+        container.appendChild(bottomSpacer);
+
+        // Add Sync Controls
+        const controls = document.createElement('div');
+        controls.className = 'lyrics-controls';
+        controls.innerHTML = `
+                    <div class="sync-btn" onclick="adjustLyricsOffset(-0.5)" title="Earlier (-0.5s)">
+                        <i class="fas fa-minus"></i>
+                    </div>
+                    <div class="sync-display" id="sync-offset-display">
+                        0.0s
+                    </div>
+                    <div class="sync-btn" onclick="adjustLyricsOffset(0.5)" title="Later (+0.5s)">
+                        <i class="fas fa-plus"></i>
+                    </div>
+                `;
+        elements.lyricsContainer.appendChild(controls);
+
+        // Make helper global so HTML onclick works
+        window.adjustLyricsOffset = adjustLyricsOffset;
+
+        // Reset scroll target tracking when lyrics are re-rendered
+        lastScrollTarget = null;
+        
+        // If at song start (no active line yet), position first line at center
+        if (currentLineIndex < 0) {
+            setTimeout(() => scrollToLyricLine(-1, true), 100);
+        } else {
+            // If we already have an active line, scroll to it
+            setTimeout(() => scrollToLyricLine(currentLineIndex, true), 100);
+        }
+    });
 }
 
 function updateProgress(data) {
@@ -1663,6 +1683,7 @@ let lastCountdownNumber = null;
 let celebrationTriggered = false;
 let celebrationStartTime = null;
 let celebrationDuration = null;
+let confettiInterval = null;
 const BIG_NUMBER_THRESHOLD = 60; // Show big number for last 60 seconds
 
 /**
@@ -1703,6 +1724,10 @@ function updateCountdownDisplay(countdown) {
             const elapsed = Date.now() - celebrationStartTime;
             if (elapsed >= celebrationDuration) {
                 // Celebration duration has passed, allow reset
+                if (confettiInterval) {
+                    clearInterval(confettiInterval);
+                    confettiInterval = null;
+                }
                 celebrationTriggered = false;
                 celebrationStartTime = null;
                 celebrationDuration = null;
@@ -1777,6 +1802,10 @@ function updateCountdownDisplay(countdown) {
             const elapsed = Date.now() - celebrationStartTime;
             if (elapsed >= celebrationDuration) {
                 // Celebration duration has passed, allow reset
+                if (confettiInterval) {
+                    clearInterval(confettiInterval);
+                    confettiInterval = null;
+                }
                 celebrationTriggered = false;
                 celebrationStartTime = null;
                 celebrationDuration = null;
@@ -1820,12 +1849,32 @@ function triggerCelebration(message, countdown = {}) {
         elements.countdownMessage.textContent = message;
     }
 
-    // Create confetti particles
+    // Clear any existing confetti interval
+    if (confettiInterval) {
+        clearInterval(confettiInterval);
+        confettiInterval = null;
+    }
+
+    // Create initial confetti particles
     createConfetti();
 
     // Hide celebration after configured duration (default 30 seconds)
     const displayDuration = (countdown.messageDisplayDuration || 30) * 1000;
+    
+    // Continuously create confetti particles during the celebration
+    // Create new particles every 2 seconds to maintain continuous confetti
+    const confettiIntervalMs = 2000; // Create new batch every 2 seconds
+    confettiInterval = setInterval(() => {
+        addConfettiParticles();
+    }, confettiIntervalMs);
+
     setTimeout(() => {
+        // Clear confetti interval
+        if (confettiInterval) {
+            clearInterval(confettiInterval);
+            confettiInterval = null;
+        }
+        
         if (elements.countdownOverlay) {
             elements.countdownOverlay.classList.remove('visible', 'celebration');
         }
@@ -1842,12 +1891,21 @@ function triggerCelebration(message, countdown = {}) {
 }
 
 /**
- * Create confetti particles for celebration
+ * Create confetti particles for celebration (clears existing particles)
  */
 function createConfetti() {
     if (!elements.countdownParticles) return;
 
     elements.countdownParticles.innerHTML = '';
+    addConfettiParticles();
+}
+
+/**
+ * Add confetti particles without clearing existing ones
+ */
+function addConfettiParticles() {
+    if (!elements.countdownParticles) return;
+
     const colors = ['#ff0', '#f0f', '#0ff', '#0f0', '#f00', '#00f', '#fff', '#34d399'];
     const particleCount = 150;
 

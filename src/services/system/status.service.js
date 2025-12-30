@@ -220,6 +220,22 @@ class StatusService extends EventEmitter {
                         current.elapsed = Date.now() - current.startTime;
                     }
                 }
+
+                // Fetch lyrics from database if songId is available
+                if (current.songId) {
+                    try {
+                        const dbService = require('../../infrastructure/database/db.service');
+                        const lyrics = dbService.getSongLyrics(current.songId);
+                        if (lyrics) {
+                            // Include lyrics in the song object
+                            // The format from database should match what updateLyrics expects
+                            current.lyrics = lyrics;
+                        }
+                    } catch (err) {
+                        logger.debug('Error fetching lyrics for status:', err.message);
+                        // Don't fail status build if lyrics fetch fails
+                    }
+                }
             }
 
             // Extract filename for streaming if it's a file path

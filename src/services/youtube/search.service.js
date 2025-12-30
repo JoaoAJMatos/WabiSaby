@@ -11,6 +11,9 @@ const { normalizeString, wordsInOrder } = require('../../utils/string.util');
  * Handles YouTube search functionality with API and play-dl fallback
  */
 
+// Track in-flight searches to prevent duplicate concurrent requests
+const inFlightSearches = new Map();
+
 /**
  * Check if a result has high similarity (90%+) for both title and artist
  * @param {Object} result - YouTube search result
@@ -290,6 +293,9 @@ function scoreSearchResult(result, expectedTitle = '', expectedArtist = '') {
  * @returns {Promise<Array>} - Scored results
  */
 async function executeSearchPlayDl(query, expectedTitle, expectedArtist) {
+    // Add small delay to avoid hammering play-dl API
+    await new Promise(resolve => setTimeout(resolve, 200));
+    
     try {
         const searchResults = await play.search(query, { limit: 10 });
 
@@ -407,6 +413,39 @@ async function executeSearch(query, expectedTitle, expectedArtist, preferAPI = t
 async function searchYouTube(query, options = {}) {
     const { expectedTitle = '', expectedArtist = '', expectedDuration = null } = options;
 
+    // Generate unique search key for deduplication
+    const searchKey = `${query}_${expectedTitle}_${expectedArtist}`;
+    
+    // Check if this search is already in-flight
+    if (inFlightSearches.has(searchKey)) {
+        logger.debug(`[YouTube Search] Deduplicating search: "${query}"`);
+        return await inFlightSearches.get(searchKey);
+    }
+
+    // Create search promise and store it
+    const searchPromise = (async () => {
+        try {
+            return await searchYouTubeInternal(query, options);
+        } finally {
+            // Clean up when search completes
+            inFlightSearches.delete(searchKey);
+        }
+    })();
+
+    // Store the promise for deduplication
+    inFlightSearches.set(searchKey, searchPromise);
+    return await searchPromise;
+}
+
+/**
+ * Internal search function (actual implementation)
+ * @param {string} query - Search query
+ * @param {Object} options - Optional search options
+ * @returns {Promise<{url: string, title: string, artist: string, matchScore: number}>} - Search result
+ */
+async function searchYouTubeInternal(query, options = {}) {
+    const { expectedTitle = '', expectedArtist = '', expectedDuration = null } = options;
+
     // Build optimized query variations for better matching
     const queries = [];
 
@@ -454,6 +493,11 @@ async function searchYouTube(query, options = {}) {
     for (let i = 0; i < queries.length; i++) {
         const currentQuery = queries[i];
         logger.info(`[YouTube Search] Query ${i + 1}/${queries.length}: "${currentQuery}"`);
+
+        // Add delay between queries to avoid rate limiting (except first query)
+        if (i > 0) {
+            await new Promise(resolve => setTimeout(resolve, 500));
+        }
 
         try {
             const results = await executeSearch(currentQuery, expectedTitle, expectedArtist, useAPI);
@@ -505,8 +549,18 @@ async function searchYouTube(query, options = {}) {
             // Check for rate limiting
             if (isRateLimitError(err)) {
                 logger.warn(`[YouTube Search] Rate limited on query "${currentQuery}"`);
-                // Re-throw rate limit errors so they can be handled upstream
-                throw createRateLimitError(err);
+                
+                // If we have more queries to try, wait and continue instead of throwing
+                if (i < queries.length - 1) {
+                    const backoffDelay = Math.min(2000 * Math.pow(2, i), 10000); // Exponential backoff, max 10s
+                    logger.info(`[YouTube Search] Waiting ${backoffDelay}ms before trying next query...`);
+                    await new Promise(resolve => setTimeout(resolve, backoffDelay));
+                    // Continue to next query instead of throwing
+                    continue;
+                } else {
+                    // Last query failed with rate limit - throw error
+                    throw createRateLimitError(err);
+                }
             }
             const errorMsg = err?.message || String(err);
             logger.warn(`[YouTube Search] Query "${currentQuery}" failed: ${errorMsg}`);

@@ -1,7 +1,7 @@
 /**
  * Infrastructure Initialization
  * 
- * Handles all infrastructure setup: storage, database, config, cleanup
+ * Handles all infrastructure setup: storage, database, config
  */
 
 const { logger } = require('../../utils/logger.util');
@@ -21,8 +21,6 @@ async function initializeInfrastructure() {
     await initializeDatabase();
     
     config.loadSettings();
-    
-    config.cleanupTempFiles();
     
     logger.info('Infrastructure initialized');
 }

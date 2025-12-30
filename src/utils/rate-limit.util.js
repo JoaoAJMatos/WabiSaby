@@ -9,11 +9,21 @@
  * @returns {boolean}
  */
 function isRateLimitError(error) {
-    const errorMsg = error?.message || String(error) || '';
+    if (!error) return false;
+    
+    // Check error message (case-insensitive)
+    const errorMsg = (error?.message || String(error) || '').toLowerCase();
+    
+    // Check for common rate limit indicators
     return errorMsg.includes('429') || 
-           errorMsg.includes('Too Many Requests') || 
-           errorMsg.includes('rate') || 
-           errorMsg.includes('Got 429');
+           errorMsg.includes('too many requests') || 
+           errorMsg.includes('rate limit') ||
+           errorMsg.includes('rate-limited') ||
+           errorMsg.includes('got 429') ||
+           // Check error code if available
+           error?.code === 429 ||
+           error?.status === 429 ||
+           error?.statusCode === 429;
 }
 
 /**
