@@ -5,7 +5,18 @@
 
 const config = require('../../config');
 const { logger } = require('../../utils/logger.util');
-const { eventBus, PLAYBACK_STARTED, PLAYBACK_FINISHED, PLAYBACK_SKIP } = require('../../events');
+const helpersUtil = require('../../utils/helpers.util');
+const fs = require('fs');
+const { 
+    eventBus, 
+    PLAYBACK_STARTED, 
+    PLAYBACK_FINISHED, 
+    PLAYBACK_SKIP,
+    COUNTDOWN_PREFETCH_STARTED,
+    COUNTDOWN_PREFETCH_COMPLETED,
+    COUNTDOWN_WAVEFORM_GENERATION_STARTED,
+    COUNTDOWN_WAVEFORM_READY
+} = require('../../events');
 
 class CountdownService {
     constructor() {
@@ -15,6 +26,10 @@ class CountdownService {
         this.lastCheck = 0;
         this.prefetchedSong = null; // Store pre-fetched song data
         this.prefetchInProgress = false;
+        this.waveformData = null; // Store waveform data for prefetched song
+        this.waveformInProgress = false;
+        this.lastSeekTime = 0; // Track when we last sought to prevent repeated seeks
+        this.initialSeekDone = false; // Track if we've done the initial positioning seek
 
         // Listen to playback events to track song state
         eventBus.on(PLAYBACK_STARTED, () => {
@@ -29,6 +44,8 @@ class CountdownService {
         eventBus.on(PLAYBACK_FINISHED, () => {
             // Reset song state when playback finishes
             this.songStarted = false;
+            this.initialSeekDone = false;
+            this.lastSeekTime = 0;
         });
     }
 
@@ -88,6 +105,24 @@ class CountdownService {
 
         const timeRemaining = this.getTimeRemaining();
 
+        // Include song metadata if prefetched
+        let songMetadata = null;
+        if (this.prefetchedSong) {
+            songMetadata = {
+                title: this.prefetchedSong.title || null,
+                artist: this.prefetchedSong.artist || null,
+                thumbnailUrl: null
+            };
+            
+            // Get thumbnail URL if thumbnail path exists
+            if (this.prefetchedSong.thumbnailPath && fs.existsSync(this.prefetchedSong.thumbnailPath)) {
+                const thumbnailUrl = helpersUtil.getThumbnailUrl(this.prefetchedSong.thumbnailPath);
+                if (thumbnailUrl) {
+                    songMetadata.thumbnailUrl = thumbnailUrl;
+                }
+            }
+        }
+
         return {
             enabled: config.countdown.enabled,
             targetDate: config.countdown.targetDate,
@@ -96,14 +131,18 @@ class CountdownService {
             showInPlayer: config.countdown.showInPlayer,
             showThreshold: config.countdown.showThreshold,
             message: config.countdown.message || 'Happy New Year!',
+            messageDisplayDuration: config.countdown.messageDisplayDuration || 30,
             song: {
                 url: config.countdown.song?.url || null,
                 timestamp: config.countdown.song?.timestamp || 0,
             },
+            songMetadata,
             songQueued: this.songQueued,
             songStarted: this.songStarted,
             songPrefetched: this.prefetchedSong !== null,
             prefetchInProgress: this.prefetchInProgress,
+            waveformReady: this.waveformData !== null,
+            waveformInProgress: this.waveformInProgress,
         };
     }
 
@@ -126,10 +165,12 @@ class CountdownService {
             const oldUrl = config.countdown.song?.url;
             if (newConfig.song.url !== undefined) {
                 config.countdown.song.url = newConfig.song.url;
-                // If URL changed, clear prefetched song
+                // If URL changed, clear prefetched song and waveform
                 if (oldUrl !== newConfig.song.url) {
                     this.prefetchedSong = null;
                     this.prefetchInProgress = false;
+                    this.waveformData = null;
+                    this.waveformInProgress = false;
                 }
             }
             if (newConfig.song.timestamp !== undefined) config.countdown.song.timestamp = newConfig.song.timestamp;
@@ -141,6 +182,8 @@ class CountdownService {
         // Reset state when config changes
         this.songQueued = false;
         this.songStarted = false;
+        this.initialSeekDone = false;
+        this.lastSeekTime = 0;
 
         logger.info('Countdown configuration updated:', {
             enabled: config.countdown.enabled,
@@ -214,6 +257,9 @@ class CountdownService {
 
         this.prefetchInProgress = true;
 
+        // Emit prefetch started event
+        eventBus.emit(COUNTDOWN_PREFETCH_STARTED, { url: songUrl });
+
         try {
             const { downloadTrack } = require('../audio/download.service');
             
@@ -221,7 +267,7 @@ class CountdownService {
             
             // Download in background (don't await - let it run async)
             downloadTrack(songUrl, null, null)
-                .then((result) => {
+                .then(async (result) => {
                     this.prefetchedSong = {
                         filePath: result.filePath,
                         sourceUrl: songUrl,
@@ -235,6 +281,16 @@ class CountdownService {
                         title: result.title,
                         filePath: result.filePath
                     });
+
+                    // Emit prefetch completed event
+                    eventBus.emit(COUNTDOWN_PREFETCH_COMPLETED, {
+                        filePath: result.filePath,
+                        title: result.title,
+                        artist: result.artist
+                    });
+
+                    // Generate waveform in background after prefetch
+                    this.generateWaveformForPrefetched();
                 })
                 .catch((error) => {
                     this.prefetchInProgress = false;
@@ -247,6 +303,80 @@ class CountdownService {
             logger.error('Failed to initiate countdown song prefetch:', error);
             return false;
         }
+    }
+
+    /**
+     * Generate waveform for prefetched song
+     * Called automatically after prefetch completes
+     */
+    async generateWaveformForPrefetched() {
+        if (!this.prefetchedSong?.filePath) {
+            logger.warn('Cannot generate waveform: no prefetched song');
+            return null;
+        }
+
+        if (this.waveformInProgress) {
+            logger.debug('Waveform generation already in progress');
+            return null;
+        }
+
+        this.waveformInProgress = true;
+
+        // Emit waveform generation started event
+        eventBus.emit(COUNTDOWN_WAVEFORM_GENERATION_STARTED, {
+            filePath: this.prefetchedSong.filePath
+        });
+
+        try {
+            const { generateWaveform } = require('../audio/waveform.service');
+            const waveformData = await generateWaveform(this.prefetchedSong.filePath, {
+                samplesPerSecond: 100 // 100 samples per second for smooth visualization
+            });
+
+            this.waveformData = waveformData;
+            this.waveformInProgress = false;
+
+            logger.info('Waveform generated for countdown song:', {
+                duration: waveformData.duration,
+                samples: waveformData.samples.length
+            });
+
+            // Emit waveform ready event
+            eventBus.emit(COUNTDOWN_WAVEFORM_READY, {
+                waveform: waveformData
+            });
+
+            return waveformData;
+        } catch (error) {
+            this.waveformInProgress = false;
+            logger.error('Failed to generate waveform:', error);
+            return null;
+        }
+    }
+
+    /**
+     * Get waveform data for the countdown song
+     * If song is prefetched but waveform not generated, generates it
+     * @returns {Promise<Object|null>} Waveform data or null
+     */
+    async getWaveformData() {
+        // If we already have waveform data, return it
+        if (this.waveformData) {
+            return this.waveformData;
+        }
+
+        // If song is prefetched but waveform not generated, generate it
+        if (this.prefetchedSong?.filePath && !this.waveformInProgress) {
+            return await this.generateWaveformForPrefetched();
+        }
+
+        // If waveform generation is in progress, wait a bit and check again
+        if (this.waveformInProgress) {
+            // Return null - client should poll
+            return null;
+        }
+
+        return null;
     }
 
     /**
@@ -395,28 +525,115 @@ class CountdownService {
             }
         }
 
-        // At startTime: Ensure song is playing at correct position
-        if (timeUntilStart <= 0 && !this.songStarted && this.songQueued) {
-            const orchestrator = this._getOrchestrator();
-            const currentSong = orchestrator?.currentSong;
+        // At startTime and during playback: Ensure song is playing at correct position
+        const orchestrator = this._getOrchestrator();
+        const currentSong = orchestrator?.currentSong;
 
-            if (!currentSong) {
-                // No song playing, trigger playback
-                logger.info('Start time reached, triggering countdown song playback');
-                orchestrator.skip(); // This will start playing the next song in queue
-            } else if (this._isCountdownSong(currentSong)) {
-                // Countdown song is playing, verify timing
-                const elapsed = currentSong.elapsed || 0;
-                const expectedPosition = songTimestamp * 1000 - (targetTime - now);
-                const drift = Math.abs(elapsed - expectedPosition);
+        if (this._isCountdownSong(currentSong)) {
+            const expectedPosition = Math.max(0, now - startTime);
+            const elapsed = currentSong.elapsed || 0;
+            const drift = Math.abs(elapsed - expectedPosition);
+            const timeSinceStart = now - startTime;
+            const timeSinceLastSeek = now - this.lastSeekTime;
 
-                if (drift > 2000) { // More than 2 seconds off
-                    logger.warn('Countdown song timing drift detected:', { drift, elapsed, expected: expectedPosition });
-                    // In the future, could implement seek here
+            // If we're at or past startTime, ensure correct position
+            if (timeUntilStart <= 0) {
+                // If song just started, mark it and reset seek tracking
+                if (!this.songStarted) {
+                    logger.info('Countdown song started playing');
+                    this.songStarted = true;
+                    this.initialSeekDone = false;
+                    this.lastSeekTime = 0; // Reset to allow initial seek
                 }
 
-                this.songStarted = true;
+                // Initial positioning: Seek once when song first starts (within first 2 seconds)
+                if (!this.initialSeekDone && timeSinceStart <= 2000) {
+                    if (drift > 100) { // Even small drift at start should be corrected
+                        logger.info('Initial countdown song positioning:', {
+                            drift: Math.round(drift) + 'ms',
+                            current: Math.round(elapsed) + 'ms',
+                            expected: Math.round(expectedPosition) + 'ms'
+                        });
+
+                        const seekSuccess = orchestrator.seek(expectedPosition);
+                        if (seekSuccess) {
+                            this.lastSeekTime = now;
+                            this.initialSeekDone = true;
+                            logger.info('Positioned countdown song at start:', {
+                                position: Math.round(expectedPosition) + 'ms'
+                            });
+                        }
+                    } else {
+                        // No drift, mark as done
+                        this.initialSeekDone = true;
+                    }
+                }
+                // Early correction: Allow one more seek in first 10 seconds if drift is significant
+                else if (this.initialSeekDone && timeSinceStart <= 10000 && timeSinceLastSeek > 3000) {
+                    if (drift > 2000) { // Only if drift is > 2 seconds
+                        logger.info('Early countdown song correction:', {
+                            drift: Math.round(drift) + 'ms',
+                            current: Math.round(elapsed) + 'ms',
+                            expected: Math.round(expectedPosition) + 'ms'
+                        });
+
+                        const seekSuccess = orchestrator.seek(expectedPosition);
+                        if (seekSuccess) {
+                            this.lastSeekTime = now;
+                            logger.info('Corrected countdown song position:', {
+                                position: Math.round(expectedPosition) + 'ms'
+                            });
+                        }
+                    }
+                }
+                // After initial period: Only seek if drift would significantly affect final timestamp
+                else if (timeSinceStart > 10000 && timeSinceLastSeek > 10000) {
+                    // Calculate projected position at target time
+                    const timeUntilTarget = targetTime - now;
+                    const projectedPositionAtTarget = elapsed + timeUntilTarget;
+                    const targetPosition = songTimestamp * 1000;
+                    const projectedDrift = Math.abs(projectedPositionAtTarget - targetPosition);
+
+                    // Only seek if projected drift at target time is > 2 seconds
+                    // This ensures we only interrupt playback if it would actually matter
+                    if (projectedDrift > 2000) {
+                        logger.warn('Significant countdown drift detected, correcting:', {
+                            projectedDrift: Math.round(projectedDrift) + 'ms',
+                            current: Math.round(elapsed) + 'ms',
+                            expected: Math.round(expectedPosition) + 'ms',
+                            projectedAtTarget: Math.round(projectedPositionAtTarget) + 'ms',
+                            targetPosition: Math.round(targetPosition) + 'ms'
+                        });
+
+                        const seekSuccess = orchestrator.seek(expectedPosition);
+                        if (seekSuccess) {
+                            this.lastSeekTime = now;
+                            logger.info('Corrected countdown song for final timestamp accuracy:', {
+                                position: Math.round(expectedPosition) + 'ms'
+                            });
+                        }
+                    }
+                }
+
+                // Log precision status every 10 seconds (without seeking)
+                if (now % 10000 < 1000) {
+                    const timeUntilTarget = targetTime - now;
+                    const currentPositionAtTarget = elapsed + timeUntilTarget;
+                    const targetPosition = songTimestamp * 1000;
+                    const finalDrift = Math.abs(currentPositionAtTarget - targetPosition);
+
+                    logger.debug('Countdown synchronization status:', {
+                        timeUntilTarget: Math.round(timeUntilTarget / 1000) + 's',
+                        currentPosition: Math.round(elapsed) + 'ms',
+                        expectedAtTarget: Math.round(targetPosition) + 'ms',
+                        projectedAtTarget: Math.round(currentPositionAtTarget) + 'ms',
+                        projectedDrift: Math.round(finalDrift) + 'ms'
+                    });
+                }
             }
+        } else if (timeUntilStart <= 0 && !this.songStarted && this.songQueued) {
+            logger.info('Start time reached, triggering countdown song playback');
+            orchestrator.skip(); // This will start playing the next song in queue
         }
     }
 

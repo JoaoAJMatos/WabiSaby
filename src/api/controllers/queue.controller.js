@@ -91,6 +91,41 @@ class QueueController {
     }
 
     /**
+     * Resolve song info without adding to queue
+     * @param {Object} req - Express request
+     * @param {Object} res - Express response
+     */
+    async resolveSong(req, res) {
+        const { url: input } = req.body;
+
+        if (!input) {
+            return res.status(400).json({ error: 'URL or search query is required' });
+        }
+
+        try {
+            // Resolve song using the song resolution service (without adding to queue)
+            const song = await services.playback.songResolution.resolveSong(input, {
+                requester: 'Web User',
+                remoteJid: 'WEB_DASHBOARD',
+                sender: 'WEB_DASHBOARD'
+            });
+
+            res.json({ 
+                success: true, 
+                url: song.content,
+                title: song.title, 
+                artist: song.artist 
+            });
+        } catch (error) {
+            logger.error('[QueueController] Error resolving song:', error);
+            res.status(400).json({
+                error: 'Failed to resolve song',
+                details: error.message
+            });
+        }
+    }
+
+    /**
      * Skip current song
      * @param {Object} req - Express request
      * @param {Object} res - Express response

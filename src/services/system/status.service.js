@@ -111,6 +111,19 @@ class StatusService extends EventEmitter {
         eventBus.on(EFFECTS_CHANGED, () => this.broadcastStatus());
         eventBus.on(CONNECTION_CHANGED, () => this.broadcastStatus());
         
+        // Countdown events - broadcast status when waveform state changes
+        const {
+            COUNTDOWN_PREFETCH_STARTED,
+            COUNTDOWN_PREFETCH_COMPLETED,
+            COUNTDOWN_WAVEFORM_GENERATION_STARTED,
+            COUNTDOWN_WAVEFORM_READY
+        } = require('../../events');
+        
+        eventBus.on(COUNTDOWN_PREFETCH_STARTED, () => this.broadcastStatus());
+        eventBus.on(COUNTDOWN_PREFETCH_COMPLETED, () => this.broadcastStatus());
+        eventBus.on(COUNTDOWN_WAVEFORM_GENERATION_STARTED, () => this.broadcastStatus());
+        eventBus.on(COUNTDOWN_WAVEFORM_READY, () => this.broadcastStatus());
+        
         // Start periodic broadcast when playback starts (via QUEUE_UPDATED)
         // We'll check if a song is playing and start/stop accordingly
         eventBus.on(QUEUE_UPDATED, () => {
@@ -205,6 +218,22 @@ class StatusService extends EventEmitter {
                         current.elapsed = current.pausedAt - current.startTime;
                     } else {
                         current.elapsed = Date.now() - current.startTime;
+                    }
+                }
+
+                // Fetch lyrics from database if songId is available
+                if (current.songId) {
+                    try {
+                        const dbService = require('../../infrastructure/database/db.service');
+                        const lyrics = dbService.getSongLyrics(current.songId);
+                        if (lyrics) {
+                            // Include lyrics in the song object
+                            // The format from database should match what updateLyrics expects
+                            current.lyrics = lyrics;
+                        }
+                    } catch (err) {
+                        logger.debug('Error fetching lyrics for status:', err.message);
+                        // Don't fail status build if lyrics fetch fails
                     }
                 }
             }

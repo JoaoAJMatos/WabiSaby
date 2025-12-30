@@ -1041,26 +1041,22 @@
 
                         <!-- Countdown Settings Panel -->
                         <div class="settings-panel" data-panel="countdown">
-                            <div class="panel-header">
-                                <div class="panel-icon countdown">
-                                    <i class="fas fa-hourglass-half"></i>
-                                </div>
-                                <div class="panel-title">
-                                    <h3>Event Countdown</h3>
-                                    <p>Sync a song to a special moment with a countdown overlay</p>
-                                </div>
-                                <div class="panel-toggle">
-                                    <label class="toggle-switch-v2">
-                                        <input type="checkbox" id="setting-countdownEnabled"
-                                            data-category="countdown" data-key="enabled">
-                                        <span class="toggle-track">
-                                            <span class="toggle-thumb"></span>
-                                        </span>
-                                    </label>
-                                </div>
-                            </div>
-
                             <div class="settings-group">
+                                <!-- Enabled -->
+                                <div class="setting-row" data-searchable="enabled countdown">
+                                    <div class="setting-info">
+                                        <label for="setting-countdownEnabled">Enabled</label>
+                                    </div>
+                                    <div class="setting-control">
+                                        <label class="toggle-switch-v2">
+                                            <input type="checkbox" id="setting-countdownEnabled"
+                                                data-category="countdown" data-key="enabled">
+                                            <span class="toggle-track">
+                                                <span class="toggle-thumb"></span>
+                                            </span>
+                                        </label>
+                                    </div>
+                                </div>
                                 <!-- Target Date & Time -->
                                 <div class="setting-row" data-searchable="target date time countdown">
                                     <div class="setting-info">
@@ -1078,44 +1074,6 @@
                                             class="text-input"
                                             data-category="countdown" data-key="targetTime"
                                             style="flex: 1;">
-                                    </div>
-                                </div>
-
-                                <!-- Countdown Song -->
-                                <div class="setting-row" data-searchable="song url youtube spotify countdown music">
-                                    <div class="setting-info">
-                                        <label>
-                                            <i class="fas fa-music" style="margin-right: 8px;"></i>
-                                            Countdown Song
-                                        </label>
-                                    </div>
-                                    <div class="setting-control" style="display: flex; gap: 8px;">
-                                        <input type="text" id="setting-countdownSongUrl"
-                                            class="text-input"
-                                            placeholder="Select a song from library..."
-                                            style="flex: 1;">
-                                        <button type="button" id="btn-browse-countdown-song" class="settings-action-btn" style="white-space: nowrap;">
-                                            <i class="fas fa-folder-open"></i>
-                                            <span>Browse</span>
-                                        </button>
-                                    </div>
-                                </div>
-
-                                <!-- Song Timestamp at Zero -->
-                                <div class="setting-row" data-searchable="song timestamp position seconds countdown">
-                                    <div class="setting-info">
-                                        <label>
-                                            <i class="fas fa-clock" style="margin-right: 8px;"></i>
-                                            Song Timestamp at Zero
-                                        </label>
-                                        <p class="setting-description">The moment to sync - this part of the song plays at target</p>
-                                    </div>
-                                    <div class="setting-control">
-                                        <input type="text" id="setting-countdownSongTimestamp"
-                                            class="text-input"
-                                            placeholder="0:00"
-                                            pattern="^([0-9]+):([0-5][0-9])$"
-                                            style="width: 100px; text-align: center;">
                                     </div>
                                 </div>
 
@@ -1161,6 +1119,52 @@
                                             placeholder="Happy New Year! 🎉"
                                             value="Happy New Year! 🎉"
                                             style="width: 100%;">
+                                    </div>
+                                </div>
+
+                                <!-- Countdown Song -->
+                                <div class="setting-row" data-searchable="song url youtube spotify countdown music">
+                                    <div class="setting-info">
+                                        <label>
+                                            <i class="fas fa-music" style="margin-right: 8px;"></i>
+                                            Countdown Song
+                                        </label>
+                                    </div>
+                                    <div class="setting-control" style="display: flex; gap: 8px;">
+                                        <input type="text" id="setting-countdownSongUrl"
+                                            class="text-input"
+                                            placeholder="Select a song from library..."
+                                            style="flex: 1;">
+                                        <button type="button" id="btn-browse-countdown-song" class="settings-action-btn" style="white-space: nowrap;">
+                                            <i class="fas fa-folder-open"></i>
+                                            <span>Browse</span>
+                                        </button>
+                                    </div>
+                                </div>
+
+                                <!-- Song Timestamp at Zero -->
+                                <div class="setting-row" data-searchable="song timestamp position seconds countdown">
+                                    <div class="setting-info">
+                                        <label>
+                                            <i class="fas fa-clock" style="margin-right: 8px;"></i>
+                                            Song Timestamp at Zero
+                                        </label>
+                                    </div>
+                                    <div class="setting-control">
+                                        <input type="text" id="setting-countdownSongTimestamp"
+                                            class="text-input"
+                                            placeholder="0:00"
+                                            pattern="^([0-9]+):([0-5][0-9])$"
+                                            style="width: 100px; text-align: center;">
+                                    </div>
+                                </div>
+
+                                <!-- Tip: How to use timestamp -->
+                                <div class="settings-info-card countdown">
+                                    <i class="fas fa-info-circle"></i>
+                                    <div>
+                                        <strong>Song Timestamp at Zero</strong>
+                                        <p>The moment to sync - this part of the song plays at target</p>
                                     </div>
                                 </div>
                             </div>

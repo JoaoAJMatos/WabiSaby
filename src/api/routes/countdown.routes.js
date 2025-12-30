@@ -23,4 +23,7 @@ router.post('/countdown/disable', countdownController.disable.bind(countdownCont
 // Pre-fetch countdown song
 router.post('/countdown/prefetch', countdownController.prefetchSong.bind(countdownController));
 
+// Get waveform data for countdown song
+router.get('/countdown/waveform', countdownController.getWaveform.bind(countdownController));
+
 module.exports = { router };

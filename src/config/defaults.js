@@ -82,6 +82,7 @@ class DefaultsConfig {
                 showInPlayer: true,
                 showThreshold: 30, // seconds - show countdown when X seconds remaining
                 message: 'Happy New Year! 🎉', // Message to display at countdown zero
+                messageDisplayDuration: 30, // seconds - how long to display the message
                 song: {
                     url: null, // YouTube/Spotify URL or search query
                     timestamp: 0, // seconds - where in song to be at countdown zero

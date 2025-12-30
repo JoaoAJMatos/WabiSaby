@@ -35,7 +35,7 @@ class CountdownController {
      */
     updateConfig(req, res) {
         try {
-            const { enabled, targetDate, showInPlayer, showThreshold, skipBuffer, song } = req.body;
+            const { enabled, targetDate, showInPlayer, showThreshold, skipBuffer, song, message, messageDisplayDuration } = req.body;
 
             // Validate targetDate if provided
             if (targetDate !== undefined && targetDate !== null) {
@@ -61,6 +61,17 @@ class CountdownController {
                     return res.status(400).json({
                         success: false,
                         error: 'showThreshold must be a non-negative integer'
+                    });
+                }
+            }
+
+            // Validate messageDisplayDuration if provided
+            if (messageDisplayDuration !== undefined) {
+                const duration = parseInt(messageDisplayDuration, 10);
+                if (isNaN(duration) || duration < 5 || duration > 300) {
+                    return res.status(400).json({
+                        success: false,
+                        error: 'messageDisplayDuration must be an integer between 5 and 300 seconds'
                     });
                 }
             }
@@ -102,6 +113,8 @@ class CountdownController {
             if (showInPlayer !== undefined) updateConfig.showInPlayer = Boolean(showInPlayer);
             if (showThreshold !== undefined) updateConfig.showThreshold = parseInt(showThreshold, 10);
             if (skipBuffer !== undefined) updateConfig.skipBuffer = parseInt(skipBuffer, 10);
+            if (message !== undefined) updateConfig.message = String(message);
+            if (messageDisplayDuration !== undefined) updateConfig.messageDisplayDuration = parseInt(messageDisplayDuration, 10);
             if (song !== undefined) {
                 updateConfig.song = {};
                 if (song.url !== undefined) updateConfig.song.url = song.url;
@@ -190,8 +203,8 @@ class CountdownController {
 
             res.json({
                 success: initiated,
-                message: initiated 
-                    ? 'Countdown song prefetch initiated' 
+                message: initiated
+                    ? 'Countdown song prefetch initiated'
                     : 'Failed to initiate countdown song prefetch',
                 countdown: status
             });
@@ -200,6 +213,93 @@ class CountdownController {
             res.status(500).json({
                 success: false,
                 error: 'Failed to prefetch countdown song'
+            });
+        }
+    }
+
+    /**
+     * Get waveform data for countdown song
+     * @param {Object} req - Express request
+     * @param {Object} res - Express response
+     */
+    async getWaveform(req, res) {
+        try {
+            const status = countdownService.getStatus();
+
+            // Check if song is prefetched
+            if (!status.songPrefetched) {
+                // If prefetch is in progress, return status
+                if (status.prefetchInProgress) {
+                    return res.json({
+                        success: true,
+                        status: 'prefetching',
+                        message: 'Song is being downloaded'
+                    });
+                }
+
+                // If no song URL configured
+                if (!status.song?.url) {
+                    return res.status(400).json({
+                        success: false,
+                        error: 'No countdown song configured'
+                    });
+                }
+
+                // Song not prefetched yet - trigger prefetch
+                return res.json({
+                    success: true,
+                    status: 'not_prefetched',
+                    message: 'Song not yet downloaded. Trigger prefetch first.'
+                });
+            }
+
+            // Check if waveform is ready
+            if (status.waveformReady) {
+                const waveformData = await countdownService.getWaveformData();
+                // Fix: Validate data exists - if waveformReady=true but data is null, regenerate
+                if (!waveformData) {
+                    logger.warn('Waveform marked ready but data missing, regenerating...');
+                    // Reset waveform ready flag and fall through to generation logic
+                    status.waveformReady = false;
+                } else {
+                    return res.json({
+                        success: true,
+                        status: 'ready',
+                        waveform: waveformData
+                    });
+                }
+            }
+
+            // Check if waveform generation is in progress
+            if (status.waveformInProgress) {
+                return res.json({
+                    success: true,
+                    status: 'generating',
+                    message: 'Waveform is being generated'
+                });
+            }
+
+            // Waveform not generated yet - trigger generation
+            const waveformData = await countdownService.getWaveformData();
+            if (waveformData) {
+                return res.json({
+                    success: true,
+                    status: 'ready',
+                    waveform: waveformData
+                });
+            }
+
+            // Generation started
+            return res.json({
+                success: true,
+                status: 'generating',
+                message: 'Waveform generation started'
+            });
+        } catch (error) {
+            logger.error('Failed to get waveform:', error);
+            res.status(500).json({
+                success: false,
+                error: 'Failed to get waveform data'
             });
         }
     }

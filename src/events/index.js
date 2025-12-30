@@ -148,6 +148,34 @@ const CONNECTION_CHANGED = 'connection_changed';
 const LYRICS_TOGGLE = 'lyrics_toggle';
 
 // ============================================
+// COUNTDOWN EVENTS
+// ============================================
+
+/**
+ * Emitted when countdown song prefetch starts
+ * Payload: { url: string }
+ */
+const COUNTDOWN_PREFETCH_STARTED = 'countdown_prefetch_started';
+
+/**
+ * Emitted when countdown song prefetch completes
+ * Payload: { filePath: string, title: string, artist: string }
+ */
+const COUNTDOWN_PREFETCH_COMPLETED = 'countdown_prefetch_completed';
+
+/**
+ * Emitted when countdown waveform generation starts
+ * Payload: { filePath: string }
+ */
+const COUNTDOWN_WAVEFORM_GENERATION_STARTED = 'countdown_waveform_generation_started';
+
+/**
+ * Emitted when countdown waveform is ready
+ * Payload: { waveform: Object }
+ */
+const COUNTDOWN_WAVEFORM_READY = 'countdown_waveform_ready';
+
+// ============================================
 // EXPORTS
 // ============================================
 
@@ -186,6 +214,12 @@ module.exports = {
     CONNECTION_CHANGED,
     
     // Player events
-    LYRICS_TOGGLE
+    LYRICS_TOGGLE,
+    
+    // Countdown events
+    COUNTDOWN_PREFETCH_STARTED,
+    COUNTDOWN_PREFETCH_COMPLETED,
+    COUNTDOWN_WAVEFORM_GENERATION_STARTED,
+    COUNTDOWN_WAVEFORM_READY
 };
 

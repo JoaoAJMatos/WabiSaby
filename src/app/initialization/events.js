@@ -14,10 +14,8 @@ const services = require('../../services');
 async function registerEventListeners() {
     logger.info('Registering event listeners...');
     
-    // Register all listeners via centralized registry
     await eventListeners.registerAll();
     
-    // Set up internal orchestrator listeners (for state management)
     services.playback.orchestrator.setupInternalListeners();
     
     logger.info('Event listeners registered');

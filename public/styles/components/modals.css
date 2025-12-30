@@ -194,6 +194,136 @@
 }
 
 /* ========================================
+   Countdown Song Selection Modal
+   ======================================== */
+
+.countdown-song-modal {
+    max-width: 520px;
+}
+
+.countdown-song-form {
+    display: flex;
+    flex-direction: column;
+    gap: 20px;
+}
+
+.countdown-song-hint {
+    font-size: 0.8rem;
+    color: var(--text-muted);
+    margin: 8px 0 0 0;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    padding: 10px 12px;
+    background: rgba(255, 99, 71, 0.1);
+    border: 1px solid rgba(255, 99, 71, 0.2);
+    border-radius: 8px;
+}
+
+.countdown-song-hint i {
+    color: #ff6347;
+    font-size: 0.85rem;
+}
+
+.countdown-song-preview {
+    padding: 16px;
+    background: rgba(255, 99, 71, 0.05);
+    border: 1px solid rgba(255, 99, 71, 0.15);
+    border-radius: 12px;
+    transition: all 0.3s ease;
+}
+
+.countdown-song-preview.hidden {
+    display: none;
+}
+
+.countdown-song-preview-content {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+}
+
+.countdown-song-preview-content i {
+    font-size: 1.5rem;
+    color: #ff6347;
+}
+
+.countdown-song-preview-info {
+    flex: 1;
+    min-width: 0;
+}
+
+.countdown-song-preview-title {
+    font-size: 0.95rem;
+    font-weight: 600;
+    color: var(--text-main);
+    margin-bottom: 4px;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+
+.countdown-song-preview-artist {
+    font-size: 0.85rem;
+    color: var(--text-muted);
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+
+.countdown-song-modal .modal-title i {
+    background: rgba(255, 99, 71, 0.15);
+    border-color: rgba(255, 99, 71, 0.3);
+    color: #ff6347;
+}
+
+.countdown-song-modal .track-input-wrapper:focus-within {
+    border-color: #ff6347;
+    box-shadow: 0 0 0 3px rgba(255, 99, 71, 0.15);
+}
+
+.countdown-song-submit {
+    background: linear-gradient(135deg, #ff6347, #ff4500) !important;
+    border-color: #ff6347 !important;
+    margin-top: 8px;
+    padding: 16px 24px !important;
+    font-size: 0.95rem !important;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 10px;
+}
+
+.countdown-song-submit:hover {
+    background: linear-gradient(135deg, #ff4500, #ff6347) !important;
+    box-shadow: 0 0 20px rgba(255, 99, 71, 0.4) !important;
+}
+
+.countdown-song-submit i {
+    font-size: 0.9rem;
+}
+
+/* Mobile responsive */
+@media (max-width: 480px) {
+    .countdown-song-modal {
+        max-width: 100%;
+    }
+
+    .countdown-song-form {
+        gap: 16px;
+    }
+
+    .countdown-song-hint {
+        font-size: 0.75rem;
+        padding: 8px 10px;
+    }
+
+    .countdown-song-submit {
+        padding: 14px 20px !important;
+    }
+}
+
+/* ========================================
    Modal System - Glassy Design
    ======================================== */
 .modal-overlay {
@@ -800,6 +930,19 @@
     background: #eab308;
 }
 
+.settings-nav-item[data-category="countdown"].active {
+    background: linear-gradient(135deg, rgba(255, 99, 71, 0.12), rgba(255, 99, 71, 0.04));
+    color: #ff6347;
+}
+
+.settings-nav-item[data-category="countdown"].active i {
+    color: #ff6347;
+}
+
+.settings-nav-item[data-category="countdown"] .nav-indicator {
+    background: #ff6347;
+}
+
 /* Reset Button Icon (in sidebar header) */
 /* Reset button moved to footer - see .settings-reset-link below */
 
@@ -908,17 +1051,6 @@
     /* Moved to main header */
 }
 
-/* Countdown panel specific header */
-.settings-panel[data-panel="countdown"] .panel-header {
-    display: flex;
-    align-items: center;
-    justify-content: space-between;
-    gap: 18px;
-    margin-bottom: 24px;
-    padding-bottom: 20px;
-    border-bottom: 1px solid rgba(255, 255, 255, 0.08);
-}
-
 .panel-toggle {
     flex-shrink: 0;
 }
@@ -980,6 +1112,12 @@
     background: linear-gradient(135deg, rgba(234, 179, 8, 0.2), rgba(234, 179, 8, 0.05));
     border: 1px solid rgba(234, 179, 8, 0.25);
     color: #eab308;
+}
+
+.panel-icon.countdown {
+    background: linear-gradient(135deg, rgba(255, 99, 71, 0.2), rgba(255, 99, 71, 0.05));
+    border: 1px solid rgba(255, 99, 71, 0.25);
+    color: #ff6347;
 }
 
 .panel-icon.search {
@@ -1643,6 +1781,15 @@
 
 .settings-info-card.rateLimit>i {
     color: #eab308;
+}
+
+.settings-info-card.countdown {
+    background: linear-gradient(135deg, rgba(255, 99, 71, 0.08), rgba(255, 99, 71, 0.02));
+    border-color: rgba(255, 99, 71, 0.15);
+}
+
+.settings-info-card.countdown>i {
+    color: #ff6347;
 }
 
 .settings-info-card.system,

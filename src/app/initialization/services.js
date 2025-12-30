@@ -6,6 +6,7 @@
 
 const { logger } = require('../../utils/logger.util');
 const services = require('../../services');
+const config = require('../../config');
 
 /**
  * Initialize all services
@@ -13,17 +14,16 @@ const services = require('../../services');
 async function initializeServices() {
     logger.info('Initializing services...');
     
-    // Load queue after database is initialized
     services.playback.queue.loadQueue();
     
-    // Load state from database
     services.playback.orchestrator.loadState();
     
-    // Load effects settings from database
     services.audio.effects.load();
     
-    // Validate currentSong after cleanup (cleanup may have deleted the file)
     services.playback.orchestrator.validateCurrentSong();
+    
+    // Cleanup temp files AFTER queue is loaded so it can protect queue files
+    config.cleanupTempFiles();
     
     logger.info('Services initialized');
 }

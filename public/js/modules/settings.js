@@ -5,6 +5,8 @@
 
 let settingsSaveTimeout = null;
 let diskUsagePollInterval = null;
+let settingsSSEConnection = null;
+let countdownTimerInterval = null;
 
 async function loadSettings() {
     try {
@@ -106,10 +108,24 @@ async function loadSettings() {
                 const countdownTargetDateEl = document.getElementById('setting-countdownTargetDate');
                 if (countdownTargetDateEl) {
                     countdownTargetDateEl.value = dateStr;
+                    // Update label position
+                    setTimeout(() => {
+                        const wrapper = countdownTargetDateEl.closest('.datetime-input-wrapper');
+                        if (wrapper && countdownTargetDateEl.value) {
+                            wrapper.classList.add('has-value');
+                        }
+                    }, 0);
                 }
                 const countdownTargetTimeEl = document.getElementById('setting-countdownTargetTime');
                 if (countdownTargetTimeEl) {
                     countdownTargetTimeEl.value = timeStr;
+                    // Update label position
+                    setTimeout(() => {
+                        const wrapper = countdownTargetTimeEl.closest('.datetime-input-wrapper');
+                        if (wrapper && countdownTargetTimeEl.value) {
+                            wrapper.classList.add('has-value');
+                        }
+                    }, 0);
                 }
             }
             
@@ -134,6 +150,14 @@ async function loadSettings() {
                 countdownMessageEl.value = settings.countdown.message || 'Happy New Year! 🎉';
             }
             
+            const countdownMessageDurationEl = document.getElementById('setting-countdownMessageDuration');
+            if (countdownMessageDurationEl) {
+                countdownMessageDurationEl.value = settings.countdown.messageDisplayDuration || 30;
+            }
+            
+            // Update message preview
+            updateMessagePreview();
+            
             // Song configuration
             const countdownSongUrlEl = document.getElementById('setting-countdownSongUrl');
             if (countdownSongUrlEl && settings.countdown.song) {
@@ -148,14 +172,28 @@ async function loadSettings() {
                 const secs = seconds % 60;
                 countdownSongTimestampEl.value = `${minutes}:${secs.toString().padStart(2, '0')}`;
             }
+
+            // Initialize waveform if song URL is set
+            if (settings.countdown.song?.url && window.countdownWaveform) {
+                // Small delay to ensure DOM is ready
+                setTimeout(() => {
+                    window.countdownWaveform.init();
+                    window.countdownWaveform.triggerLoad();
+                }, 200);
+            }
         }
 
-        // Start countdown status updates (always running, regardless of panel visibility)
-        startCountdownStatusUpdates();
+        // Connect to SSE for countdown status updates
+        connectSettingsSSE();
         
         // Also update immediately after a short delay to ensure DOM is ready
         setTimeout(() => {
             updateCountdownStatus();
+            // Also update song info on initial load
+            const songUrl = document.getElementById('setting-countdownSongUrl')?.value?.trim();
+            if (songUrl) {
+                updateWaveformSongInfo(null, songUrl);
+            }
         }, 100);
 
     } catch (err) {
@@ -320,12 +358,13 @@ window.switchSettingsPanel = function switchSettingsPanel(category) {
     const activePanel = document.querySelector(`.settings-panel[data-panel="${category}"]`);
     if (activePanel) {
         const panelHeader = activePanel.querySelector('.panel-header');
+        const headerIcon = document.getElementById('settings-main-header-icon');
+        const headerTitle = document.getElementById('settings-main-header-title');
+        
         if (panelHeader) {
+            // Standard panel with header
             const panelIcon = panelHeader.querySelector('.panel-icon');
             const panelTitle = panelHeader.querySelector('.panel-title');
-            
-            const headerIcon = document.getElementById('settings-main-header-icon');
-            const headerTitle = document.getElementById('settings-main-header-title');
             
             if (headerIcon && panelIcon) {
                 // Copy icon classes and content
@@ -336,6 +375,16 @@ window.switchSettingsPanel = function switchSettingsPanel(category) {
             if (headerTitle && panelTitle) {
                 // Copy title content
                 headerTitle.innerHTML = panelTitle.innerHTML;
+            }
+        } else if (category === 'countdown') {
+            // Special handling for countdown panel (no panel-header)
+            if (headerIcon) {
+                headerIcon.className = 'panel-icon countdown';
+                headerIcon.innerHTML = '<i class="fas fa-hourglass-half"></i>';
+            }
+            
+            if (headerTitle) {
+                headerTitle.innerHTML = '<h3>Event Countdown</h3><p>Sync a song to a special moment with a countdown overlay</p>';
             }
         }
     }
@@ -382,6 +431,69 @@ window.switchSettingsPanel = function switchSettingsPanel(category) {
             searchInput.value = '';
             const clearBtn = document.getElementById('settings-search-clear');
             if (clearBtn) clearBtn.classList.add('hidden');
+        }
+    }
+
+    // Initialize waveform when switching to countdown panel
+    if (category === 'countdown') {
+        const songUrl = document.getElementById('setting-countdownSongUrl')?.value?.trim();
+        if (window.countdownWaveform) {
+            // Small delay to ensure panel is visible before initializing
+            setTimeout(async () => {
+                // Always initialize to ensure canvas is sized correctly
+                window.countdownWaveform.init();
+                
+                if (songUrl) {
+                    // Check current status first - waveform might already be ready
+                    try {
+                        const statusRes = await fetch('/api/countdown');
+                        if (statusRes.ok) {
+                            const statusData = await statusRes.json();
+                            if (statusData.success && statusData.countdown) {
+                                const countdown = statusData.countdown;
+                                
+                                // If waveform is ready, load it immediately
+                                if (countdown.waveformReady && !window.countdownWaveform.isReady()) {
+                                    console.debug('Panel open: Waveform is ready, loading immediately...');
+                                    await window.countdownWaveform.handleWaveformReady();
+                                    return;
+                                } else if (countdown.waveformReady && window.countdownWaveform.isReady()) {
+                                    console.debug('Panel open: Waveform already loaded, re-rendering...');
+                                    window.countdownWaveform.render();
+                                    return;
+                                } else {
+                                    console.debug('Panel open: Waveform not ready yet:', {
+                                        waveformReady: countdown.waveformReady,
+                                        waveformInProgress: countdown.waveformInProgress
+                                    });
+                                }
+                            }
+                        }
+                    } catch (e) {
+                        console.debug('Failed to check countdown status:', e);
+                    }
+                    
+                    // Only trigger load if not already ready and not currently loading
+                    if (!window.countdownWaveform.isReady()) {
+                        // Check if container is in loading state - if so, don't trigger again
+                        const container = document.getElementById('countdown-waveform-container');
+                        const isCurrentlyLoading = container?.classList.contains('loading');
+                        
+                        // Only trigger if not already loading (to prevent duplicate requests)
+                        if (!isCurrentlyLoading) {
+                            window.countdownWaveform.triggerLoad();
+                        }
+                    } else {
+                        // Re-render in case of resize
+                        window.countdownWaveform.render();
+                    }
+                } else {
+                    // No song URL - show initial state
+                    if (window.countdownWaveform.showInitialState) {
+                        window.countdownWaveform.showInitialState();
+                    }
+                }
+            }, 100);
         }
     }
 }
@@ -961,7 +1073,198 @@ function initSettingsListeners() {
 // COUNTDOWN SETTINGS
 // ============================================
 
-let countdownStatusInterval = null;
+/**
+ * Connect to SSE stream for countdown status updates
+ */
+function connectSettingsSSE() {
+    // Close existing connection if any
+    if (settingsSSEConnection) {
+        settingsSSEConnection.close();
+        settingsSSEConnection = null;
+    }
+
+    // Connect to status stream
+    settingsSSEConnection = new EventSource('/api/status/stream');
+
+    settingsSSEConnection.onopen = () => {
+        console.debug('Settings SSE connection opened');
+    };
+
+    settingsSSEConnection.onerror = () => {
+        console.warn('Settings SSE connection error, will reconnect...');
+        // Try to reconnect after 3 seconds
+        setTimeout(() => {
+            if (settingsSSEConnection && settingsSSEConnection.readyState === EventSource.CLOSED) {
+                connectSettingsSSE();
+            }
+        }, 3000);
+    };
+
+    settingsSSEConnection.onmessage = (event) => {
+        try {
+            const data = JSON.parse(event.data);
+            console.debug('Settings SSE message received:', data);
+            
+            // Update countdown status from SSE
+            if (data.countdown) {
+                console.debug('Countdown status in SSE:', data.countdown);
+                handleCountdownStatusUpdate(data.countdown);
+            }
+        } catch (e) {
+            console.error('Failed to parse settings SSE data:', e);
+        }
+    };
+}
+
+/**
+ * Handle countdown status update from SSE
+ */
+function handleCountdownStatusUpdate(countdown) {
+    console.debug('handleCountdownStatusUpdate called:', {
+        waveformReady: countdown.waveformReady,
+        waveformInProgress: countdown.waveformInProgress,
+        songPrefetched: countdown.songPrefetched
+    });
+    
+    // Update countdown status display
+    updateCountdownStatusFromData(countdown);
+    
+    // Check if waveform is ready and update waveform if needed
+    if (countdown.waveformReady && window.countdownWaveform) {
+        console.debug('Waveform is ready, checking if already loaded...');
+        // Check if waveform is not already loaded
+        if (!window.countdownWaveform.isReady()) {
+            console.debug('SSE: Waveform is ready, triggering load');
+            // Waveform is ready, fetch it
+            window.countdownWaveform.handleWaveformReady().catch(err => {
+                console.error('Failed to load waveform from SSE update:', err);
+            });
+        } else {
+            console.debug('Waveform already loaded, skipping');
+        }
+    } else if (!countdown.waveformReady) {
+        console.debug('Waveform not ready yet:', {
+            waveformReady: countdown.waveformReady,
+            waveformInProgress: countdown.waveformInProgress
+        });
+    }
+}
+
+/**
+ * Update countdown status display from data object
+ */
+function updateCountdownStatusFromData(countdown) {
+    const statusText = document.getElementById('countdown-status-text');
+    const timeRemaining = document.getElementById('countdown-time-remaining');
+    
+    if (!statusText || !timeRemaining) return;
+    
+    if (!countdown.enabled) {
+        statusText.textContent = 'Countdown is disabled';
+        timeRemaining.textContent = '--:--:--';
+        timeRemaining.classList.remove('active');
+        stopCountdownTimerPolling();
+    } else if (!countdown.targetDate) {
+        statusText.textContent = 'No target date configured';
+        timeRemaining.textContent = '--:--:--';
+        timeRemaining.classList.remove('active');
+        stopCountdownTimerPolling();
+    } else if (countdown.timeRemaining !== null && countdown.timeRemaining > 0) {
+        statusText.textContent = 'Countdown is active';
+        timeRemaining.textContent = countdown.formattedTime || formatTimeRemaining(countdown.timeRemaining);
+        timeRemaining.classList.add('active');
+        startCountdownTimerPolling();
+    } else {
+        statusText.textContent = 'Countdown has completed';
+        timeRemaining.textContent = '00:00:00';
+        timeRemaining.classList.remove('active');
+        stopCountdownTimerPolling();
+    }
+    
+    // Update song metadata in waveform header
+    updateWaveformSongInfo(countdown.songMetadata, countdown.song?.url);
+}
+
+/**
+ * Start polling for countdown timer updates
+ */
+function startCountdownTimerPolling() {
+    // Clear existing interval if any
+    stopCountdownTimerPolling();
+    
+    // Update every second
+    countdownTimerInterval = setInterval(() => {
+        updateCountdownStatus();
+    }, 1000);
+}
+
+/**
+ * Stop polling for countdown timer updates
+ */
+function stopCountdownTimerPolling() {
+    if (countdownTimerInterval) {
+        clearInterval(countdownTimerInterval);
+        countdownTimerInterval = null;
+    }
+}
+
+/**
+ * Update waveform header with song information
+ */
+async function updateWaveformSongInfo(songMetadata, songUrl) {
+    const songInfoEl = document.getElementById('waveform-header-song-info');
+    const thumbnailEl = document.getElementById('waveform-header-song-thumbnail');
+    const titleEl = document.getElementById('waveform-header-song-title');
+    const artistEl = document.getElementById('waveform-header-song-artist');
+    
+    if (!songInfoEl || !thumbnailEl || !titleEl || !artistEl) return;
+    
+    // If we have metadata from backend, use it
+    if (songMetadata && (songMetadata.title || songMetadata.artist)) {
+        // Update thumbnail
+        if (songMetadata.thumbnailUrl) {
+            thumbnailEl.innerHTML = `<img src="${songMetadata.thumbnailUrl}" alt="Song thumbnail">`;
+        } else {
+            thumbnailEl.innerHTML = '<i class="fas fa-music"></i>';
+        }
+        
+        // Update title and artist
+        titleEl.textContent = songMetadata.title || 'Unknown Title';
+        artistEl.textContent = songMetadata.artist || '';
+    } else if (songUrl) {
+        // If we have a URL but no metadata, try to resolve it
+        try {
+            const response = await fetch('/api/queue/resolve', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ url: songUrl })
+            });
+            
+            if (response.ok) {
+                const data = await response.json();
+                if (data.success) {
+                    thumbnailEl.innerHTML = '<i class="fas fa-music"></i>';
+                    titleEl.textContent = data.title || 'Unknown Title';
+                    artistEl.textContent = data.artist || '';
+                } else {
+                    // Failed to resolve
+                    thumbnailEl.innerHTML = '<i class="fas fa-music"></i>';
+                    titleEl.textContent = 'Failed to load song info';
+                    artistEl.textContent = '';
+                }
+            }
+        } catch (error) {
+            console.debug('Error resolving song info:', error);
+            // Keep default state on error
+        }
+    } else {
+        // No song selected
+        thumbnailEl.innerHTML = '<i class="fas fa-music"></i>';
+        titleEl.textContent = 'No song selected';
+        artistEl.textContent = '';
+    }
+}
+
 
 /**
  * Convert MM:SS format to seconds
@@ -1003,6 +1306,19 @@ function initCountdownSettingsHandlers() {
     const targetDateEl = document.getElementById('setting-countdownTargetDate');
     const targetTimeEl = document.getElementById('setting-countdownTargetTime');
     
+    // Function to update label position based on input value
+    const updateDateTimeLabel = (inputEl) => {
+        if (!inputEl) return;
+        const wrapper = inputEl.closest('.datetime-input-wrapper');
+        if (!wrapper) return;
+        
+        if (inputEl.value) {
+            wrapper.classList.add('has-value');
+        } else {
+            wrapper.classList.remove('has-value');
+        }
+    };
+    
     const updateTargetDateTime = async () => {
         const dateStr = targetDateEl?.value || '';
         const timeStr = targetTimeEl?.value || '';
@@ -1019,11 +1335,41 @@ function initCountdownSettingsHandlers() {
     };
     
     if (targetDateEl) {
-        targetDateEl.addEventListener('change', updateTargetDateTime);
+        // Update label on load
+        updateDateTimeLabel(targetDateEl);
+        
+        // Open custom picker on click
+        targetDateEl.addEventListener('click', (e) => {
+            e.preventDefault();
+            openDateTimePicker('date', targetDateEl, targetTimeEl);
+        });
+        
+        targetDateEl.addEventListener('change', () => {
+            updateDateTimeLabel(targetDateEl);
+            updateTargetDateTime();
+        });
     }
     if (targetTimeEl) {
-        targetTimeEl.addEventListener('change', updateTargetDateTime);
+        // Update label on load
+        updateDateTimeLabel(targetTimeEl);
+        
+        // Open custom picker on click
+        targetTimeEl.addEventListener('click', (e) => {
+            e.preventDefault();
+            openDateTimePicker('time', targetDateEl, targetTimeEl);
+        });
+        
+        targetTimeEl.addEventListener('change', () => {
+            updateDateTimeLabel(targetTimeEl);
+            updateTargetDateTime();
+        });
     }
+    
+    // Initialize datetime picker
+    initDateTimePicker();
+    
+    // Initialize message configuration modal
+    initMessageConfigurationModal();
 
     // Handle show threshold dropdown
     const showThresholdEl = document.getElementById('setting-countdownShowThreshold');
@@ -1054,63 +1400,18 @@ function initCountdownSettingsHandlers() {
         });
     }
 
-    // Handle song URL changes (auto-save)
-    const songUrlEl = document.getElementById('setting-countdownSongUrl');
-    if (songUrlEl) {
-        let saveTimeout;
-        songUrlEl.addEventListener('input', () => {
-            clearTimeout(saveTimeout);
-            saveTimeout = setTimeout(async () => {
-                await saveCountdownSong();
-            }, 1000); // Debounce 1 second
-        });
-    }
-
     // Handle song timestamp changes (auto-save)
+    // The timestamp input is now hidden and updated by the waveform module
     const songTimestampEl = document.getElementById('setting-countdownSongTimestamp');
     if (songTimestampEl) {
         let saveTimeout;
-        
-        // Format input as user types (MM:SS)
-        songTimestampEl.addEventListener('input', (e) => {
-            let value = e.target.value.replace(/[^\d:]/g, ''); // Remove non-digits and colons
-            const parts = value.split(':');
-            
-            // Auto-format as MM:SS
-            if (parts.length === 1 && parts[0].length > 2) {
-                const totalSeconds = parseInt(parts[0], 10);
-                if (!isNaN(totalSeconds)) {
-                    const minutes = Math.floor(totalSeconds / 60);
-                    const seconds = totalSeconds % 60;
-                    value = `${minutes}:${seconds.toString().padStart(2, '0')}`;
-                    e.target.value = value;
-                }
-            } else if (parts.length === 2) {
-                // Ensure seconds are 2 digits
-                if (parts[1].length > 2) {
-                    parts[1] = parts[1].slice(0, 2);
-                }
-                value = `${parts[0]}:${parts[1].padStart(2, '0')}`;
-                e.target.value = value;
-            }
-            
+
+        // Listen for changes from waveform module
+        songTimestampEl.addEventListener('input', () => {
             clearTimeout(saveTimeout);
             saveTimeout = setTimeout(async () => {
-                await saveCountdownSong();
-            }, 1000); // Debounce 1 second
-        });
-        
-        // Validate on blur
-        songTimestampEl.addEventListener('blur', (e) => {
-            const value = e.target.value;
-            if (value && !value.match(/^\d+:\d{2}$/)) {
-                // Try to fix it
-                const seconds = parseTimestamp(value);
-                const minutes = Math.floor(seconds / 60);
-                const secs = seconds % 60;
-                e.target.value = `${minutes}:${secs.toString().padStart(2, '0')}`;
-                saveCountdownSong();
-            }
+                await saveCountdownSong(false); // Don't reload waveform
+            }, 500); // Debounce 500ms
         });
     }
 
@@ -1118,37 +1419,16 @@ function initCountdownSettingsHandlers() {
     const browseBtn = document.getElementById('btn-browse-countdown-song');
     if (browseBtn) {
         browseBtn.addEventListener('click', () => {
-            // Open the add track modal for browsing
-            const addTrackModal = document.getElementById('add-track-modal');
-            const songUrlInput = document.getElementById('song-url');
-            if (addTrackModal && songUrlInput) {
-                // Pre-fill with current value if set
-                songUrlInput.value = songUrlEl?.value || '';
-                
-                // Open modal
-                addTrackModal.classList.add('active');
-                document.body.style.overflow = 'hidden';
-                setTimeout(() => songUrlInput.focus(), 100);
-                
-                // Add a note that user should copy the URL after adding
-                // The URL will be in the input, user can copy it or we can auto-copy
-                // For now, just let user manually copy or we'll enhance later
-            } else {
-                // Fallback: prompt for URL
-                const url = prompt('Enter YouTube/Spotify URL or search query:');
-                if (url && songUrlEl) {
-                    songUrlEl.value = url;
-                    saveCountdownSong();
-                }
-            }
+            openCountdownSongModal();
         });
     }
 }
 
 /**
  * Save countdown song configuration
+ * @param {boolean} triggerWaveform - Whether to trigger waveform loading after save
  */
-async function saveCountdownSong() {
+async function saveCountdownSong(triggerWaveform = false) {
     const songUrl = document.getElementById('setting-countdownSongUrl')?.value?.trim() || null;
     const songTimestampStr = document.getElementById('setting-countdownSongTimestamp')?.value || '0:00';
     const songTimestamp = parseTimestamp(songTimestampStr);
@@ -1168,8 +1448,19 @@ async function saveCountdownSong() {
         const data = await res.json();
         if (data.success) {
             showSaveIndicator();
-            
-            // If a song URL was provided, trigger background prefetch
+
+            // Update song info from response if available
+            if (data.countdown && data.countdown.songMetadata) {
+                updateWaveformSongInfo(data.countdown.songMetadata, songUrl);
+            } else if (songUrl) {
+                // If no metadata yet, try to resolve it
+                updateWaveformSongInfo(null, songUrl);
+            } else {
+                // No song URL - clear song info
+                updateWaveformSongInfo(null, null);
+            }
+
+            // If a song URL was provided, trigger background prefetch and waveform
             if (songUrl) {
                 try {
                     await fetch('/api/countdown/prefetch', {
@@ -1181,6 +1472,16 @@ async function saveCountdownSong() {
                     // Silently fail - prefetch is non-critical
                     console.debug('Prefetch initiation failed (non-critical):', err);
                 }
+
+                // Trigger waveform loading if requested
+                if (triggerWaveform && window.countdownWaveform) {
+                    window.countdownWaveform.triggerLoad();
+                }
+            } else {
+                // No song URL - reset waveform
+                if (window.countdownWaveform) {
+                    window.countdownWaveform.reset();
+                }
             }
         } else {
             console.error('Failed to save countdown song:', data.error);
@@ -1190,20 +1491,185 @@ async function saveCountdownSong() {
     }
 }
 
+
 /**
- * Start periodic countdown status updates
+ * Open countdown song selection modal
  */
-function startCountdownStatusUpdates() {
-    // Clear existing interval
-    if (countdownStatusInterval) {
-        clearInterval(countdownStatusInterval);
+function openCountdownSongModal() {
+    const modal = document.getElementById('countdown-song-modal');
+    const songUrlInput = document.getElementById('countdown-song-url');
+    const songUrlEl = document.getElementById('setting-countdownSongUrl');
+    
+    if (!modal || !songUrlInput) {
+        // Fallback: prompt for URL
+        const url = prompt('Enter YouTube/Spotify URL or search query:');
+        if (url && songUrlEl) {
+            songUrlEl.value = url;
+            saveCountdownSong();
+        }
+        return;
     }
+    
+    // Pre-fill with current value if set
+    songUrlInput.value = songUrlEl?.value || '';
+    songUrlInput.dataset.originalValue = songUrlEl?.value || '';
+    
+    // Reset preview
+    const preview = document.getElementById('countdown-song-preview');
+    if (preview) {
+        preview.classList.add('hidden');
+    }
+    
+    // Open modal
+    modal.classList.add('active');
+    document.body.style.overflow = 'hidden';
+    setTimeout(() => songUrlInput.focus(), 100);
+    
+    // Setup form handler if not already set
+    const form = document.getElementById('countdown-song-form');
+    if (form && !form.dataset.handlerAttached) {
+        form.addEventListener('submit', handleCountdownSongSubmit);
+        form.dataset.handlerAttached = 'true';
+        
+        // Setup input handler for preview
+        let previewTimeout;
+        songUrlInput.addEventListener('input', () => {
+            clearTimeout(previewTimeout);
+            const value = songUrlInput.value.trim();
+            
+            if (value && value !== songUrlInput.dataset.originalValue) {
+                previewTimeout = setTimeout(() => {
+                    previewCountdownSong(value);
+                }, 800); // Debounce 800ms
+            } else {
+                const preview = document.getElementById('countdown-song-preview');
+                if (preview) {
+                    preview.classList.add('hidden');
+                }
+            }
+        });
+    }
+}
 
-    // Update immediately
-    updateCountdownStatus();
+/**
+ * Close countdown song selection modal
+ */
+function closeCountdownSongModal() {
+    const modal = document.getElementById('countdown-song-modal');
+    if (modal) {
+        modal.classList.remove('active');
+        document.body.style.overflow = '';
+    }
+}
 
-    // Update every second
-    countdownStatusInterval = setInterval(updateCountdownStatus, 1000);
+/**
+ * Preview countdown song (resolve without saving)
+ */
+async function previewCountdownSong(input) {
+    const preview = document.getElementById('countdown-song-preview');
+    const previewTitle = preview?.querySelector('.countdown-song-preview-title');
+    const previewArtist = preview?.querySelector('.countdown-song-preview-artist');
+    
+    if (!preview || !previewTitle || !previewArtist) return;
+    
+    preview.classList.remove('hidden');
+    previewTitle.textContent = 'Resolving...';
+    previewArtist.textContent = '';
+    
+    try {
+        const response = await fetch('/api/queue/resolve', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ url: input })
+        });
+        
+        if (response.ok) {
+            const data = await response.json();
+            if (data.success) {
+                previewTitle.textContent = data.title || 'Unknown Track';
+                previewArtist.textContent = data.artist || '';
+            } else {
+                previewTitle.textContent = 'Failed to resolve';
+                previewArtist.textContent = data.error || '';
+            }
+        } else {
+            const error = await response.json();
+            previewTitle.textContent = 'Failed to resolve';
+            previewArtist.textContent = error.error || error.details || 'Unknown error';
+        }
+    } catch (error) {
+        previewTitle.textContent = 'Connection error';
+        previewArtist.textContent = 'Please check your connection';
+        console.error('Error previewing countdown song:', error);
+    }
+}
+
+/**
+ * Handle countdown song form submission
+ */
+async function handleCountdownSongSubmit(e) {
+    e.preventDefault();
+    
+    const songUrlInput = document.getElementById('countdown-song-url');
+    const submitBtn = e.target.querySelector('button[type="submit"]');
+    const songUrlEl = document.getElementById('setting-countdownSongUrl');
+    
+    if (!songUrlInput || !songUrlEl) return;
+    
+    const input = songUrlInput.value.trim();
+    if (!input) return;
+    
+    const originalBtnContent = submitBtn.innerHTML;
+    submitBtn.innerHTML = '<i class="fas fa-compact-disc fa-spin"></i> Resolving...';
+    submitBtn.disabled = true;
+    
+    try {
+        // Resolve the song
+        const response = await fetch('/api/queue/resolve', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ url: input })
+        });
+        
+        if (response.ok) {
+            const data = await response.json();
+            if (data.success) {
+                // Set the resolved URL in the countdown song input
+                songUrlEl.value = data.url;
+                
+                // Save the countdown song configuration
+                await saveCountdownSong(true); // Trigger waveform loading
+                
+                // Close modal
+                closeCountdownSongModal();
+                
+                // Show success notification
+                const successText = `Countdown song set: ${data.title || 'Track'}`;
+                if (window.showNotification) {
+                    showNotification(successText, 'success');
+                }
+            } else {
+                const errorText = data.error || 'Failed to resolve song';
+                if (window.showNotification) {
+                    showNotification(errorText, 'error');
+                }
+            }
+        } else {
+            const error = await response.json();
+            const errorText = error.error || error.details || 'Failed to resolve song';
+            if (window.showNotification) {
+                showNotification(errorText, 'error');
+            }
+        }
+    } catch (error) {
+        console.error('Error resolving countdown song:', error);
+        if (window.showNotification) {
+            showNotification('Connection error. Please try again.', 'error');
+        }
+    } finally {
+        submitBtn.innerHTML = originalBtnContent;
+        submitBtn.disabled = false;
+    }
 }
 
 /**
@@ -1268,7 +1734,7 @@ async function updateCountdownStatus() {
         timeRemaining.classList.remove('active');
     }
     
-    // Then fetch from API for authoritative status (updates every second)
+    // Fetch from API once for initial status (SSE will handle updates)
     try {
         const res = await fetch('/api/countdown');
         if (!res.ok) return;
@@ -1276,27 +1742,486 @@ async function updateCountdownStatus() {
         const data = await res.json();
         if (!data.success || !data.countdown) return;
 
-        const countdown = data.countdown;
-        
-        if (!countdown.enabled) {
-            statusText.textContent = 'Countdown is disabled';
-            timeRemaining.textContent = '--:--:--';
-            timeRemaining.classList.remove('active');
-        } else if (!countdown.targetDate) {
-            statusText.textContent = 'No target date configured';
-            timeRemaining.textContent = '--:--:--';
-            timeRemaining.classList.remove('active');
-        } else if (countdown.timeRemaining !== null && countdown.timeRemaining > 0) {
-            statusText.textContent = 'Countdown is active';
-            timeRemaining.textContent = countdown.formattedTime || formatTimeRemaining(countdown.timeRemaining);
-            timeRemaining.classList.add('active');
-        } else {
-            statusText.textContent = 'Countdown has completed';
-            timeRemaining.textContent = '00:00:00';
-            timeRemaining.classList.remove('active');
-        }
+        updateCountdownStatusFromData(data.countdown);
     } catch (err) {
         // Silently fail - don't spam console, UI calculation above will handle display
+    }
+}
+
+/**
+ * Custom Date/Time Picker
+ */
+let datetimePickerState = {
+    currentDate: new Date(),
+    selectedDate: null,
+    selectedTime: { hours: 12, minutes: 0 },
+    targetInput: null,
+    timeInput: null
+};
+
+function initDateTimePicker() {
+    const modal = document.getElementById('datetime-picker-modal');
+    if (!modal) return;
+    
+    // Close handlers
+    const closeBtn = document.getElementById('datetime-picker-close');
+    const cancelBtn = document.getElementById('datetime-picker-cancel');
+    const confirmBtn = document.getElementById('datetime-picker-confirm');
+    
+    if (closeBtn) closeBtn.addEventListener('click', closeDateTimePicker);
+    if (cancelBtn) cancelBtn.addEventListener('click', closeDateTimePicker);
+    if (confirmBtn) confirmBtn.addEventListener('click', confirmDateTimeSelection);
+    
+    // Tab switching
+    const tabs = modal.querySelectorAll('.datetime-tab');
+    tabs.forEach(tab => {
+        tab.addEventListener('click', () => {
+            const tabName = tab.dataset.tab;
+            switchDateTimeTab(tabName);
+        });
+    });
+    
+    // Month navigation
+    const prevBtn = document.getElementById('prev-month');
+    const nextBtn = document.getElementById('next-month');
+    if (prevBtn) prevBtn.addEventListener('click', () => navigateMonth(-1));
+    if (nextBtn) nextBtn.addEventListener('click', () => navigateMonth(1));
+    
+    // Close on overlay click
+    modal.addEventListener('click', (e) => {
+        if (e.target === modal) closeDateTimePicker();
+    });
+}
+
+function openDateTimePicker(initialTab, dateInput, timeInput) {
+    const modal = document.getElementById('datetime-picker-modal');
+    if (!modal) return;
+    
+    datetimePickerState.targetInput = dateInput;
+    datetimePickerState.timeInput = timeInput;
+    
+    // Get current values
+    const currentDate = dateInput?.value ? new Date(dateInput.value) : new Date();
+    const currentTime = timeInput?.value ? timeInput.value.split(':') : ['12', '00'];
+    
+    datetimePickerState.currentDate = new Date(currentDate.getFullYear(), currentDate.getMonth(), 1);
+    datetimePickerState.selectedDate = dateInput?.value ? new Date(dateInput.value) : null;
+    datetimePickerState.selectedTime = {
+        hours: parseInt(currentTime[0]) || 12,
+        minutes: parseInt(currentTime[1]) || 0
+    };
+    
+    // Render calendar and time picker
+    renderCalendar();
+    renderTimePicker();
+    updateSelectedDateTimeDisplay();
+    
+    // Switch to appropriate tab
+    switchDateTimeTab(initialTab);
+    
+    // Show modal
+    modal.classList.add('active');
+    document.body.style.overflow = 'hidden';
+}
+
+function closeDateTimePicker() {
+    const modal = document.getElementById('datetime-picker-modal');
+    if (!modal) return;
+    
+    modal.classList.remove('active');
+    document.body.style.overflow = '';
+}
+
+function switchDateTimeTab(tabName) {
+    const tabs = document.querySelectorAll('.datetime-tab');
+    const contents = document.querySelectorAll('.datetime-picker-content');
+    
+    tabs.forEach(tab => {
+        if (tab.dataset.tab === tabName) {
+            tab.classList.add('active');
+        } else {
+            tab.classList.remove('active');
+        }
+    });
+    
+    contents.forEach(content => {
+        if (content.dataset.content === tabName) {
+            content.classList.add('active');
+        } else {
+            content.classList.remove('active');
+        }
+    });
+    
+    // Update icon and title
+    const icon = document.getElementById('datetime-picker-icon');
+    const title = document.getElementById('datetime-picker-title');
+    if (icon && title) {
+        if (tabName === 'date') {
+            icon.className = 'fas fa-calendar-alt';
+            title.textContent = 'Select Date';
+        } else {
+            icon.className = 'fas fa-clock';
+            title.textContent = 'Select Time';
+        }
+    }
+}
+
+function navigateMonth(direction) {
+    datetimePickerState.currentDate.setMonth(datetimePickerState.currentDate.getMonth() + direction);
+    renderCalendar();
+}
+
+function renderCalendar() {
+    const grid = document.getElementById('calendar-grid');
+    const monthYear = document.getElementById('current-month-year');
+    if (!grid || !monthYear) return;
+    
+    const year = datetimePickerState.currentDate.getFullYear();
+    const month = datetimePickerState.currentDate.getMonth();
+    
+    // Update month/year display
+    const monthNames = ['January', 'February', 'March', 'April', 'May', 'June',
+        'July', 'August', 'September', 'October', 'November', 'December'];
+    monthYear.textContent = `${monthNames[month]} ${year}`;
+    
+    // Get first day of month and number of days
+    const firstDay = new Date(year, month, 1).getDay();
+    const daysInMonth = new Date(year, month + 1, 0).getDate();
+    const daysInPrevMonth = new Date(year, month, 0).getDate();
+    
+    // Clear grid
+    grid.innerHTML = '';
+    
+    // Previous month days
+    for (let i = firstDay - 1; i >= 0; i--) {
+        const day = daysInPrevMonth - i;
+        const dayEl = createCalendarDay(day, true);
+        grid.appendChild(dayEl);
+    }
+    
+    // Current month days
+    const today = new Date();
+    const selectedDate = datetimePickerState.selectedDate;
+    
+    for (let day = 1; day <= daysInMonth; day++) {
+        const date = new Date(year, month, day);
+        const isToday = date.toDateString() === today.toDateString();
+        const isSelected = selectedDate && date.toDateString() === selectedDate.toDateString();
+        
+        const dayEl = createCalendarDay(day, false, isToday, isSelected);
+        dayEl.addEventListener('click', () => selectDate(date));
+        grid.appendChild(dayEl);
+    }
+    
+    // Fill remaining cells
+    const totalCells = grid.children.length;
+    const remaining = 42 - totalCells; // 6 rows * 7 days
+    for (let day = 1; day <= remaining; day++) {
+        const dayEl = createCalendarDay(day, true);
+        grid.appendChild(dayEl);
+    }
+}
+
+function createCalendarDay(day, isOtherMonth, isToday = false, isSelected = false) {
+    const dayEl = document.createElement('div');
+    dayEl.className = 'datetime-calendar-day';
+    dayEl.textContent = day;
+    
+    if (isOtherMonth) dayEl.classList.add('other-month');
+    if (isToday) dayEl.classList.add('today');
+    if (isSelected) dayEl.classList.add('selected');
+    
+    return dayEl;
+}
+
+function selectDate(date) {
+    datetimePickerState.selectedDate = date;
+    renderCalendar();
+    updateSelectedDateTimeDisplay();
+}
+
+function renderTimePicker() {
+    const hoursContainer = document.getElementById('hours-items');
+    const minutesContainer = document.getElementById('minutes-items');
+    if (!hoursContainer || !minutesContainer) return;
+    
+    // Render hours (0-23)
+    hoursContainer.innerHTML = '';
+    for (let h = 0; h < 24; h++) {
+        const item = document.createElement('div');
+        item.className = 'time-picker-item';
+        item.textContent = h.toString().padStart(2, '0');
+        if (h === datetimePickerState.selectedTime.hours) {
+            item.classList.add('selected');
+        }
+        item.addEventListener('click', () => selectTime(h, null));
+        hoursContainer.appendChild(item);
+    }
+    
+    // Render minutes (0-59, every 5 minutes)
+    minutesContainer.innerHTML = '';
+    for (let m = 0; m < 60; m += 5) {
+        const item = document.createElement('div');
+        item.className = 'time-picker-item';
+        item.textContent = m.toString().padStart(2, '0');
+        if (m === datetimePickerState.selectedTime.minutes) {
+            item.classList.add('selected');
+        }
+        item.addEventListener('click', () => selectTime(null, m));
+        minutesContainer.appendChild(item);
+    }
+    
+    // Scroll to selected items
+    setTimeout(() => {
+        scrollToSelectedTime();
+    }, 100);
+}
+
+function selectTime(hours, minutes) {
+    if (hours !== null) datetimePickerState.selectedTime.hours = hours;
+    if (minutes !== null) datetimePickerState.selectedTime.minutes = minutes;
+    
+    renderTimePicker();
+    updateSelectedDateTimeDisplay();
+}
+
+function scrollToSelectedTime() {
+    const hoursScroll = document.getElementById('hours-scroll');
+    const minutesScroll = document.getElementById('minutes-scroll');
+    const hoursItems = document.getElementById('hours-items');
+    const minutesItems = document.getElementById('minutes-items');
+    
+    if (hoursScroll && hoursItems) {
+        const selectedHour = hoursItems.querySelector('.selected');
+        if (selectedHour) {
+            hoursScroll.scrollTop = selectedHour.offsetTop - 80;
+        }
+    }
+    
+    if (minutesScroll && minutesItems) {
+        const selectedMinute = minutesItems.querySelector('.selected');
+        if (selectedMinute) {
+            minutesScroll.scrollTop = selectedMinute.offsetTop - 80;
+        }
+    }
+}
+
+function updateSelectedDateTimeDisplay() {
+    const display = document.getElementById('selected-datetime-text');
+    if (!display) return;
+    
+    let text = 'Not selected';
+    
+    if (datetimePickerState.selectedDate) {
+        const dateStr = datetimePickerState.selectedDate.toLocaleDateString('en-US', {
+            weekday: 'short',
+            year: 'numeric',
+            month: 'short',
+            day: 'numeric'
+        });
+        const timeStr = `${datetimePickerState.selectedTime.hours.toString().padStart(2, '0')}:${datetimePickerState.selectedTime.minutes.toString().padStart(2, '0')}`;
+        text = `${dateStr} at ${timeStr}`;
+    }
+    
+    display.textContent = text;
+}
+
+function confirmDateTimeSelection() {
+    if (!datetimePickerState.selectedDate) {
+        // If no date selected, use today
+        datetimePickerState.selectedDate = new Date();
+    }
+    
+    // Format date as YYYY-MM-DD
+    const year = datetimePickerState.selectedDate.getFullYear();
+    const month = (datetimePickerState.selectedDate.getMonth() + 1).toString().padStart(2, '0');
+    const day = datetimePickerState.selectedDate.getDate().toString().padStart(2, '0');
+    const dateStr = `${year}-${month}-${day}`;
+    
+    // Format time as HH:MM
+    const timeStr = `${datetimePickerState.selectedTime.hours.toString().padStart(2, '0')}:${datetimePickerState.selectedTime.minutes.toString().padStart(2, '0')}`;
+    
+    // Update inputs
+    if (datetimePickerState.targetInput) {
+        datetimePickerState.targetInput.value = dateStr;
+        const wrapper = datetimePickerState.targetInput.closest('.datetime-input-wrapper');
+        if (wrapper) wrapper.classList.add('has-value');
+    }
+    
+    if (datetimePickerState.timeInput) {
+        datetimePickerState.timeInput.value = timeStr;
+        const wrapper = datetimePickerState.timeInput.closest('.datetime-input-wrapper');
+        if (wrapper) wrapper.classList.add('has-value');
+    }
+    
+    // Trigger change events
+    if (datetimePickerState.targetInput) {
+        datetimePickerState.targetInput.dispatchEvent(new Event('change', { bubbles: true }));
+    }
+    if (datetimePickerState.timeInput) {
+        datetimePickerState.timeInput.dispatchEvent(new Event('change', { bubbles: true }));
+    }
+    
+    closeDateTimePicker();
+}
+
+/**
+ * Countdown Message Configuration Modal
+ */
+function initMessageConfigurationModal() {
+    const openBtn = document.getElementById('btn-configure-message');
+    const modal = document.getElementById('countdown-message-modal');
+    const closeBtn = document.getElementById('countdown-message-modal-close');
+    const cancelBtn = document.getElementById('countdown-message-cancel');
+    const saveBtn = document.getElementById('countdown-message-save');
+    const messageText = document.getElementById('countdown-message-text');
+    const charCount = document.getElementById('message-char-count');
+    const durationInput = document.getElementById('countdown-message-duration');
+    const durationCustom = document.getElementById('countdown-message-duration-custom');
+    const presetBtns = document.querySelectorAll('.duration-preset-btn');
+    
+    if (!openBtn || !modal) return;
+    
+    // Open modal
+    openBtn.addEventListener('click', () => {
+        const messageEl = document.getElementById('setting-countdownMessage');
+        const durationEl = document.getElementById('setting-countdownMessageDuration');
+        
+        if (messageText) {
+            messageText.value = messageEl?.value || 'Happy New Year! 🎉';
+            updateCharCount();
+        }
+        
+        if (durationInput && durationEl) {
+            const duration = parseInt(durationEl.value) || 30;
+            durationInput.value = duration;
+            
+            // Set active preset or show custom
+            let foundPreset = false;
+            presetBtns.forEach(btn => {
+                btn.classList.remove('active');
+                if (btn.dataset.duration === duration.toString()) {
+                    btn.classList.add('active');
+                    foundPreset = true;
+                } else if (btn.dataset.duration === 'custom' && !foundPreset && ![10, 15, 30, 60].includes(duration)) {
+                    btn.classList.add('active');
+                    const customContainer = document.getElementById('duration-custom-container');
+                    if (customContainer) {
+                        customContainer.style.display = 'flex';
+                    }
+                    if (durationCustom) {
+                        durationCustom.value = duration;
+                    }
+                }
+            });
+        }
+        
+        modal.classList.add('active');
+        document.body.style.overflow = 'hidden';
+    });
+    
+    // Close modal
+    const closeModal = () => {
+        modal.classList.remove('active');
+        document.body.style.overflow = '';
+    };
+    
+    if (closeBtn) closeBtn.addEventListener('click', closeModal);
+    if (cancelBtn) cancelBtn.addEventListener('click', closeModal);
+    
+    // Close on overlay click
+    modal.addEventListener('click', (e) => {
+        if (e.target === modal) closeModal();
+    });
+    
+    // Character count
+    if (messageText && charCount) {
+        messageText.addEventListener('input', updateCharCount);
+    }
+    
+    function updateCharCount() {
+        if (charCount && messageText) {
+            charCount.textContent = messageText.value.length;
+        }
+    }
+    
+    // Duration presets
+    presetBtns.forEach(btn => {
+        btn.addEventListener('click', () => {
+            presetBtns.forEach(b => b.classList.remove('active'));
+            btn.classList.add('active');
+            
+            const customContainer = document.getElementById('duration-custom-container');
+            if (btn.dataset.duration === 'custom') {
+                if (customContainer) {
+                    customContainer.style.display = 'flex';
+                }
+                if (durationCustom) {
+                    durationCustom.focus();
+                }
+            } else {
+                if (customContainer) {
+                    customContainer.style.display = 'none';
+                }
+                if (durationInput) {
+                    durationInput.value = btn.dataset.duration;
+                }
+            }
+        });
+    });
+    
+    // Custom duration input
+    if (durationCustom) {
+        durationCustom.addEventListener('input', (e) => {
+            const value = parseInt(e.target.value) || 0;
+            if (value >= 5 && value <= 300) {
+                if (durationInput) {
+                    durationInput.value = value;
+                }
+            }
+        });
+    }
+    
+    // Save
+    if (saveBtn) {
+        saveBtn.addEventListener('click', async () => {
+            const message = messageText?.value.trim() || 'Happy New Year! 🎉';
+            const duration = parseInt(durationInput?.value) || 30;
+            
+            // Update hidden inputs
+            const messageEl = document.getElementById('setting-countdownMessage');
+            const durationEl = document.getElementById('setting-countdownMessageDuration');
+            
+            if (messageEl) {
+                messageEl.value = message;
+            }
+            if (durationEl) {
+                durationEl.value = duration;
+            }
+            
+            // Save to backend
+            await updateSettingsValue('countdown', 'message', message);
+            await updateSettingsValue('countdown', 'messageDisplayDuration', duration);
+            
+            // Update preview
+            updateMessagePreview();
+            
+            // Close modal
+            closeModal();
+            
+            // Show save indicator
+            showSaveIndicator();
+        });
+    }
+}
+
+function updateMessagePreview() {
+    const preview = document.getElementById('countdown-message-preview');
+    const messageEl = document.getElementById('setting-countdownMessage');
+    
+    if (preview && messageEl) {
+        const message = messageEl.value || 'Happy New Year! 🎉';
+        preview.textContent = message.length > 40 ? message.substring(0, 40) + '...' : message;
     }
 }
 
