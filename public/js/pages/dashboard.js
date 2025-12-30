@@ -1028,6 +1028,7 @@ initEffectsListeners();
 initVolumeListeners();
 initAddTrackModalListeners();
 initConfirmationModalListeners();
+initCountdownSongModalListeners();
 
 // Initialize burger menu
 initBurgerMenu();

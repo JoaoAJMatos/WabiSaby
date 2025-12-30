@@ -22,6 +22,14 @@ router.get('/queue', queueController.getQueue);
 router.post('/queue/add', queueController.addSong);
 
 /**
+ * Resolve song info without adding to queue
+ * POST /api/queue/resolve
+ * Accepts either a URL (YouTube/Spotify) or a search query
+ * Returns song metadata (url, title, artist) without adding to queue
+ */
+router.post('/queue/resolve', queueController.resolveSong);
+
+/**
  * Skip current song
  * POST /api/queue/skip
  */

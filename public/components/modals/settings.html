@@ -928,105 +928,52 @@
 
                         <!-- Countdown Settings Panel -->
                         <div class="settings-panel" data-panel="countdown">
-                            <div class="panel-header">
-                                <div class="panel-icon countdown">
-                                    <i class="fas fa-hourglass-half"></i>
-                                </div>
-                                <div class="panel-title">
-                                    <h3>Event Countdown</h3>
-                                    <p>Sync a song to a special moment with a countdown overlay</p>
-                                </div>
-                                <div class="panel-toggle">
-                                    <label class="toggle-switch-v2">
-                                        <input type="checkbox" id="setting-countdownEnabled"
-                                            data-category="countdown" data-key="enabled">
-                                        <span class="toggle-track">
-                                            <span class="toggle-thumb"></span>
-                                        </span>
-                                    </label>
-                                </div>
-                            </div>
-
                             <div class="settings-group">
-                                <!-- Target Date & Time -->
-                                <div class="setting-row" data-searchable="target date time countdown">
+                                <!-- Enabled -->
+                                <div class="setting-row" data-searchable="enabled countdown">
                                     <div class="setting-info">
+                                        <label for="setting-countdownEnabled">Enabled</label>
+                                    </div>
+                                    <div class="setting-control">
+                                        <label class="toggle-switch-v2">
+                                            <input type="checkbox" id="setting-countdownEnabled"
+                                                data-category="countdown" data-key="enabled">
+                                            <span class="toggle-track">
+                                                <span class="toggle-thumb"></span>
+                                            </span>
+                                        </label>
+                                    </div>
+                                </div>
+                                <!-- Target Date & Time -->
+                                <div class="countdown-datetime-container" data-searchable="target date time countdown">
+                                    <div class="countdown-datetime-header">
                                         <label>
                                             <i class="fas fa-calendar-alt" style="margin-right: 8px;"></i>
                                             Target Date & Time
                                         </label>
                                     </div>
-                                    <div class="setting-control" style="display: flex; gap: 12px; align-items: center;">
-                                        <input type="date" id="setting-countdownTargetDate"
-                                            class="text-input"
-                                            data-category="countdown" data-key="targetDate"
-                                            style="flex: 1;">
-                                        <input type="time" id="setting-countdownTargetTime"
-                                            class="text-input"
-                                            data-category="countdown" data-key="targetTime"
-                                            style="flex: 1;">
-                                    </div>
-                                </div>
-
-                                <!-- Countdown Song -->
-                                <div class="setting-row" data-searchable="song url youtube spotify countdown music">
-                                    <div class="setting-info">
-                                        <label>
-                                            <i class="fas fa-music" style="margin-right: 8px;"></i>
-                                            Countdown Song
-                                        </label>
-                                    </div>
-                                    <div class="setting-control" style="display: flex; gap: 8px;">
-                                        <input type="text" id="setting-countdownSongUrl"
-                                            class="text-input"
-                                            placeholder="Select a song from library..."
-                                            style="flex: 1;">
-                                        <button type="button" id="btn-browse-countdown-song" class="settings-action-btn" style="white-space: nowrap;">
-                                            <i class="fas fa-folder-open"></i>
-                                            <span>Browse</span>
-                                        </button>
-                                    </div>
-                                </div>
-
-                                <!-- Song Timestamp at Zero - Waveform Selector -->
-                                <div class="setting-row setting-row-waveform" data-searchable="song timestamp position seconds countdown waveform">
-                                    <div class="setting-info setting-info-waveform">
-                                        <label>
-                                            <i class="fas fa-clock" style="margin-right: 8px;"></i>
-                                            Song Timestamp at Zero
-                                        </label>
-                                        <p class="setting-description">Drag the marker to the moment you want to sync with the countdown</p>
-                                    </div>
-                                </div>
-
-                                <!-- Waveform Container -->
-                                <div class="countdown-waveform-container" id="countdown-waveform-container">
-                                    <div class="waveform-header">
-                                        <label>Waveform</label>
-                                        <span class="timestamp-display" id="countdown-timestamp-display">0:00</span>
-                                    </div>
-                                    <div class="waveform-visual">
-                                        <canvas id="countdown-waveform-canvas"></canvas>
-                                        <div class="waveform-marker draggable-marker" id="countdown-waveform-marker">
-                                            <div class="marker-line"></div>
-                                            <div class="marker-handle"></div>
+                                    <div class="countdown-datetime-inputs">
+                                        <div class="datetime-input-wrapper">
+                                            <i class="fas fa-calendar datetime-input-icon"></i>
+                                            <input type="date" id="setting-countdownTargetDate"
+                                                class="datetime-input-enhanced"
+                                                data-category="countdown" data-key="targetDate"
+                                                readonly>
+                                            <label for="setting-countdownTargetDate" class="datetime-input-label">Date</label>
                                         </div>
-                                        <!-- Loading state -->
-                                        <div class="waveform-loading">
-                                            <i class="fas fa-circle-notch fa-spin"></i>
-                                            <span class="waveform-loading-text">Select a song to see waveform</span>
-                                        </div>
-                                        <!-- Error state -->
-                                        <div class="waveform-error">
-                                            <i class="fas fa-exclamation-triangle"></i>
-                                            <span class="waveform-error-text">Failed to load waveform</span>
+                                        <div class="datetime-input-wrapper">
+                                            <i class="fas fa-clock datetime-input-icon"></i>
+                                            <input type="time" id="setting-countdownTargetTime"
+                                                class="datetime-input-enhanced"
+                                                data-category="countdown" data-key="targetTime"
+                                                readonly>
+                                            <label for="setting-countdownTargetTime" class="datetime-input-label">Time</label>
                                         </div>
                                     </div>
-                                    <div class="waveform-time-axis" id="countdown-time-axis">
-                                        <!-- Time labels generated by JS -->
+                                    <div class="countdown-timer-display" id="countdown-timer-display">
+                                        <div class="countdown-timer-status" id="countdown-status-text">Countdown not configured</div>
+                                        <div class="countdown-timer-value" id="countdown-time-remaining">--:--:--</div>
                                     </div>
-                                    <!-- Hidden input for form compatibility -->
-                                    <input type="hidden" id="setting-countdownSongTimestamp" value="0:00">
                                 </div>
 
                                 <!-- Show Countdown For -->
@@ -1064,31 +1011,81 @@
                                             Message at Zero
                                         </label>
                                     </div>
-                                    <div class="setting-control" style="min-width: 200px;">
-                                        <input type="text" id="setting-countdownMessage"
-                                            class="text-input"
-                                            data-category="countdown" data-key="message"
-                                            placeholder="Happy New Year! 🎉"
-                                            value="Happy New Year! 🎉"
-                                            style="width: 100%;">
+                                    <div class="setting-control">
+                                        <button type="button" id="btn-configure-message" class="countdown-message-config-btn">
+                                            <i class="fas fa-cog"></i>
+                                            <span id="countdown-message-preview">Happy New Year! 🎉</span>
+                                            <i class="fas fa-chevron-right"></i>
+                                        </button>
+                                        <input type="hidden" id="setting-countdownMessage" data-category="countdown" data-key="message">
+                                        <input type="hidden" id="setting-countdownMessageDuration" data-category="countdown" data-key="messageDisplayDuration">
                                     </div>
                                 </div>
-                            </div>
 
-                            <!-- Countdown Status -->
-                            <div class="settings-group-header">
-                                <i class="fas fa-info-circle"></i>
-                                <span>Status</span>
-                            </div>
-
-                            <div class="settings-group">
-                                <div class="setting-row">
+                                <!-- Countdown Song -->
+                                <div class="setting-row" data-searchable="song url youtube spotify countdown music">
                                     <div class="setting-info">
-                                        <label>Time Remaining</label>
-                                        <p class="setting-description" id="countdown-status-text">Countdown not configured</p>
+                                        <label>
+                                            <i class="fas fa-music" style="margin-right: 8px;"></i>
+                                            Countdown Song
+                                        </label>
                                     </div>
                                     <div class="setting-control">
-                                        <span id="countdown-time-remaining" class="countdown-status-value">--:--:--</span>
+                                        <button type="button" id="btn-browse-countdown-song" class="countdown-song-select-btn">
+                                            <i class="fas fa-music"></i>
+                                            <span>Select Countdown Song</span>
+                                        </button>
+                                        <input type="hidden" id="setting-countdownSongUrl">
+                                    </div>
+                                </div>
+
+                                <!-- Waveform Container -->
+                                <div class="countdown-waveform-container loading" id="countdown-waveform-container">
+                                    <div class="waveform-header">
+                                        <div class="waveform-header-song-info" id="waveform-header-song-info">
+                                            <div class="waveform-header-song-thumbnail" id="waveform-header-song-thumbnail">
+                                                <i class="fas fa-music"></i>
+                                            </div>
+                                            <div class="waveform-header-song-details">
+                                                <div class="waveform-header-song-title" id="waveform-header-song-title">No song selected</div>
+                                                <div class="waveform-header-song-artist" id="waveform-header-song-artist"></div>
+                                            </div>
+                                        </div>
+                                        <div class="waveform-header-controls">
+                                            <label>Waveform</label>
+                                            <span class="timestamp-display" id="countdown-timestamp-display">0:00</span>
+                                        </div>
+                                    </div>
+                                    <div class="waveform-visual">
+                                        <canvas id="countdown-waveform-canvas"></canvas>
+                                        <div class="waveform-marker draggable-marker" id="countdown-waveform-marker">
+                                            <div class="marker-line"></div>
+                                            <div class="marker-handle"></div>
+                                        </div>
+                                        <!-- Loading state -->
+                                        <div class="waveform-loading">
+                                            <i class="fas fa-circle-notch fa-spin"></i>
+                                            <span class="waveform-loading-text">Select a song to see waveform</span>
+                                        </div>
+                                        <!-- Error state -->
+                                        <div class="waveform-error">
+                                            <i class="fas fa-exclamation-triangle"></i>
+                                            <span class="waveform-error-text">Failed to load waveform</span>
+                                        </div>
+                                    </div>
+                                    <div class="waveform-time-axis" id="countdown-time-axis">
+                                        <!-- Time labels generated by JS -->
+                                    </div>
+                                    <!-- Hidden input for form compatibility -->
+                                    <input type="hidden" id="setting-countdownSongTimestamp" value="0:00">
+                                </div>
+
+                                <!-- Tip: How to use waveform -->
+                                <div class="settings-info-card countdown">
+                                    <i class="fas fa-info-circle"></i>
+                                    <div>
+                                        <strong>Song Timestamp at Zero</strong>
+                                        <p>Drag the marker to the moment you want to sync with the countdown</p>
                                     </div>
                                 </div>
                             </div>
@@ -1137,6 +1134,161 @@
                             <span data-i18n="ui.dashboard.settings.footer.saved">Saved</span>
                         </div>
                     </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Custom Date/Time Picker Modal -->
+        <div id="datetime-picker-modal" class="modal-overlay datetime-picker-overlay">
+            <div class="modal-content glass-modal datetime-picker-modal">
+                <div class="modal-header">
+                    <div class="modal-title">
+                        <i class="fas fa-calendar-alt" id="datetime-picker-icon"></i>
+                        <h2 id="datetime-picker-title">Select Date & Time</h2>
+                    </div>
+                    <button id="datetime-picker-close" class="modal-close-btn">
+                        <i class="fas fa-times"></i>
+                    </button>
+                </div>
+                <div class="modal-body datetime-picker-body">
+                    <div class="datetime-picker-tabs">
+                        <button class="datetime-tab active" data-tab="date">
+                            <i class="fas fa-calendar"></i>
+                            <span>Date</span>
+                        </button>
+                        <button class="datetime-tab" data-tab="time">
+                            <i class="fas fa-clock"></i>
+                            <span>Time</span>
+                        </button>
+                    </div>
+                    
+                    <!-- Date Picker -->
+                    <div class="datetime-picker-content active" data-content="date">
+                        <div class="datetime-picker-header">
+                            <button class="datetime-nav-btn" id="prev-month">
+                                <i class="fas fa-chevron-left"></i>
+                            </button>
+                            <div class="datetime-month-year" id="current-month-year"></div>
+                            <button class="datetime-nav-btn" id="next-month">
+                                <i class="fas fa-chevron-right"></i>
+                            </button>
+                        </div>
+                        <div class="datetime-weekdays">
+                            <div class="datetime-weekday">Sun</div>
+                            <div class="datetime-weekday">Mon</div>
+                            <div class="datetime-weekday">Tue</div>
+                            <div class="datetime-weekday">Wed</div>
+                            <div class="datetime-weekday">Thu</div>
+                            <div class="datetime-weekday">Fri</div>
+                            <div class="datetime-weekday">Sat</div>
+                        </div>
+                        <div class="datetime-calendar-grid" id="calendar-grid"></div>
+                    </div>
+                    
+                    <!-- Time Picker -->
+                    <div class="datetime-picker-content" data-content="time">
+                        <div class="time-picker-container">
+                            <div class="time-picker-section">
+                                <label>Hours</label>
+                                <div class="time-picker-scroll" id="hours-scroll">
+                                    <div class="time-picker-items" id="hours-items"></div>
+                                </div>
+                            </div>
+                            <div class="time-picker-separator">:</div>
+                            <div class="time-picker-section">
+                                <label>Minutes</label>
+                                <div class="time-picker-scroll" id="minutes-scroll">
+                                    <div class="time-picker-items" id="minutes-items"></div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                <div class="modal-footer datetime-picker-footer">
+                    <div class="datetime-picker-selected" id="selected-datetime">
+                        <i class="fas fa-check-circle"></i>
+                        <span id="selected-datetime-text">Not selected</span>
+                    </div>
+                    <div class="datetime-picker-actions">
+                        <button class="cyber-btn secondary" id="datetime-picker-cancel">
+                            <i class="fas fa-times"></i> Cancel
+                        </button>
+                        <button class="cyber-btn primary" id="datetime-picker-confirm">
+                            <i class="fas fa-check"></i> Confirm
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Countdown Message Configuration Modal -->
+        <div id="countdown-message-modal" class="modal-overlay">
+            <div class="modal-content glass-modal countdown-message-modal">
+                <div class="modal-header">
+                    <div class="modal-title">
+                        <i class="fas fa-comment"></i>
+                        <h2>Configure Celebration Message</h2>
+                    </div>
+                    <button id="countdown-message-modal-close" class="modal-close-btn">
+                        <i class="fas fa-times"></i>
+                    </button>
+                </div>
+                <div class="modal-body">
+                    <form id="countdown-message-form" class="countdown-message-form">
+                        <div class="message-input-group">
+                            <label class="message-input-label">
+                                <i class="fas fa-comment-dots"></i>
+                                <span>Celebration Message</span>
+                            </label>
+                            <textarea id="countdown-message-text" 
+                                class="message-textarea"
+                                placeholder="Enter your celebration message..."
+                                rows="4"
+                                maxlength="200"></textarea>
+                            <div class="message-char-count">
+                                <span id="message-char-count">0</span> / 200 characters
+                            </div>
+                        </div>
+                        
+                        <div class="message-duration-group">
+                            <label class="message-input-label">
+                                <i class="fas fa-clock"></i>
+                                <span>Display Duration</span>
+                            </label>
+                            <div class="duration-controls">
+                                <div class="duration-presets">
+                                    <button type="button" class="duration-preset-btn" data-duration="10">10s</button>
+                                    <button type="button" class="duration-preset-btn" data-duration="15">15s</button>
+                                    <button type="button" class="duration-preset-btn active" data-duration="30">30s</button>
+                                    <button type="button" class="duration-preset-btn" data-duration="60">60s</button>
+                                    <button type="button" class="duration-preset-btn" data-duration="custom">Custom</button>
+                                </div>
+                                <div class="duration-custom" id="duration-custom-container" style="display: none;">
+                                    <input type="number" 
+                                        id="countdown-message-duration-custom"
+                                        class="duration-input"
+                                        min="5" 
+                                        max="300" 
+                                        step="5"
+                                        placeholder="Seconds">
+                                    <span class="duration-unit">seconds</span>
+                                </div>
+                                <input type="hidden" id="countdown-message-duration" value="30">
+                            </div>
+                            <div class="message-hint">
+                                <i class="fas fa-info-circle"></i>
+                                <span>How long the message will be displayed when countdown reaches zero</span>
+                            </div>
+                        </div>
+                    </form>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="cyber-btn secondary" id="countdown-message-cancel">
+                        <i class="fas fa-times"></i> Cancel
+                    </button>
+                    <button type="button" class="cyber-btn primary" id="countdown-message-save">
+                        <i class="fas fa-check"></i> Save
+                    </button>
                 </div>
             </div>
         </div>

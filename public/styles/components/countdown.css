@@ -27,6 +27,56 @@
     cursor: not-allowed;
 }
 
+.countdown-song-select-btn {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 10px;
+    width: 100%;
+    padding: 14px 20px;
+    background: linear-gradient(135deg, rgba(52, 211, 153, 0.15), rgba(167, 139, 250, 0.15));
+    border: 1px solid rgba(52, 211, 153, 0.3);
+    border-radius: 12px;
+    color: var(--primary);
+    font-size: 0.95rem;
+    font-weight: 600;
+    cursor: pointer;
+    transition: all 0.3s ease;
+    position: relative;
+    overflow: hidden;
+}
+
+.countdown-song-select-btn::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: -100%;
+    width: 100%;
+    height: 100%;
+    background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.1), transparent);
+    transition: left 0.5s ease;
+}
+
+.countdown-song-select-btn:hover {
+    background: linear-gradient(135deg, rgba(52, 211, 153, 0.25), rgba(167, 139, 250, 0.25));
+    border-color: rgba(52, 211, 153, 0.5);
+    transform: translateY(-2px);
+    box-shadow: 0 4px 12px rgba(52, 211, 153, 0.2);
+}
+
+.countdown-song-select-btn:hover::before {
+    left: 100%;
+}
+
+.countdown-song-select-btn:active {
+    transform: translateY(0);
+    box-shadow: 0 2px 6px rgba(52, 211, 153, 0.15);
+}
+
+.countdown-song-select-btn i {
+    font-size: 1.1rem;
+}
+
 .countdown-status-value {
     font-family: 'JetBrains Mono', monospace;
     font-size: 1.1rem;
@@ -50,13 +100,202 @@
     min-width: 200px;
 }
 
+/* ========================================
+   Enhanced Date/Time Configuration
+   ======================================== */
+
+.countdown-datetime-container {
+    background: var(--glass-bg);
+    border: 1px solid var(--glass-border);
+    border-radius: var(--card-radius-sm);
+    padding: 20px;
+    margin: 16px 0;
+    backdrop-filter: blur(10px);
+    transition: all 0.3s ease;
+}
+
+.countdown-datetime-container:hover {
+    border-color: var(--glass-border-hover);
+    background: rgba(18, 18, 28, 0.75);
+}
+
+.countdown-datetime-header {
+    margin-bottom: 16px;
+}
+
+.countdown-datetime-header label {
+    font-size: 0.9rem;
+    font-weight: 600;
+    color: var(--text-primary);
+    display: flex;
+    align-items: center;
+}
+
+.countdown-datetime-inputs {
+    display: flex;
+    gap: 16px;
+    align-items: stretch;
+    margin-bottom: 16px;
+}
+
+.datetime-input-wrapper {
+    position: relative;
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+}
+
+.datetime-input-icon {
+    position: absolute;
+    left: 16px;
+    top: 50%;
+    transform: translateY(-50%);
+    color: var(--text-muted);
+    font-size: 1rem;
+    z-index: 2;
+    pointer-events: none;
+    transition: color 0.3s ease;
+}
+
+.datetime-input-wrapper:focus-within .datetime-input-icon {
+    color: var(--primary);
+}
+
+.datetime-input-enhanced {
+    width: 100%;
+    padding: 14px 16px 14px 48px;
+    background: rgba(0, 0, 0, 0.3);
+    border: 1px solid var(--glass-border);
+    border-radius: 12px;
+    color: var(--text-primary);
+    font-family: var(--font-main);
+    font-size: 0.95rem;
+    transition: all 0.3s ease;
+    color-scheme: dark;
+    cursor: pointer;
+    position: relative;
+}
+
+.datetime-input-enhanced:hover {
+    border-color: var(--glass-border-hover);
+    background: rgba(0, 0, 0, 0.4);
+}
+
+.datetime-input-enhanced:focus {
+    outline: none;
+    border-color: var(--primary);
+    background: rgba(0, 0, 0, 0.5);
+    box-shadow: 0 0 0 3px rgba(52, 211, 153, 0.15);
+}
+
+.datetime-input-enhanced[readonly] {
+    cursor: pointer;
+}
+
+.datetime-input-enhanced[readonly]::-webkit-calendar-picker-indicator {
+    display: none;
+}
+
+.datetime-input-enhanced::-webkit-calendar-picker-indicator {
+    cursor: pointer;
+    filter: invert(0.8);
+    opacity: 0.7;
+    transition: opacity 0.2s ease;
+}
+
+.datetime-input-enhanced:hover::-webkit-calendar-picker-indicator,
+.datetime-input-enhanced:focus::-webkit-calendar-picker-indicator {
+    opacity: 1;
+    filter: invert(1);
+}
+
+.datetime-input-label {
+    position: absolute;
+    left: 48px;
+    top: 50%;
+    transform: translateY(-50%);
+    color: var(--text-muted);
+    font-size: 0.85rem;
+    font-weight: 500;
+    pointer-events: none;
+    transition: all 0.3s ease;
+    z-index: 1;
+    background: transparent;
+}
+
+.datetime-input-enhanced:focus + .datetime-input-label,
+.datetime-input-wrapper.has-value .datetime-input-label {
+    top: -8px;
+    left: 12px;
+    font-size: 0.75rem;
+    color: var(--primary);
+    background: var(--glass-bg);
+    padding: 0 6px;
+    border-radius: 4px;
+}
+
+.countdown-timer-display {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+    padding: 16px;
+    background: rgba(0, 0, 0, 0.25);
+    border-radius: 12px;
+    border: 1px solid rgba(255, 255, 255, 0.04);
+}
+
+.countdown-timer-status {
+    font-size: 0.85rem;
+    color: var(--text-secondary);
+    font-weight: 500;
+}
+
+.countdown-timer-value {
+    font-family: var(--font-mono);
+    font-size: 1.5rem;
+    font-weight: 700;
+    color: var(--text-muted);
+    text-align: center;
+    padding: 12px;
+    background: rgba(255, 255, 255, 0.02);
+    border: 1px solid rgba(255, 255, 255, 0.04);
+    border-radius: 8px;
+    transition: all 0.3s ease;
+}
+
+.countdown-timer-value.active {
+    color: var(--primary);
+    background: rgba(52, 211, 153, 0.1);
+    border-color: rgba(52, 211, 153, 0.2);
+    box-shadow: 0 0 20px rgba(52, 211, 153, 0.1);
+}
+
 /* Countdown panel icon */
 .panel-icon.countdown {
-    background: linear-gradient(135deg, #f97316, #ea580c);
+    background: linear-gradient(135deg, rgba(255, 99, 71, 0.2), rgba(255, 99, 71, 0.05));
+    border: 1px solid rgba(255, 99, 71, 0.25);
+    color: #ff6347;
 }
 
 .settings-nav-item[data-category="countdown"].active .fa-hourglass-half {
-    color: #f97316;
+    color: #ff6347;
+}
+
+/* Countdown tip icon */
+.countdown-tip-icon {
+    margin-left: 8px;
+    font-size: 0.75rem;
+    color: #ff6347;
+    opacity: 0.7;
+    cursor: help;
+    transition: all 0.2s ease;
+}
+
+.countdown-tip-icon:hover {
+    opacity: 1;
+    color: #ff4500;
+    transform: scale(1.1);
 }
 
 /* ========================================
@@ -93,6 +332,71 @@
     justify-content: space-between;
     align-items: center;
     margin-bottom: 16px;
+    gap: 16px;
+}
+
+.waveform-header-song-info {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    flex: 1;
+    min-width: 0;
+}
+
+.waveform-header-song-thumbnail {
+    width: 48px;
+    height: 48px;
+    border-radius: 8px;
+    background: rgba(0, 0, 0, 0.3);
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    flex-shrink: 0;
+    overflow: hidden;
+}
+
+.waveform-header-song-thumbnail img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+}
+
+.waveform-header-song-thumbnail i {
+    font-size: 1.2rem;
+    color: var(--text-muted);
+}
+
+.waveform-header-song-details {
+    flex: 1;
+    min-width: 0;
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+}
+
+.waveform-header-song-title {
+    font-size: 0.95rem;
+    font-weight: 600;
+    color: var(--text-primary);
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+
+.waveform-header-song-artist {
+    font-size: 0.8rem;
+    color: var(--text-secondary);
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+
+.waveform-header-controls {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    flex-shrink: 0;
 }
 
 .waveform-header label {
@@ -359,12 +663,45 @@
 
 /* Responsive */
 @media (max-width: 768px) {
+    .countdown-datetime-container {
+        padding: 16px;
+    }
+
+    .countdown-datetime-inputs {
+        flex-direction: column;
+        gap: 12px;
+    }
+
+    .datetime-input-wrapper {
+        width: 100%;
+    }
+
+    .countdown-timer-value {
+        font-size: 1.2rem;
+        padding: 10px;
+    }
+
     .countdown-waveform-container {
         padding: 16px;
     }
 
     .waveform-visual {
         height: 80px;
+    }
+
+    .waveform-header {
+        flex-direction: column;
+        align-items: flex-start;
+        gap: 12px;
+    }
+
+    .waveform-header-song-info {
+        width: 100%;
+    }
+
+    .waveform-header-controls {
+        width: 100%;
+        justify-content: space-between;
     }
 
     .waveform-header label {
@@ -384,4 +721,484 @@
     .waveform-time-label {
         font-size: 0.6rem;
     }
+}
+
+/* ========================================
+   Custom Date/Time Picker Modal
+   ======================================== */
+
+.datetime-picker-overlay {
+    z-index: 10000;
+}
+
+.datetime-picker-modal {
+    max-width: 500px;
+    width: 90%;
+}
+
+.datetime-picker-body {
+    padding: 24px;
+}
+
+.datetime-picker-tabs {
+    display: flex;
+    gap: 8px;
+    margin-bottom: 24px;
+    border-bottom: 1px solid var(--glass-border);
+    padding-bottom: 12px;
+}
+
+.datetime-tab {
+    flex: 1;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
+    padding: 12px 16px;
+    background: transparent;
+    border: none;
+    border-bottom: 2px solid transparent;
+    color: var(--text-secondary);
+    font-size: 0.9rem;
+    font-weight: 500;
+    cursor: pointer;
+    transition: all 0.3s ease;
+}
+
+.datetime-tab:hover {
+    color: var(--text-primary);
+    background: rgba(255, 255, 255, 0.05);
+}
+
+.datetime-tab.active {
+    color: var(--primary);
+    border-bottom-color: var(--primary);
+}
+
+.datetime-tab i {
+    font-size: 1rem;
+}
+
+.datetime-picker-content {
+    display: none;
+    min-height: 300px;
+}
+
+.datetime-picker-content.active {
+    display: block;
+}
+
+.datetime-picker-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    margin-bottom: 20px;
+}
+
+.datetime-nav-btn {
+    width: 36px;
+    height: 36px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background: rgba(255, 255, 255, 0.05);
+    border: 1px solid var(--glass-border);
+    border-radius: 8px;
+    color: var(--text-primary);
+    cursor: pointer;
+    transition: all 0.2s ease;
+}
+
+.datetime-nav-btn:hover {
+    background: rgba(255, 255, 255, 0.1);
+    border-color: var(--primary);
+    color: var(--primary);
+}
+
+.datetime-month-year {
+    font-size: 1.1rem;
+    font-weight: 600;
+    color: var(--text-primary);
+    text-transform: capitalize;
+}
+
+.datetime-weekdays {
+    display: grid;
+    grid-template-columns: repeat(7, 1fr);
+    gap: 4px;
+    margin-bottom: 12px;
+}
+
+.datetime-weekday {
+    text-align: center;
+    font-size: 0.75rem;
+    font-weight: 600;
+    color: var(--text-muted);
+    padding: 8px;
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+}
+
+.datetime-calendar-grid {
+    display: grid;
+    grid-template-columns: repeat(7, 1fr);
+    gap: 4px;
+}
+
+.datetime-calendar-day {
+    aspect-ratio: 1;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background: rgba(255, 255, 255, 0.03);
+    border: 1px solid transparent;
+    border-radius: 8px;
+    color: var(--text-primary);
+    font-size: 0.9rem;
+    cursor: pointer;
+    transition: all 0.2s ease;
+}
+
+.datetime-calendar-day:hover {
+    background: rgba(52, 211, 153, 0.1);
+    border-color: var(--primary);
+    color: var(--primary);
+}
+
+.datetime-calendar-day.other-month {
+    color: var(--text-muted);
+    opacity: 0.4;
+}
+
+.datetime-calendar-day.today {
+    background: rgba(52, 211, 153, 0.15);
+    border-color: var(--primary);
+    font-weight: 600;
+}
+
+.datetime-calendar-day.selected {
+    background: var(--primary);
+    color: #1a1a2e;
+    font-weight: 700;
+    border-color: var(--primary);
+}
+
+.time-picker-container {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 16px;
+    padding: 20px 0;
+}
+
+.time-picker-section {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 12px;
+}
+
+.time-picker-section label {
+    font-size: 0.85rem;
+    font-weight: 600;
+    color: var(--text-secondary);
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+}
+
+.time-picker-scroll {
+    height: 200px;
+    overflow-y: auto;
+    overflow-x: hidden;
+    width: 100%;
+    scroll-behavior: smooth;
+    border: 1px solid var(--glass-border);
+    border-radius: 12px;
+    background: rgba(0, 0, 0, 0.2);
+}
+
+.time-picker-scroll::-webkit-scrollbar {
+    width: 6px;
+}
+
+.time-picker-scroll::-webkit-scrollbar-thumb {
+    background: rgba(255, 255, 255, 0.2);
+    border-radius: 3px;
+}
+
+.time-picker-items {
+    display: flex;
+    flex-direction: column;
+    padding: 80px 0;
+}
+
+.time-picker-item {
+    padding: 12px 16px;
+    text-align: center;
+    font-size: 1.2rem;
+    font-weight: 500;
+    color: var(--text-muted);
+    cursor: pointer;
+    transition: all 0.2s ease;
+    min-height: 40px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.time-picker-item:hover {
+    color: var(--text-primary);
+    background: rgba(255, 255, 255, 0.05);
+}
+
+.time-picker-item.selected {
+    color: var(--primary);
+    font-weight: 700;
+    font-size: 1.4rem;
+    background: rgba(52, 211, 153, 0.1);
+}
+
+.time-picker-separator {
+    font-size: 2rem;
+    font-weight: 700;
+    color: var(--primary);
+    margin-top: 40px;
+}
+
+.datetime-picker-footer {
+    display: flex;
+    flex-direction: column;
+    gap: 16px;
+    padding: 20px 24px;
+    border-top: 1px solid var(--glass-border);
+}
+
+.datetime-picker-selected {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    padding: 12px 16px;
+    background: rgba(52, 211, 153, 0.1);
+    border: 1px solid rgba(52, 211, 153, 0.2);
+    border-radius: 8px;
+    color: var(--primary);
+    font-weight: 500;
+}
+
+.datetime-picker-actions {
+    display: flex;
+    gap: 12px;
+    justify-content: flex-end;
+}
+
+/* ========================================
+   Countdown Message Configuration
+   ======================================== */
+
+.countdown-message-config-btn {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 12px;
+    width: 100%;
+    padding: 14px 20px;
+    background: rgba(255, 255, 255, 0.05);
+    border: 1px solid var(--glass-border);
+    border-radius: 12px;
+    color: var(--text-primary);
+    font-size: 0.95rem;
+    font-weight: 500;
+    cursor: pointer;
+    transition: all 0.3s ease;
+}
+
+.countdown-message-config-btn:hover {
+    background: rgba(255, 255, 255, 0.1);
+    border-color: var(--primary);
+    transform: translateX(4px);
+}
+
+.countdown-message-config-btn i:first-child {
+    color: var(--primary);
+    font-size: 1rem;
+}
+
+.countdown-message-config-btn span {
+    flex: 1;
+    text-align: left;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+
+.countdown-message-config-btn i:last-child {
+    color: var(--text-muted);
+    font-size: 0.85rem;
+    transition: transform 0.3s ease;
+}
+
+.countdown-message-config-btn:hover i:last-child {
+    transform: translateX(4px);
+}
+
+.countdown-message-modal {
+    max-width: 600px;
+    width: 90%;
+}
+
+.countdown-message-form {
+    display: flex;
+    flex-direction: column;
+    gap: 24px;
+}
+
+.message-input-group,
+.message-duration-group {
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+}
+
+.message-input-label {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    font-size: 0.9rem;
+    font-weight: 600;
+    color: var(--text-primary);
+}
+
+.message-input-label i {
+    color: var(--primary);
+    font-size: 1rem;
+}
+
+.message-textarea {
+    width: 100%;
+    padding: 14px 16px;
+    background: rgba(0, 0, 0, 0.3);
+    border: 1px solid var(--glass-border);
+    border-radius: 12px;
+    color: var(--text-primary);
+    font-family: var(--font-main);
+    font-size: 0.95rem;
+    line-height: 1.5;
+    resize: vertical;
+    transition: all 0.3s ease;
+}
+
+.message-textarea:focus {
+    outline: none;
+    border-color: var(--primary);
+    background: rgba(0, 0, 0, 0.5);
+    box-shadow: 0 0 0 3px rgba(52, 211, 153, 0.15);
+}
+
+.message-char-count {
+    text-align: right;
+    font-size: 0.8rem;
+    color: var(--text-muted);
+}
+
+.message-char-count span {
+    color: var(--text-secondary);
+    font-weight: 500;
+}
+
+.duration-controls {
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+}
+
+.duration-presets {
+    display: flex;
+    gap: 8px;
+    flex-wrap: wrap;
+}
+
+.duration-preset-btn {
+    flex: 1;
+    min-width: 80px;
+    padding: 12px 16px;
+    background: rgba(255, 255, 255, 0.05);
+    border: 1px solid var(--glass-border);
+    border-radius: 8px;
+    color: var(--text-secondary);
+    font-size: 0.9rem;
+    font-weight: 500;
+    cursor: pointer;
+    transition: all 0.2s ease;
+}
+
+.duration-preset-btn:hover {
+    background: rgba(255, 255, 255, 0.1);
+    border-color: var(--primary);
+    color: var(--text-primary);
+}
+
+.duration-preset-btn.active {
+    background: rgba(52, 211, 153, 0.15);
+    border-color: var(--primary);
+    color: var(--primary);
+    font-weight: 600;
+}
+
+.duration-custom {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+}
+
+.duration-input {
+    flex: 1;
+    padding: 12px 16px;
+    background: rgba(0, 0, 0, 0.3);
+    border: 1px solid var(--glass-border);
+    border-radius: 8px;
+    color: var(--text-primary);
+    font-size: 0.95rem;
+    transition: all 0.3s ease;
+}
+
+.duration-input:focus {
+    outline: none;
+    border-color: var(--primary);
+    background: rgba(0, 0, 0, 0.5);
+    box-shadow: 0 0 0 3px rgba(52, 211, 153, 0.15);
+}
+
+.duration-unit {
+    font-size: 0.9rem;
+    color: var(--text-secondary);
+    white-space: nowrap;
+}
+
+.message-hint {
+    display: flex;
+    align-items: flex-start;
+    gap: 8px;
+    padding: 12px;
+    background: rgba(52, 211, 153, 0.1);
+    border: 1px solid rgba(52, 211, 153, 0.2);
+    border-radius: 8px;
+    font-size: 0.85rem;
+    color: var(--text-secondary);
+}
+
+.message-hint i {
+    color: var(--primary);
+    margin-top: 2px;
+}
+
+.countdown-message-modal .modal-footer {
+    display: flex;
+    gap: 12px;
+    justify-content: flex-end;
+    align-items: center;
+}
+
+.countdown-message-modal .modal-footer .cyber-btn {
+    min-width: 120px;
 }

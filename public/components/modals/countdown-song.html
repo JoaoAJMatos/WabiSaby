@@ -1,0 +1,53 @@
+        <!-- Countdown Song Selection Modal -->
+        <div id="countdown-song-modal" class="modal-overlay">
+            <div class="modal-content glass-modal countdown-song-modal">
+                <div class="modal-header">
+                    <div class="modal-title">
+                        <i class="fas fa-hourglass-half"></i>
+                        <h2>Select Countdown Song</h2>
+                    </div>
+                    <button id="countdown-song-modal-close" class="modal-close-btn">
+                        <i class="fas fa-times"></i>
+                    </button>
+                </div>
+                <div class="modal-body">
+                    <form id="countdown-song-form" class="countdown-song-form">
+                        <div class="track-input-group">
+                            <label class="track-input-label">
+                                <i class="fas fa-link"></i>
+                                <span>Song URL or Search</span>
+                            </label>
+                            <div class="track-input-wrapper">
+                                <input type="text" id="countdown-song-url" class="track-input"
+                                    placeholder="Paste YouTube/Spotify URL or search by name..." required
+                                    autocomplete="off">
+                                <div class="track-platforms">
+                                    <span class="track-platform" title="YouTube supported">
+                                        <i class="fab fa-youtube"></i>
+                                    </span>
+                                    <span class="track-platform" title="Spotify supported">
+                                        <i class="fab fa-spotify"></i>
+                                    </span>
+                                </div>
+                            </div>
+                            <div class="countdown-song-hint">
+                                <i class="fas fa-info-circle"></i>
+                                <span>This song will be used for the countdown overlay and won't be added to the queue</span>
+                            </div>
+                        </div>
+                        <div id="countdown-song-preview" class="countdown-song-preview hidden">
+                            <div class="countdown-song-preview-content">
+                                <i class="fas fa-music"></i>
+                                <div class="countdown-song-preview-info">
+                                    <div class="countdown-song-preview-title"></div>
+                                    <div class="countdown-song-preview-artist"></div>
+                                </div>
+                            </div>
+                        </div>
+                        <button type="submit" class="cyber-btn primary countdown-song-submit">
+                            <i class="fas fa-check"></i> <span>Set as Countdown Song</span>
+                        </button>
+                    </form>
+                </div>
+            </div>
+        </div>

@@ -17,25 +17,17 @@ const { setupBackgroundJobs } = require('./initialization/background-jobs');
  * 4. Start application (server, WhatsApp connection)
  * 5. Background jobs (periodic tasks)
  */
-(async () => {
+const main = async () => {
     try {
         await initializeInfrastructure();
-        
         await initializeServices();
-        
         await registerEventListeners();
-        
         await startApplication();
-        
         setupBackgroundJobs();
-        
-        logger.info('WabiSaby is running...');
     } catch (error) {
         logger.error('Failed to start application:', error);
-        if (error && error.stack) {
-            logger.error('Error stack:', error.stack);
-        }
         process.exit(1);
     }
-})();
+}
 
+main();

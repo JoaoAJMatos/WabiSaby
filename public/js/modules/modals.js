@@ -159,3 +159,27 @@ function initAddTrackModalListeners() {
     }
 }
 
+// Countdown Song Modal Functions
+function initCountdownSongModalListeners() {
+    const closeBtn = document.getElementById('countdown-song-modal-close');
+    const modal = document.getElementById('countdown-song-modal');
+    
+    if (closeBtn) {
+        closeBtn.addEventListener('click', () => {
+            if (typeof closeCountdownSongModal === 'function') {
+                closeCountdownSongModal();
+            }
+        });
+    }
+    
+    if (modal) {
+        modal.addEventListener('click', (e) => {
+            if (e.target.id === 'countdown-song-modal') {
+                if (typeof closeCountdownSongModal === 'function') {
+                    closeCountdownSongModal();
+                }
+            }
+        });
+    }
+}
+

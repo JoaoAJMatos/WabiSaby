@@ -111,6 +111,19 @@ class StatusService extends EventEmitter {
         eventBus.on(EFFECTS_CHANGED, () => this.broadcastStatus());
         eventBus.on(CONNECTION_CHANGED, () => this.broadcastStatus());
         
+        // Countdown events - broadcast status when waveform state changes
+        const {
+            COUNTDOWN_PREFETCH_STARTED,
+            COUNTDOWN_PREFETCH_COMPLETED,
+            COUNTDOWN_WAVEFORM_GENERATION_STARTED,
+            COUNTDOWN_WAVEFORM_READY
+        } = require('../../events');
+        
+        eventBus.on(COUNTDOWN_PREFETCH_STARTED, () => this.broadcastStatus());
+        eventBus.on(COUNTDOWN_PREFETCH_COMPLETED, () => this.broadcastStatus());
+        eventBus.on(COUNTDOWN_WAVEFORM_GENERATION_STARTED, () => this.broadcastStatus());
+        eventBus.on(COUNTDOWN_WAVEFORM_READY, () => this.broadcastStatus());
+        
         // Start periodic broadcast when playback starts (via QUEUE_UPDATED)
         // We'll check if a song is playing and start/stop accordingly
         eventBus.on(QUEUE_UPDATED, () => {

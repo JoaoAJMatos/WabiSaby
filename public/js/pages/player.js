@@ -1686,7 +1686,7 @@ function updateCountdownDisplay(countdown) {
 
     if (isAtZero && !celebrationTriggered) {
         // Trigger celebration!
-        triggerCelebration(countdown.message || 'Happy New Year!');
+        triggerCelebration(countdown.message || 'Happy New Year!', countdown);
         celebrationTriggered = true;
         return;
     }
@@ -1762,7 +1762,7 @@ function formatCountdownTime(ms) {
 /**
  * Trigger celebration when countdown reaches zero
  */
-function triggerCelebration(message) {
+function triggerCelebration(message, countdown = {}) {
     console.log('🎉 Countdown reached zero! Triggering celebration...');
 
     // Show celebration state
@@ -1785,7 +1785,8 @@ function triggerCelebration(message) {
     // Create confetti particles
     createConfetti();
 
-    // Hide celebration after 30 seconds (increased from 15 seconds)
+    // Hide celebration after configured duration (default 30 seconds)
+    const displayDuration = (countdown.messageDisplayDuration || 30) * 1000;
     setTimeout(() => {
         if (elements.countdownOverlay) {
             elements.countdownOverlay.classList.remove('visible', 'celebration');
@@ -1795,7 +1796,7 @@ function triggerCelebration(message) {
         if (elements.countdownParticles) {
             elements.countdownParticles.innerHTML = '';
         }
-    }, 30000);
+    }, displayDuration);
 }
 
 /**

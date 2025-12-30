@@ -5,7 +5,18 @@
 
 const config = require('../../config');
 const { logger } = require('../../utils/logger.util');
-const { eventBus, PLAYBACK_STARTED, PLAYBACK_FINISHED, PLAYBACK_SKIP } = require('../../events');
+const helpersUtil = require('../../utils/helpers.util');
+const fs = require('fs');
+const { 
+    eventBus, 
+    PLAYBACK_STARTED, 
+    PLAYBACK_FINISHED, 
+    PLAYBACK_SKIP,
+    COUNTDOWN_PREFETCH_STARTED,
+    COUNTDOWN_PREFETCH_COMPLETED,
+    COUNTDOWN_WAVEFORM_GENERATION_STARTED,
+    COUNTDOWN_WAVEFORM_READY
+} = require('../../events');
 
 class CountdownService {
     constructor() {
@@ -90,6 +101,24 @@ class CountdownService {
 
         const timeRemaining = this.getTimeRemaining();
 
+        // Include song metadata if prefetched
+        let songMetadata = null;
+        if (this.prefetchedSong) {
+            songMetadata = {
+                title: this.prefetchedSong.title || null,
+                artist: this.prefetchedSong.artist || null,
+                thumbnailUrl: null
+            };
+            
+            // Get thumbnail URL if thumbnail path exists
+            if (this.prefetchedSong.thumbnailPath && fs.existsSync(this.prefetchedSong.thumbnailPath)) {
+                const thumbnailUrl = helpersUtil.getThumbnailUrl(this.prefetchedSong.thumbnailPath);
+                if (thumbnailUrl) {
+                    songMetadata.thumbnailUrl = thumbnailUrl;
+                }
+            }
+        }
+
         return {
             enabled: config.countdown.enabled,
             targetDate: config.countdown.targetDate,
@@ -98,10 +127,12 @@ class CountdownService {
             showInPlayer: config.countdown.showInPlayer,
             showThreshold: config.countdown.showThreshold,
             message: config.countdown.message || 'Happy New Year!',
+            messageDisplayDuration: config.countdown.messageDisplayDuration || 30,
             song: {
                 url: config.countdown.song?.url || null,
                 timestamp: config.countdown.song?.timestamp || 0,
             },
+            songMetadata,
             songQueued: this.songQueued,
             songStarted: this.songStarted,
             songPrefetched: this.prefetchedSong !== null,
@@ -220,6 +251,9 @@ class CountdownService {
 
         this.prefetchInProgress = true;
 
+        // Emit prefetch started event
+        eventBus.emit(COUNTDOWN_PREFETCH_STARTED, { url: songUrl });
+
         try {
             const { downloadTrack } = require('../audio/download.service');
             
@@ -240,6 +274,13 @@ class CountdownService {
                     logger.info('Countdown song prefetched successfully:', {
                         title: result.title,
                         filePath: result.filePath
+                    });
+
+                    // Emit prefetch completed event
+                    eventBus.emit(COUNTDOWN_PREFETCH_COMPLETED, {
+                        filePath: result.filePath,
+                        title: result.title,
+                        artist: result.artist
                     });
 
                     // Generate waveform in background after prefetch
@@ -275,6 +316,11 @@ class CountdownService {
 
         this.waveformInProgress = true;
 
+        // Emit waveform generation started event
+        eventBus.emit(COUNTDOWN_WAVEFORM_GENERATION_STARTED, {
+            filePath: this.prefetchedSong.filePath
+        });
+
         try {
             const { generateWaveform } = require('../audio/waveform.service');
             const waveformData = await generateWaveform(this.prefetchedSong.filePath, {
@@ -287,6 +333,11 @@ class CountdownService {
             logger.info('Waveform generated for countdown song:', {
                 duration: waveformData.duration,
                 samples: waveformData.samples.length
+            });
+
+            // Emit waveform ready event
+            eventBus.emit(COUNTDOWN_WAVEFORM_READY, {
+                waveform: waveformData
             });
 
             return waveformData;

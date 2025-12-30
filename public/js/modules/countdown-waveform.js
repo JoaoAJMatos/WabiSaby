@@ -16,11 +16,8 @@
     let timeAxisEl = null;
     let currentTimestamp = 0; // in seconds
     let isDragging = false;
-    let pollInterval = null;
     let isLoading = false;
-
-    // Constants
-    const POLL_INTERVAL = 2000; // Poll every 2 seconds while loading
+    let isTriggeringLoad = false; // Prevent multiple simultaneous triggerLoad calls
     const WAVEFORM_COLORS = {
         gradient1: 'rgba(52, 211, 153, 0.8)',   // Primary green
         gradient2: 'rgba(167, 139, 250, 0.6)',  // Secondary purple
@@ -49,6 +46,9 @@
 
         ctx = canvas.getContext('2d');
 
+        // Initial canvas resize
+        resizeCanvas();
+
         // Set up resize observer for responsive canvas
         const resizeObserver = new ResizeObserver(() => {
             resizeCanvas();
@@ -63,6 +63,13 @@
 
         // Set up canvas click handler
         canvas.addEventListener('click', handleCanvasClick);
+
+        // Ensure container is visible (show loading state if not ready)
+        if (container && !container.classList.contains('ready') && !container.classList.contains('error')) {
+            if (!container.classList.contains('loading')) {
+                container.classList.add('loading');
+            }
+        }
 
         console.log('Countdown waveform module initialized');
     }
@@ -85,82 +92,126 @@
     }
 
     /**
-     * Load waveform data from API
+     * Load waveform data from API (called once when SSE indicates ready)
      * @returns {Promise<Object|null>}
      */
     async function loadWaveform() {
-        if (isLoading) return null;
+        // Don't block if already loading - allow retry when SSE says ready
+        // The isLoading check was preventing retries when waveform becomes ready
+        if (isLoading && waveformData) {
+            // Already have data and loading, just return it
+            return waveformData;
+        }
 
         setLoadingState(true);
 
         try {
             const res = await fetch('/api/countdown/waveform');
+            if (!res.ok) {
+                const errorText = await res.text();
+                console.error('Waveform API error:', res.status, errorText);
+                setErrorState(`API error: ${res.status}`);
+                return null;
+            }
+
             const data = await res.json();
+            console.debug('Waveform API response:', data);
 
             if (!data.success) {
                 setErrorState(data.error || 'Failed to load waveform');
+                setLoadingState(false);
                 return null;
             }
 
             // Handle different statuses
             switch (data.status) {
                 case 'ready':
-                    waveformData = data.waveform;
-                    stopPolling();
-                    setLoadingState(false);
-                    resizeCanvas();
-                    render();
-                    updateTimeAxis();
-                    return waveformData;
+                    if (data.waveform) {
+                        waveformData = data.waveform;
+                        setLoadingState(false);
+                        resizeCanvas();
+                        render();
+                        updateTimeAxis();
+                        console.debug('Waveform loaded and rendered successfully');
+                        return waveformData;
+                    } else {
+                        console.error('Waveform status is ready but waveform data is missing');
+                        setErrorState('Waveform data is missing');
+                        setLoadingState(false);
+                        return null;
+                    }
 
                 case 'prefetching':
+                    console.debug('Waveform API says prefetching, waiting for SSE update');
                     setLoadingMessage('Downloading song...');
-                    startPolling();
+                    // Keep loading state - SSE will notify when ready
+                    // Don't reset isLoading here, we're still waiting
                     return null;
 
                 case 'generating':
+                    console.debug('Waveform API says generating, waiting for SSE update');
                     setLoadingMessage('Generating waveform...');
-                    startPolling();
+                    // Keep loading state - SSE will notify when ready
+                    // Don't reset isLoading here, we're still waiting
                     return null;
 
                 case 'not_prefetched':
-                    setLoadingMessage('Song not downloaded. Click to download.');
+                    console.debug('Waveform API says not_prefetched, triggering prefetch');
+                    setLoadingMessage('Downloading song...');
+                    // Automatically trigger prefetch
+                    fetch('/api/countdown/prefetch', { method: 'POST' })
+                        .catch(err => console.debug('Prefetch trigger failed:', err));
+                    // Keep loading state - SSE will notify when ready
+                    // Don't reset isLoading here, we're still waiting
                     return null;
 
                 default:
-                    setErrorState('Unknown status');
+                    console.error('Unknown waveform status:', data.status);
+                    setErrorState('Unknown status: ' + data.status);
+                    // Reset loading state on error
+                    setLoadingState(false);
                     return null;
             }
         } catch (error) {
             console.error('Failed to load waveform:', error);
-            setErrorState('Network error');
+            setErrorState('Network error: ' + error.message);
+            setLoadingState(false);
             return null;
         }
     }
 
     /**
-     * Start polling for waveform data
+     * Handle waveform ready from SSE update
+     * Called when SSE indicates waveformReady: true
      */
-    function startPolling() {
-        if (pollInterval) return;
+    async function handleWaveformReady() {
+        console.debug('handleWaveformReady called');
+        if (waveformData) {
+            // Already have data, just re-render
+            resizeCanvas();
+            render();
+            updateTimeAxis();
+            return;
+        }
 
-        pollInterval = setInterval(async () => {
-            const data = await loadWaveform();
-            if (data) {
-                stopPolling();
-            }
-        }, POLL_INTERVAL);
-    }
-
-    /**
-     * Stop polling
-     */
-    function stopPolling() {
-        if (pollInterval) {
-            clearInterval(pollInterval);
-            pollInterval = null;
+        // Fetch waveform data
+        console.debug('Fetching waveform data...');
+        const data = await loadWaveform();
+        if (data) {
+            console.debug('Waveform data loaded successfully');
+        } else {
+            // If SSE says ready but API says not ready, wait a bit and retry once
+            // This handles race conditions where SSE updates before API is ready
+            console.debug('Waveform not ready yet, will retry after short delay...');
+            setTimeout(async () => {
+                if (!waveformData) {
+                    console.debug('Retrying waveform load...');
+                    await loadWaveform();
+                }
+            }, 1000);
         }
     }
+
 
     /**
      * Set loading state
@@ -194,7 +245,6 @@
      */
     function setErrorState(message) {
         isLoading = false;
-        stopPolling();
 
         if (!container) return;
 
@@ -488,10 +538,13 @@
     function reset() {
         waveformData = null;
         currentTimestamp = 0;
-        stopPolling();
 
         if (container) {
-            container.classList.remove('ready', 'error', 'loading');
+            container.classList.remove('ready', 'error');
+            // Keep loading state to show the container
+            if (!container.classList.contains('loading')) {
+                container.classList.add('loading');
+            }
         }
 
         if (ctx && canvas) {
@@ -513,24 +566,70 @@
 
     /**
      * Trigger waveform load when song is set
+     * Checks current status and loads if ready, otherwise waits for SSE update
      */
     async function triggerLoad() {
-        reset();
-        setLoadingState(true);
-        setLoadingMessage('Loading...');
-
-        // First trigger prefetch if needed
-        try {
-            await fetch('/api/countdown/prefetch', { method: 'POST' });
-        } catch (e) {
-            // Ignore prefetch errors
+        // Prevent multiple simultaneous calls
+        if (isTriggeringLoad) {
+            console.debug('Waveform load already in progress, skipping duplicate call');
+            return;
         }
 
-        // Load initial timestamp
-        loadInitialTimestamp();
+        isTriggeringLoad = true;
 
-        // Then try to load waveform
-        await loadWaveform();
+        try {
+            reset();
+            setLoadingState(true);
+            setLoadingMessage('Loading...');
+
+            // Load initial timestamp
+            loadInitialTimestamp();
+
+            // Check current countdown status first
+            try {
+                const statusRes = await fetch('/api/countdown');
+                if (statusRes.ok) {
+                    const statusData = await statusRes.json();
+                    if (statusData.success && statusData.countdown) {
+                        const countdown = statusData.countdown;
+                        
+                        // If waveform is ready, fetch it immediately
+                        if (countdown.waveformReady) {
+                            await loadWaveform();
+                            isTriggeringLoad = false;
+                            return;
+                        }
+                        
+                        // If not prefetched, trigger prefetch
+                        if (!countdown.songPrefetched && !countdown.prefetchInProgress) {
+                            fetch('/api/countdown/prefetch', { method: 'POST' })
+                                .catch(e => console.debug('Prefetch trigger failed:', e));
+                        }
+                        
+                        // Update loading message based on status
+                        if (countdown.prefetchInProgress) {
+                            setLoadingMessage('Downloading song...');
+                        } else if (countdown.waveformInProgress) {
+                            setLoadingMessage('Generating waveform...');
+                        }
+                        
+                        // SSE will notify us when ready, no need to poll
+                        isTriggeringLoad = false;
+                        return;
+                    }
+                }
+            } catch (e) {
+                console.debug('Failed to check countdown status:', e);
+            }
+
+            // Fallback: try to load waveform (will show appropriate status)
+            await loadWaveform();
+        } finally {
+            // Reset flag after a short delay
+            setTimeout(() => {
+                isTriggeringLoad = false;
+            }, 500);
+        }
     }
 
     /**
@@ -538,6 +637,35 @@
      */
     function isReady() {
         return waveformData !== null;
+    }
+
+    /**
+     * Show initial state (when no song is selected)
+     */
+    function showInitialState() {
+        if (container) {
+            container.classList.remove('ready', 'error');
+            container.classList.add('loading');
+            setLoadingMessage('Select a song to see waveform');
+        }
+        waveformData = null;
+        currentTimestamp = 0;
+        
+        if (ctx && canvas) {
+            const width = canvas.width / (window.devicePixelRatio || 1);
+            const height = canvas.height / (window.devicePixelRatio || 1);
+            ctx.clearRect(0, 0, width, height);
+        }
+        
+        if (timeAxisEl) {
+            timeAxisEl.innerHTML = '';
+        }
+        
+        if (timestampDisplay) {
+            timestampDisplay.textContent = '0:00';
+        }
+        
+        updateMarkerPosition();
     }
 
     // Initialize when DOM is ready
@@ -556,7 +684,9 @@
         setTimestamp,
         getTimestamp,
         isReady,
-        render
+        render,
+        showInitialState,
+        handleWaveformReady
     };
 
 })();
