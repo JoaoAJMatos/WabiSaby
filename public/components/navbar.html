@@ -1,0 +1,31 @@
+        <header class="glass-navbar">
+            <div class="logo-container">
+                <i class="fas fa-leaf fa-2x pulse-icon"></i>
+                <h1>Wabi<span class="highlight">Saby</span></h1>
+            </div>
+            <div class="navbar-actions">
+                <div class="burger-menu-wrapper">
+                    <button class="burger-menu-btn navbar-icon-btn" title="Menu" id="burger-menu-btn"
+                        aria-label="Toggle menu" aria-expanded="false" data-i18n-title="ui.dashboard.nav.menu">
+                        <span class="burger-line burger-line-top"></span>
+                        <span class="burger-line burger-line-middle"></span>
+                        <span class="burger-line burger-line-bottom"></span>
+                    </button>
+                    <button id="settings-btn" class="navbar-icon-btn burger-menu-item" title="Settings"
+                        data-i18n-title="ui.dashboard.nav.settings">
+                        <i class="fas fa-cog"></i>
+                    </button>
+                    <a href="/pages/logs.html" class="navbar-icon-btn burger-menu-item" title="System Logs"
+                        id="logs-btn" target="_blank" data-i18n-title="ui.dashboard.nav.systemLogs">
+                        <i class="fas fa-terminal"></i>
+                    </a>
+                    <button id="logout-btn" class="navbar-icon-btn burger-menu-item" title="Logout"
+                        data-i18n-title="ui.dashboard.nav.logout">
+                        <i class="fas fa-sign-out-alt"></i>
+                    </button>
+                </div>
+                <div class="status-badge online" id="connection-status">
+                    <span class="dot"></span> <span data-i18n="ui.dashboard.nav.live">LIVE</span>
+                </div>
+            </div>
+        </header>

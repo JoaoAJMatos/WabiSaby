@@ -1,0 +1,53 @@
+        <!-- Add Track Modal -->
+        <div id="add-track-modal" class="modal-overlay">
+            <div class="modal-content glass-modal add-track-modal">
+                <div class="modal-header">
+                    <div class="modal-title">
+                        <i class="fas fa-music"></i>
+                        <h2 data-i18n="ui.dashboard.modals.addTrack.title">Add Track</h2>
+                    </div>
+                    <button id="add-track-modal-close" class="modal-close-btn">
+                        <i class="fas fa-times"></i>
+                    </button>
+                </div>
+                <div class="modal-body">
+                    <form id="add-song-form" class="add-track-form">
+                        <div class="track-input-group">
+                            <label class="track-input-label">
+                                <i class="fas fa-link"></i>
+                                <span data-i18n="ui.dashboard.modals.addTrack.songUrlLabel">Song URL or Search</span>
+                            </label>
+                            <div class="track-input-wrapper">
+                                <input type="text" id="song-url" class="track-input"
+                                    placeholder="Paste YouTube/Spotify URL or search by name..." required
+                                    autocomplete="off"
+                                    data-i18n-placeholder="ui.dashboard.modals.addTrack.songUrlPlaceholder">
+                                <div class="track-platforms">
+                                    <span class="track-platform" title="YouTube supported"
+                                        data-i18n-title="ui.dashboard.modals.addTrack.youtubeSupported"><i
+                                            class="fab fa-youtube"></i></span>
+                                    <span class="track-platform" title="Spotify supported"
+                                        data-i18n-title="ui.dashboard.modals.addTrack.spotifySupported"><i
+                                            class="fab fa-spotify"></i></span>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="track-input-group">
+                            <label class="track-input-label">
+                                <i class="fas fa-user"></i>
+                                <span data-i18n="ui.dashboard.modals.addTrack.requestedBy">Requested By</span> <span
+                                    class="optional-tag"
+                                    data-i18n="ui.dashboard.modals.addTrack.optional">Optional</span>
+                            </label>
+                            <input type="text" id="requester-name" class="track-input dj-field"
+                                placeholder="Your name or DJ alias..." autocomplete="off"
+                                data-i18n-placeholder="ui.dashboard.modals.addTrack.requesterPlaceholder">
+                        </div>
+                        <button type="submit" class="cyber-btn primary track-submit-btn">
+                            <i class="fas fa-plus"></i> <span data-i18n="ui.dashboard.modals.addTrack.addToQueue">Add to
+                                Queue</span>
+                        </button>
+                    </form>
+                </div>
+            </div>
+        </div>

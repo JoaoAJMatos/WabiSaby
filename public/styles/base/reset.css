@@ -1,0 +1,63 @@
+/* ========================================
+   Base Reset & Typography
+   ======================================== */
+
+@import url('https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700&display=swap');
+
+/* Base Reset & Typography */
+*,
+*::before,
+*::after {
+    box-sizing: border-box;
+}
+
+body {
+    font-family: var(--font-main);
+    background: var(--bg-main);
+    color: var(--text-main);
+    margin: 0;
+    padding: 24px;
+    min-height: 100vh;
+    overflow-x: hidden;
+    position: relative;
+    line-height: 1.5;
+}
+
+/* Ambient Background */
+body::before {
+    content: '';
+    position: fixed;
+    inset: 0;
+    background:
+        radial-gradient(ellipse 80% 50% at 50% -20%, rgba(52, 211, 153, 0.08) 0%, transparent 50%),
+        radial-gradient(ellipse 60% 40% at 100% 100%, rgba(167, 139, 250, 0.06) 0%, transparent 40%),
+        radial-gradient(ellipse 40% 30% at 0% 80%, rgba(52, 211, 153, 0.04) 0%, transparent 40%);
+    pointer-events: none;
+    z-index: 0;
+}
+
+/* Dynamic Background Overlay - Album Art */
+.bg-overlay {
+    position: fixed;
+    inset: -40px;
+    z-index: 0;
+    opacity: 0;
+    pointer-events: none;
+    background-size: cover;
+    background-position: center;
+    background-repeat: no-repeat;
+    filter: blur(80px) saturate(1.2) brightness(0.4);
+    transform: scale(1.2);
+    transition: opacity 0.8s ease-in-out, background-image 0.5s ease-in-out;
+}
+
+.container {
+    max-width: 1100px;
+    margin: 0 auto;
+    position: relative;
+    z-index: 10;
+    display: flex;
+    flex-direction: column;
+    min-height: calc(100vh - 48px); /* Account for body padding (24px top + 24px bottom) */
+}
+

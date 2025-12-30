@@ -1,0 +1,67 @@
+/* ========================================
+   Cards - Premium Glass Effect
+   ======================================== */
+
+.card {
+    background: var(--glass-bg);
+    backdrop-filter: blur(20px) saturate(1.5);
+    -webkit-backdrop-filter: blur(20px) saturate(1.5);
+    padding: 28px;
+    position: relative;
+    border-radius: var(--card-radius);
+    border: 1px solid var(--glass-border);
+    box-shadow: var(--shadow-card);
+    z-index: 1;
+    transition: transform 0.3s ease, box-shadow 0.3s ease, border-color 0.3s ease;
+    overflow: hidden;
+}
+
+.card::before {
+    content: '';
+    position: absolute;
+    inset: 0;
+    border-radius: inherit;
+    background: linear-gradient(135deg, var(--glass-highlight) 0%, transparent 40%);
+    pointer-events: none;
+}
+
+.card:hover {
+    transform: translateY(-2px);
+    border-color: var(--glass-border-hover);
+    box-shadow: var(--shadow-elevated);
+}
+
+.card-header {
+    display: flex;
+    align-items: center;
+    gap: 14px;
+    margin-bottom: 24px;
+    padding-bottom: 16px;
+    border-bottom: 1px solid var(--glass-border);
+    position: relative;
+}
+
+.card-header i {
+    color: var(--primary);
+    font-size: 1.1rem;
+    opacity: 0.9;
+}
+
+h2 {
+    font-family: var(--font-main);
+    font-size: 1rem;
+    margin: 0;
+    color: var(--text-main);
+    letter-spacing: 0.02em;
+    font-weight: 600;
+}
+
+/* Badge */
+.badge {
+    background: var(--primary-dim);
+    color: var(--primary);
+    padding: 4px 10px;
+    border-radius: 100px;
+    font-size: 0.75rem;
+    font-weight: 600;
+}

@@ -1,0 +1,411 @@
+            <!-- Audio Effects Card -->
+            <section id="effects-card" class="card full-width effects-card">
+                <div class="card-header" style="justify-content: space-between;">
+                    <div style="display: flex; align-items: center; gap: 15px;">
+                        <i class="fas fa-sliders-h"></i>
+                        <h2 data-i18n="ui.dashboard.effects.title">Audio Effects</h2>
+                        <div class="effects-active-badge" id="effects-active-badge">
+                            <span class="preset-name" data-i18n="ui.dashboard.effects.normal">Normal</span>
+                        </div>
+                    </div>
+                    <div style="display: flex; align-items: center; gap: 12px;">
+                        <button type="button" id="effects-mode-toggle" class="cyber-btn small"
+                            title="Toggle Simple/Advanced Mode"
+                            data-i18n-title="ui.dashboard.effects.toggleSimpleAdvanced">
+                            <i class="fas fa-sliders-h"></i>
+                            <span id="effects-mode-label" data-i18n="ui.dashboard.effects.simple">Simple</span>
+                        </button>
+                        <button type="button" id="effects-reset-all"
+                            class="cyber-btn small danger effects-reset-all-btn" title="Reset All Effects"
+                            data-i18n-title="ui.dashboard.effects.resetAllEffects">
+                            <i class="fas fa-undo"></i>
+                            <span data-i18n="ui.dashboard.effects.resetAll">RESET ALL</span>
+                        </button>
+                        <label class="toggle-switch-v2">
+                            <input type="checkbox" id="effects-enabled" checked>
+                            <span class="toggle-track">
+                                <span class="toggle-thumb"></span>
+                            </span>
+                        </label>
+                        <button id="effects-expand-btn" class="cyber-btn small" title="Expand Effects"
+                            style="width: auto; padding: 8px;" data-i18n-title="ui.dashboard.effects.expandEffects">
+                            <i class="fas fa-chevron-down"></i>
+                        </button>
+                    </div>
+                </div>
+
+                <!-- Presets Row (always visible) -->
+                <div class="effects-presets-row">
+                    <div class="effects-presets-grid" id="effects-presets-grid">
+                        <!-- Presets populated by JavaScript -->
+                    </div>
+                </div>
+
+                <!-- Quick Adjustments Row (Simple Mode) -->
+                <div class="effects-quick-adjustments-row" id="effects-quick-adjustments-row">
+                    <div class="effects-quick-adjustments">
+                        <button class="quick-adjust-btn" data-action="bass-up" title="Increase Bass"
+                            data-i18n-title="ui.dashboard.effects.bassUp">
+                            <i class="fas fa-volume-up"></i>
+                            <span data-i18n="ui.dashboard.effects.bassUp">Bass+</span>
+                        </button>
+                        <button class="quick-adjust-btn" data-action="bass-down" title="Decrease Bass"
+                            data-i18n-title="ui.dashboard.effects.bassDown">
+                            <i class="fas fa-volume-down"></i>
+                            <span data-i18n="ui.dashboard.effects.bassDown">Bass-</span>
+                        </button>
+                        <button class="quick-adjust-btn" data-action="reverb-up" title="Increase Reverb"
+                            data-i18n-title="ui.dashboard.effects.reverbUp">
+                            <i class="fas fa-water"></i>
+                            <span data-i18n="ui.dashboard.effects.reverbUp">Reverb+</span>
+                        </button>
+                        <button class="quick-adjust-btn" data-action="reverb-down" title="Decrease Reverb"
+                            data-i18n-title="ui.dashboard.effects.reverbDown">
+                            <i class="fas fa-water"></i>
+                            <span data-i18n="ui.dashboard.effects.reverbDown">Reverb-</span>
+                        </button>
+                        <button class="quick-adjust-btn" data-action="faster" title="Speed Up"
+                            data-i18n-title="ui.dashboard.effects.faster">
+                            <i class="fas fa-forward"></i>
+                            <span data-i18n="ui.dashboard.effects.faster">Faster</span>
+                        </button>
+                        <button class="quick-adjust-btn" data-action="slower" title="Slow Down"
+                            data-i18n-title="ui.dashboard.effects.slower">
+                            <i class="fas fa-backward"></i>
+                            <span data-i18n="ui.dashboard.effects.slower">Slower</span>
+                        </button>
+                    </div>
+                </div>
+
+                <!-- Expandable Content -->
+                <div class="effects-expanded-content" id="effects-expanded-content">
+                    <!-- Simple Mode - Just show a hint -->
+                    <div class="effects-simple-mode" id="effects-simple-mode">
+                        <div class="effects-simple-content">
+                            <p class="effects-simple-hint" data-i18n="ui.dashboard.effects.simpleModeHint">Use the quick
+                                adjustment buttons above to tweak effects, or switch to Advanced mode for full control.
+                            </p>
+                        </div>
+                    </div>
+
+                    <!-- Advanced Mode -->
+                    <div class="effects-advanced-mode" id="effects-advanced-mode" style="display: none;">
+                        <div class="effects-columns">
+                            <!-- Left Column: Speed & EQ -->
+                            <div class="effects-column">
+                                <!-- Speed Control -->
+                                <div class="effects-section compact">
+                                    <div class="effects-section-header">
+                                        <i class="fas fa-tachometer-alt"></i>
+                                        <span data-i18n="ui.dashboard.effects.speed">Speed</span>
+                                    </div>
+                                    <div class="effect-slider-row">
+                                        <div class="effect-slider-container">
+                                            <input type="range" id="effect-speed" class="effect-slider" min="0.5"
+                                                max="2" step="0.05" value="1">
+                                            <span class="effect-value" id="effect-speed-value">1.0x</span>
+                                        </div>
+                                        <button class="effect-reset-btn" data-target="effect-speed" data-default="1"
+                                            title="Reset">
+                                            <i class="fas fa-undo"></i>
+                                        </button>
+                                    </div>
+                                </div>
+
+                                <!-- EQ Controls (Visual) -->
+                                <div class="effects-section compact">
+                                    <div class="effects-section-header">
+                                        <i class="fas fa-sliders-h"></i>
+                                        <span data-i18n="ui.dashboard.effects.equalizer">Equalizer</span>
+                                    </div>
+                                    <div class="effects-eq-container">
+                                        <div class="eq-graphical" id="eq-graphical">
+                                            <div class="eq-header-controls">
+                                                <button id="eq-spectrum-toggle" class="eq-toggle-btn"
+                                                    title="Toggle spectrum visualization"
+                                                    data-i18n-title="ui.dashboard.effects.toggleSpectrum">
+                                                    <i class="fas fa-wave-square"></i>
+                                                </button>
+                                            </div>
+                                            <svg class="eq-curve-svg" viewBox="0 0 300 120" preserveAspectRatio="none">
+                                                <defs>
+                                                    <linearGradient id="eq-gradient" x1="0%" y1="0%" x2="0%" y2="100%">
+                                                        <stop offset="0%" style="stop-color:#a855f7;stop-opacity:0.3" />
+                                                        <stop offset="100%"
+                                                            style="stop-color:#a855f7;stop-opacity:0.1" />
+                                                    </linearGradient>
+                                                    <linearGradient id="spectrum-gradient" x1="0%" y1="0%" x2="0%"
+                                                        y2="100%">
+                                                        <stop offset="0%" style="stop-color:#3b82f6;stop-opacity:0.4" />
+                                                        <stop offset="100%"
+                                                            style="stop-color:#3b82f6;stop-opacity:0.1" />
+                                                    </linearGradient>
+                                                </defs>
+                                                <!-- Real-time frequency spectrum (background) -->
+                                                <g id="eq-spectrum-layer" class="eq-spectrum-layer" opacity="0">
+                                                    <path id="eq-spectrum-path" stroke="#3b82f6" stroke-width="1.5"
+                                                        fill="url(#spectrum-gradient)" opacity="0.6" />
+                                                    <path id="eq-spectrum-line" stroke="#60a5fa" stroke-width="1"
+                                                        fill="none" opacity="0.8" />
+                                                </g>
+                                                <!-- Frequency response curve (foreground) -->
+                                                <path id="eq-curve-path" d="M0,60 L75,60 L150,60 L225,60 L300,60"
+                                                    stroke="#a855f7" stroke-width="2" fill="none" />
+                                                <!-- Fill under curve -->
+                                                <path id="eq-curve-fill"
+                                                    d="M0,120 L0,60 L75,60 L150,60 L225,60 L300,60 L300,120 Z"
+                                                    fill="url(#eq-gradient)" />
+                                                <!-- Control points -->
+                                                <circle id="eq-point-bass" cx="75" cy="60" r="6" fill="#a855f7"
+                                                    class="eq-control-point" />
+                                                <circle id="eq-point-mid" cx="150" cy="60" r="6" fill="#a855f7"
+                                                    class="eq-control-point" />
+                                                <circle id="eq-point-treble" cx="225" cy="60" r="6" fill="#a855f7"
+                                                    class="eq-control-point" />
+                                            </svg>
+                                            <div class="eq-frequency-labels">
+                                                <span>100Hz</span>
+                                                <span>1kHz</span>
+                                                <span>10kHz</span>
+                                            </div>
+                                            <div class="eq-db-labels">
+                                                <span>+20</span>
+                                                <span>0</span>
+                                                <span>-20</span>
+                                            </div>
+                                        </div>
+                                        <!-- Fallback sliders for mobile -->
+                                        <div class="eq-fallback" id="eq-fallback" style="display: none;">
+                                            <div class="eq-band-h">
+                                                <label data-i18n="ui.dashboard.effects.bass">Bass</label>
+                                                <input type="range" id="effect-eq-bass" class="eq-slider-h" min="-20"
+                                                    max="20" step="1" value="0">
+                                                <span class="eq-value-h" id="effect-eq-bass-value">0</span>
+                                            </div>
+                                            <div class="eq-band-h">
+                                                <label data-i18n="ui.dashboard.effects.mid">Mid</label>
+                                                <input type="range" id="effect-eq-mid" class="eq-slider-h" min="-20"
+                                                    max="20" step="1" value="0">
+                                                <span class="eq-value-h" id="effect-eq-mid-value">0</span>
+                                            </div>
+                                            <div class="eq-band-h">
+                                                <label data-i18n="ui.dashboard.effects.treble">Treble</label>
+                                                <input type="range" id="effect-eq-treble" class="eq-slider-h" min="-20"
+                                                    max="20" step="1" value="0">
+                                                <span class="eq-value-h" id="effect-eq-treble-value">0</span>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <!-- Right Column: Effects -->
+                            <div class="effects-column">
+                                <div class="effects-section compact">
+                                    <div class="effects-section-header">
+                                        <i class="fas fa-magic"></i>
+                                        <span data-i18n="ui.dashboard.effects.effects">Effects</span>
+                                    </div>
+                                    <div class="effects-toggles-grid">
+                                        <!-- Reverb -->
+                                        <div class="effect-toggle-card">
+                                            <div class="effect-toggle-header">
+                                                <i class="fas fa-water"></i>
+                                                <span data-i18n="ui.dashboard.effects.reverb">Reverb</span>
+                                                <div class="effect-header-controls">
+                                                    <button class="effect-advanced-btn" data-effect="reverb"
+                                                        title="Advanced Controls"
+                                                        data-i18n-title="ui.dashboard.effects.advancedControls">
+                                                        <i class="fas fa-cog"></i>
+                                                    </button>
+                                                    <label class="toggle-switch-v2 small">
+                                                        <input type="checkbox" id="effect-reverb-enabled">
+                                                        <span class="toggle-track"><span
+                                                                class="toggle-thumb"></span></span>
+                                                    </label>
+                                                </div>
+                                            </div>
+                                            <div class="effect-toggle-controls" id="effect-reverb-controls">
+                                                <div class="effect-intensity-control">
+                                                    <div class="mini-control-header">
+                                                        <span
+                                                            data-i18n="ui.dashboard.effects.intensity">Intensity</span>
+                                                        <span class="mini-value"
+                                                            id="effect-reverb-intensity-value-adv">0%</span>
+                                                    </div>
+                                                    <input type="range" id="effect-reverb-intensity-adv" min="0"
+                                                        max="100" step="5" value="0">
+                                                </div>
+                                                <div class="effect-advanced-controls" id="effect-reverb-advanced"
+                                                    style="display: none;">
+                                                    <div class="mini-control">
+                                                        <div class="mini-control-header">
+                                                            <span data-i18n="ui.dashboard.effects.size">Size</span>
+                                                            <span class="mini-value">0.5</span>
+                                                        </div>
+                                                        <input type="range" id="effect-reverb-roomSize" min="0.1"
+                                                            max="1" step="0.1" value="0.5">
+                                                    </div>
+                                                    <div class="mini-control">
+                                                        <div class="mini-control-header">
+                                                            <span data-i18n="ui.dashboard.effects.wet">Wet</span>
+                                                            <span class="mini-value">0.3</span>
+                                                        </div>
+                                                        <input type="range" id="effect-reverb-wetLevel" min="0.1"
+                                                            max="0.8" step="0.05" value="0.3">
+                                                    </div>
+                                                </div>
+                                            </div>
+                                        </div>
+
+                                        <!-- Echo -->
+                                        <div class="effect-toggle-card">
+                                            <div class="effect-toggle-header">
+                                                <i class="fas fa-broadcast-tower"></i>
+                                                <span data-i18n="ui.dashboard.effects.echo">Echo</span>
+                                                <div class="effect-header-controls">
+                                                    <button class="effect-advanced-btn" data-effect="echo"
+                                                        title="Advanced Controls"
+                                                        data-i18n-title="ui.dashboard.effects.advancedControls">
+                                                        <i class="fas fa-cog"></i>
+                                                    </button>
+                                                    <label class="toggle-switch-v2 small">
+                                                        <input type="checkbox" id="effect-echo-enabled">
+                                                        <span class="toggle-track"><span
+                                                                class="toggle-thumb"></span></span>
+                                                    </label>
+                                                </div>
+                                            </div>
+                                            <div class="effect-toggle-controls" id="effect-echo-controls">
+                                                <div class="effect-intensity-control">
+                                                    <div class="mini-control-header">
+                                                        <span
+                                                            data-i18n="ui.dashboard.effects.intensity">Intensity</span>
+                                                        <span class="mini-value"
+                                                            id="effect-echo-intensity-value-adv">0%</span>
+                                                    </div>
+                                                    <input type="range" id="effect-echo-intensity-adv" min="0" max="100"
+                                                        step="5" value="0">
+                                                </div>
+                                                <div class="effect-advanced-controls" id="effect-echo-advanced"
+                                                    style="display: none;">
+                                                    <div class="mini-control">
+                                                        <div class="mini-control-header">
+                                                            <span data-i18n="ui.dashboard.effects.delay">Delay</span>
+                                                            <span class="mini-value">300ms</span>
+                                                        </div>
+                                                        <input type="range" id="effect-echo-delay" min="50" max="1000"
+                                                            step="50" value="300">
+                                                    </div>
+                                                    <div class="mini-control">
+                                                        <div class="mini-control-header">
+                                                            <span data-i18n="ui.dashboard.effects.decay">Decay</span>
+                                                            <span class="mini-value">0.4</span>
+                                                        </div>
+                                                        <input type="range" id="effect-echo-decay" min="0.1" max="0.8"
+                                                            step="0.05" value="0.4">
+                                                    </div>
+                                                </div>
+                                            </div>
+                                        </div>
+
+                                        <!-- Distortion -->
+                                        <div class="effect-toggle-card">
+                                            <div class="effect-toggle-header">
+                                                <i class="fas fa-bolt"></i>
+                                                <span data-i18n="ui.dashboard.effects.distortion">Distortion</span>
+                                                <div class="effect-header-controls">
+                                                    <button class="effect-advanced-btn" data-effect="distortion"
+                                                        title="Advanced Controls"
+                                                        data-i18n-title="ui.dashboard.effects.advancedControls">
+                                                        <i class="fas fa-cog"></i>
+                                                    </button>
+                                                    <label class="toggle-switch-v2 small">
+                                                        <input type="checkbox" id="effect-distortion-enabled">
+                                                        <span class="toggle-track"><span
+                                                                class="toggle-thumb"></span></span>
+                                                    </label>
+                                                </div>
+                                            </div>
+                                            <div class="effect-toggle-controls" id="effect-distortion-controls">
+                                                <div class="effect-intensity-control">
+                                                    <div class="mini-control-header">
+                                                        <span
+                                                            data-i18n="ui.dashboard.effects.intensity">Intensity</span>
+                                                        <span class="mini-value"
+                                                            id="effect-distortion-intensity-value-adv">0%</span>
+                                                    </div>
+                                                    <input type="range" id="effect-distortion-intensity-adv" min="0"
+                                                        max="100" step="5" value="0">
+                                                </div>
+                                                <div class="effect-advanced-controls" id="effect-distortion-advanced"
+                                                    style="display: none;">
+                                                    <div class="mini-control">
+                                                        <div class="mini-control-header">
+                                                            <span data-i18n="ui.dashboard.effects.drive">Drive</span>
+                                                            <span class="mini-value">0.5</span>
+                                                        </div>
+                                                        <input type="range" id="effect-distortion-drive" min="0.1"
+                                                            max="1" step="0.05" value="0.5">
+                                                    </div>
+                                                </div>
+                                            </div>
+                                        </div>
+
+                                        <!-- Compressor -->
+                                        <div class="effect-toggle-card">
+                                            <div class="effect-toggle-header">
+                                                <i class="fas fa-compress-alt"></i>
+                                                <span data-i18n="ui.dashboard.effects.compressor">Compressor</span>
+                                                <div class="effect-header-controls">
+                                                    <button class="effect-advanced-btn" data-effect="compressor"
+                                                        title="Advanced Controls"
+                                                        data-i18n-title="ui.dashboard.effects.advancedControls">
+                                                        <i class="fas fa-cog"></i>
+                                                    </button>
+                                                    <label class="toggle-switch-v2 small">
+                                                        <input type="checkbox" id="effect-compressor-enabled">
+                                                        <span class="toggle-track"><span
+                                                                class="toggle-thumb"></span></span>
+                                                    </label>
+                                                </div>
+                                            </div>
+                                            <div class="effect-toggle-controls" id="effect-compressor-controls">
+                                                <div class="effect-intensity-control">
+                                                    <div class="mini-control-header">
+                                                        <span
+                                                            data-i18n="ui.dashboard.effects.intensity">Intensity</span>
+                                                        <span class="mini-value"
+                                                            id="effect-compressor-intensity-value-adv">0%</span>
+                                                    </div>
+                                                    <input type="range" id="effect-compressor-intensity-adv" min="0"
+                                                        max="100" step="5" value="0">
+                                                </div>
+                                                <div class="effect-advanced-controls" id="effect-compressor-advanced"
+                                                    style="display: none;">
+                                                    <div class="mini-control">
+                                                        <div class="mini-control-header">
+                                                            <span data-i18n="ui.dashboard.effects.thresh">Thresh</span>
+                                                            <span class="mini-value">-20dB</span>
+                                                        </div>
+                                                        <input type="range" id="effect-compressor-threshold" min="-40"
+                                                            max="0" step="1" value="-20">
+                                                    </div>
+                                                    <div class="mini-control">
+                                                        <div class="mini-control-header">
+                                                            <span data-i18n="ui.dashboard.effects.ratio">Ratio</span>
+                                                            <span class="mini-value">4:1</span>
+                                                        </div>
+                                                        <input type="range" id="effect-compressor-ratio" min="1"
+                                                            max="20" step="1" value="4">
+                                                    </div>
+                                                </div>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </section>

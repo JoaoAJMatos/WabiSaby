@@ -1145,18 +1145,45 @@ function updateRepeatButtonState() {
     }
 }
 
-// Listeners
-document.getElementById('add-song-form').addEventListener('submit', addSong);
-document.getElementById('skip-btn').addEventListener('click', skipSong);
-document.getElementById('play-pause-btn').addEventListener('click', togglePause);
-document.getElementById('shuffle-btn').addEventListener('click', toggleShuffle);
-document.getElementById('repeat-btn').addEventListener('click', toggleRepeat);
-document.getElementById('add-vip-form').addEventListener('submit', addVip);
-document.getElementById('fullscreen-btn').addEventListener('click', openFullscreenWindow);
-document.getElementById('new-session-btn').addEventListener('click', startNewSession);
-document.getElementById('prefetch-btn').addEventListener('click', prefetchAll);
-document.getElementById('stats-collapse-btn').addEventListener('click', toggleStatsCollapse);
-document.getElementById('logout-btn').addEventListener('click', logout);
+// Listeners - Wait for components to load
+function setupEventListeners() {
+    const addSongForm = document.getElementById('add-song-form');
+    const skipBtn = document.getElementById('skip-btn');
+    const playPauseBtn = document.getElementById('play-pause-btn');
+    const shuffleBtn = document.getElementById('shuffle-btn');
+    const repeatBtn = document.getElementById('repeat-btn');
+    const addVipForm = document.getElementById('add-vip-form');
+    const fullscreenBtn = document.getElementById('fullscreen-btn');
+    const newSessionBtn = document.getElementById('new-session-btn');
+    const prefetchBtn = document.getElementById('prefetch-btn');
+    const statsCollapseBtn = document.getElementById('stats-collapse-btn');
+    const logoutBtn = document.getElementById('logout-btn');
+    
+    if (addSongForm) addSongForm.addEventListener('submit', addSong);
+    if (skipBtn) skipBtn.addEventListener('click', skipSong);
+    if (playPauseBtn) playPauseBtn.addEventListener('click', togglePause);
+    if (shuffleBtn) shuffleBtn.addEventListener('click', toggleShuffle);
+    if (repeatBtn) repeatBtn.addEventListener('click', toggleRepeat);
+    if (addVipForm) addVipForm.addEventListener('submit', addVip);
+    if (fullscreenBtn) fullscreenBtn.addEventListener('click', openFullscreenWindow);
+    if (newSessionBtn) newSessionBtn.addEventListener('click', startNewSession);
+    if (prefetchBtn) prefetchBtn.addEventListener('click', prefetchAll);
+    if (statsCollapseBtn) statsCollapseBtn.addEventListener('click', toggleStatsCollapse);
+    if (logoutBtn) logoutBtn.addEventListener('click', logout);
+}
+
+// Wait for components to load, or set up immediately if already loaded
+if (document.readyState === 'loading') {
+    window.addEventListener('componentsLoaded', setupEventListeners);
+} else {
+    // Components might already be loaded, try to set up listeners
+    // If elements don't exist, wait for componentsLoaded event
+    if (document.getElementById('logout-btn')) {
+        setupEventListeners();
+    } else {
+        window.addEventListener('componentsLoaded', setupEventListeners);
+    }
+}
 
 // Spacebar keyboard shortcut for play/pause
 document.addEventListener('keydown', (e) => {

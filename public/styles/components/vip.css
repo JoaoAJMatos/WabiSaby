@@ -1,0 +1,1494 @@
+/* ========================================
+   VIP Section - New Design
+   ======================================== */
+
+.vip-section-new {
+    padding: 0 !important;
+    overflow: hidden;
+    position: relative;
+    background: var(--glass-bg);
+    backdrop-filter: blur(20px) saturate(1.5);
+    -webkit-backdrop-filter: blur(20px) saturate(1.5);
+    border: 1px solid var(--glass-border);
+}
+
+.vip-section-new::before {
+    content: '';
+    position: absolute;
+    inset: 0;
+    border-radius: inherit;
+    background: linear-gradient(135deg, var(--glass-highlight) 0%, transparent 40%);
+    pointer-events: none;
+}
+
+/* Unlock Overlay - New Design */
+.vip-unlock-overlay-new {
+    position: absolute;
+    inset: 0;
+    z-index: 50;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background: var(--glass-bg);
+    backdrop-filter: blur(20px) saturate(1.5);
+    -webkit-backdrop-filter: blur(20px) saturate(1.5);
+    transition: all 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.vip-unlock-overlay-new.hidden {
+    opacity: 0;
+    visibility: hidden;
+    pointer-events: none;
+}
+
+.vip-unlock-card {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 24px;
+    padding: 40px 48px;
+    max-width: 440px;
+    width: 100%;
+}
+
+.vip-unlock-header {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 16px;
+    text-align: center;
+}
+
+.vip-unlock-icon-new {
+    width: 56px;
+    height: 56px;
+    border-radius: 16px;
+    background: linear-gradient(135deg, rgba(167, 139, 250, 0.2) 0%, rgba(139, 92, 246, 0.1) 100%);
+    border: 1px solid rgba(167, 139, 250, 0.3);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    flex-shrink: 0;
+}
+
+.vip-unlock-icon-new i {
+    font-size: 1.4rem;
+    color: var(--secondary);
+}
+
+.vip-unlock-text h3 {
+    font-size: 1.2rem;
+    font-weight: 600;
+    color: var(--text-main);
+    margin: 0 0 4px 0;
+}
+
+.vip-unlock-text p {
+    font-size: 0.85rem;
+    color: var(--text-muted);
+    margin: 0;
+}
+
+.vip-unlock-form {
+    display: flex;
+    flex-direction: column;
+    gap: 16px;
+    width: 100%;
+}
+
+.vip-password-input-wrapper {
+    flex: 1;
+    display: flex;
+    align-items: center;
+    background: rgba(0, 0, 0, 0.5);
+    border: 1px solid rgba(167, 139, 250, 0.2);
+    border-radius: 12px;
+    padding: 0 16px;
+    transition: all 0.3s ease;
+}
+
+.vip-password-input-wrapper:focus-within {
+    border-color: var(--secondary);
+    background: rgba(0, 0, 0, 0.6);
+    box-shadow: 0 0 0 3px rgba(167, 139, 250, 0.2);
+}
+
+.vip-password-input-wrapper>i {
+    color: var(--text-muted);
+    font-size: 0.9rem;
+    margin-right: 12px;
+}
+
+.vip-password-input-wrapper input {
+    flex: 1;
+    background: transparent;
+    border: none;
+    padding: 16px 0;
+    font-size: 0.95rem;
+    color: var(--text-main);
+}
+
+.vip-password-input-wrapper input:focus {
+    outline: none;
+}
+
+.vip-password-toggle {
+    background: none;
+    border: none;
+    color: var(--text-muted);
+    cursor: pointer;
+    padding: 4px;
+    transition: color 0.2s;
+}
+
+.vip-password-toggle:hover {
+    color: var(--secondary);
+}
+
+.vip-unlock-btn {
+    width: 100%;
+    padding: 14px 24px;
+    border-radius: 12px;
+    border: none;
+    background: linear-gradient(135deg, var(--secondary) 0%, #8b5cf6 100%);
+    color: white;
+    font-size: 0.95rem;
+    font-weight: 600;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
+    transition: all 0.3s ease;
+    position: relative;
+    overflow: hidden;
+}
+
+.vip-unlock-btn::before {
+    content: '';
+    position: absolute;
+    inset: 0;
+    background: linear-gradient(135deg, rgba(255, 255, 255, 0.2) 0%, transparent 50%);
+    opacity: 0;
+    transition: opacity 0.3s ease;
+}
+
+.vip-unlock-btn:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 8px 24px -4px rgba(167, 139, 250, 0.5), 0 4px 12px -2px rgba(139, 92, 246, 0.3);
+}
+
+.vip-unlock-btn:hover::before {
+    opacity: 1;
+}
+
+.vip-unlock-btn:active {
+    transform: translateY(0);
+}
+
+/* VIP Setup Modal - Onboarding */
+.vip-setup-modal {
+    position: fixed;
+    inset: 0;
+    z-index: 9999;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background: rgba(0, 0, 0, 0.8);
+    backdrop-filter: blur(10px);
+    -webkit-backdrop-filter: blur(10px);
+    animation: fadeIn 0.3s ease;
+}
+
+@keyframes fadeIn {
+    from {
+        opacity: 0;
+    }
+    to {
+        opacity: 1;
+    }
+}
+
+.vip-setup-card {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 24px;
+    padding: 40px 48px;
+    max-width: 440px;
+    width: 90%;
+    background: var(--glass-bg);
+    backdrop-filter: blur(20px) saturate(1.5);
+    -webkit-backdrop-filter: blur(20px) saturate(1.5);
+    border: 1px solid var(--glass-border);
+    border-radius: 20px;
+    box-shadow: 0 20px 60px -12px rgba(0, 0, 0, 0.5);
+    animation: slideUp 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+@keyframes slideUp {
+    from {
+        transform: translateY(20px);
+        opacity: 0;
+    }
+    to {
+        transform: translateY(0);
+        opacity: 1;
+    }
+}
+
+.vip-setup-header {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 16px;
+    text-align: center;
+}
+
+.vip-setup-icon {
+    width: 56px;
+    height: 56px;
+    border-radius: 16px;
+    background: linear-gradient(135deg, rgba(167, 139, 250, 0.2) 0%, rgba(139, 92, 246, 0.1) 100%);
+    border: 1px solid rgba(167, 139, 250, 0.3);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    flex-shrink: 0;
+}
+
+.vip-setup-icon i {
+    font-size: 1.4rem;
+    color: var(--secondary);
+}
+
+.vip-setup-text h3 {
+    font-size: 1.2rem;
+    font-weight: 600;
+    color: var(--text-main);
+    margin: 0 0 4px 0;
+}
+
+.vip-setup-text p {
+    font-size: 0.85rem;
+    color: var(--text-muted);
+    margin: 0;
+}
+
+.vip-setup-form {
+    display: flex;
+    flex-direction: column;
+    gap: 16px;
+    width: 100%;
+}
+
+.vip-setup-btn {
+    width: 100%;
+    padding: 14px 24px;
+    border-radius: 12px;
+    border: none;
+    background: linear-gradient(135deg, var(--secondary) 0%, #8b5cf6 100%);
+    color: white;
+    font-size: 0.95rem;
+    font-weight: 600;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
+    transition: all 0.3s ease;
+    position: relative;
+    overflow: hidden;
+    margin-top: 8px;
+}
+
+.vip-setup-btn::before {
+    content: '';
+    position: absolute;
+    inset: 0;
+    background: linear-gradient(135deg, rgba(255, 255, 255, 0.2) 0%, transparent 50%);
+    opacity: 0;
+    transition: opacity 0.3s ease;
+}
+
+.vip-setup-btn:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 8px 24px -4px rgba(167, 139, 250, 0.5), 0 4px 12px -2px rgba(139, 92, 246, 0.3);
+}
+
+.vip-setup-btn:hover::before {
+    opacity: 1;
+}
+
+.vip-setup-btn:active {
+    transform: translateY(0);
+}
+
+/* VIP Content - Unlocked State */
+.vip-content-new {
+    padding: 24px;
+    opacity: 0;
+    pointer-events: none;
+    transition: opacity 0.4s ease;
+}
+
+.vip-section-new.unlocked .vip-content-new {
+    opacity: 1;
+    pointer-events: auto;
+}
+
+.vip-section-new.unlocked .vip-unlock-overlay-new {
+    opacity: 0;
+    visibility: hidden;
+    pointer-events: none;
+}
+
+/* Top Bar */
+.vip-top-bar {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 20px;
+    margin-bottom: 20px;
+    padding-bottom: 20px;
+    border-bottom: 1px solid rgba(255, 255, 255, 0.06);
+}
+
+.vip-title-section {
+    display: flex;
+    align-items: center;
+    gap: 14px;
+}
+
+.vip-icon-badge {
+    width: 44px;
+    height: 44px;
+    border-radius: 12px;
+    background: linear-gradient(135deg, rgba(167, 139, 250, 0.2) 0%, rgba(139, 92, 246, 0.1) 100%);
+    border: 1px solid rgba(167, 139, 250, 0.25);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.vip-icon-badge i {
+    font-size: 1.1rem;
+    color: var(--secondary);
+}
+
+.vip-title-text h2 {
+    font-size: 1.1rem;
+    font-weight: 600;
+    color: var(--text-main);
+    margin: 0;
+}
+
+.vip-subtitle {
+    font-size: 0.8rem;
+    color: var(--text-muted);
+}
+
+.vip-actions {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+}
+
+.vip-mode-toggle {
+    display: flex;
+    background: rgba(0, 0, 0, 0.3);
+    border-radius: 10px;
+    padding: 4px;
+}
+
+.vip-mode-btn {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    padding: 8px 14px;
+    border: none;
+    background: transparent;
+    color: var(--text-muted);
+    font-size: 0.8rem;
+    font-weight: 500;
+    cursor: pointer;
+    border-radius: 8px;
+    transition: all 0.25s ease;
+}
+
+.vip-mode-btn:hover {
+    color: var(--text-secondary);
+}
+
+.vip-mode-btn.active {
+    background: var(--secondary);
+    color: white;
+}
+
+.vip-mode-btn i {
+    font-size: 0.85rem;
+}
+
+.vip-lock-btn-new {
+    width: 40px;
+    height: 40px;
+    border-radius: 10px;
+    border: 1px solid rgba(239, 68, 68, 0.2);
+    background: rgba(239, 68, 68, 0.1);
+    color: var(--error);
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transition: all 0.25s ease;
+}
+
+.vip-lock-btn-new:hover {
+    background: rgba(239, 68, 68, 0.2);
+    border-color: rgba(239, 68, 68, 0.4);
+}
+
+/* VIP Grid Layout */
+.vip-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 20px;
+}
+
+.vip-add-panel,
+.vip-list-panel {
+    background: rgba(0, 0, 0, 0.2);
+    border-radius: 14px;
+    border: 1px solid rgba(255, 255, 255, 0.05);
+    overflow: hidden;
+}
+
+.vip-panel-header {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    padding: 14px 18px;
+    background: rgba(255, 255, 255, 0.02);
+    border-bottom: 1px solid rgba(255, 255, 255, 0.05);
+    font-size: 0.85rem;
+    font-weight: 500;
+    color: var(--text-secondary);
+}
+
+.vip-panel-header i {
+    color: var(--secondary);
+    font-size: 0.9rem;
+}
+
+.vip-count-badge {
+    margin-left: auto;
+    background: var(--secondary);
+    color: white;
+    padding: 2px 8px;
+    border-radius: 10px;
+    font-size: 0.75rem;
+    font-weight: 600;
+}
+
+/* Selector Container */
+.vip-selector-container {
+    padding: 14px;
+}
+
+.vip-search-box {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    background: rgba(0, 0, 0, 0.3);
+    border: 1px solid rgba(255, 255, 255, 0.08);
+    border-radius: 10px;
+    padding: 10px 14px;
+    margin-bottom: 12px;
+    transition: all 0.25s ease;
+}
+
+.vip-search-box:focus-within {
+    border-color: var(--secondary);
+    box-shadow: 0 0 0 3px rgba(167, 139, 250, 0.1);
+}
+
+.vip-search-box i {
+    color: var(--text-muted);
+    font-size: 0.85rem;
+}
+
+.vip-search-box input {
+    flex: 1;
+    background: transparent;
+    border: none;
+    font-size: 0.9rem;
+    color: var(--text-main);
+}
+
+.vip-search-box input:focus {
+    outline: none;
+}
+
+.vip-members-list {
+    max-height: 240px;
+    overflow-y: auto;
+    border-radius: 10px;
+    background: rgba(0, 0, 0, 0.15);
+}
+
+.vip-members-list::-webkit-scrollbar {
+    width: 5px;
+}
+
+.vip-members-list::-webkit-scrollbar-thumb {
+    background: rgba(255, 255, 255, 0.1);
+    border-radius: 3px;
+}
+
+.vip-loading {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 10px;
+    padding: 32px;
+    color: var(--text-muted);
+    font-size: 0.85rem;
+}
+
+/* Manual Input Form */
+.vip-manual-form {
+    display: flex;
+    gap: 10px;
+    padding: 14px;
+}
+
+.vip-manual-form.hidden {
+    display: none;
+}
+
+.vip-manual-input-wrapper {
+    flex: 1;
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    background: rgba(0, 0, 0, 0.3);
+    border: 1px solid rgba(255, 255, 255, 0.08);
+    border-radius: 10px;
+    padding: 10px 14px;
+    transition: all 0.25s ease;
+}
+
+.vip-manual-input-wrapper:focus-within {
+    border-color: var(--secondary);
+}
+
+.vip-manual-input-wrapper i {
+    color: var(--text-muted);
+    font-size: 0.85rem;
+}
+
+.vip-manual-input-wrapper input {
+    flex: 1;
+    background: transparent;
+    border: none;
+    font-size: 0.85rem;
+    font-family: var(--font-mono);
+    color: var(--text-main);
+}
+
+.vip-manual-input-wrapper input:focus {
+    outline: none;
+}
+
+.vip-add-btn {
+    width: 44px;
+    height: 44px;
+    border-radius: 10px;
+    border: none;
+    background: var(--secondary);
+    color: white;
+    font-size: 1rem;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transition: all 0.25s ease;
+    flex-shrink: 0;
+}
+
+.vip-add-btn:hover {
+    transform: scale(1.05);
+    box-shadow: 0 4px 16px -4px rgba(167, 139, 250, 0.4);
+}
+
+/* VIP Users List */
+.vip-users-list {
+    list-style: none;
+    padding: 10px;
+    margin: 0;
+    max-height: 300px;
+    overflow-y: auto;
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+}
+
+.vip-users-list::-webkit-scrollbar {
+    width: 5px;
+}
+
+.vip-users-list::-webkit-scrollbar-thumb {
+    background: rgba(255, 255, 255, 0.1);
+    border-radius: 3px;
+}
+
+.vip-user-card {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    padding: 10px 12px;
+    background: linear-gradient(135deg, rgba(167, 139, 250, 0.1) 0%, rgba(139, 92, 246, 0.05) 100%);
+    border: 1px solid rgba(167, 139, 250, 0.15);
+    border-radius: 10px;
+    transition: all 0.25s ease;
+}
+
+.vip-user-card:hover {
+    border-color: rgba(167, 139, 250, 0.3);
+    background: linear-gradient(135deg, rgba(167, 139, 250, 0.15) 0%, rgba(139, 92, 246, 0.08) 100%);
+}
+
+.vip-user-avatar {
+    width: 36px;
+    height: 36px;
+    border-radius: 10px;
+    background: rgba(167, 139, 250, 0.2);
+    border: 1px solid rgba(167, 139, 250, 0.3);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    overflow: hidden;
+    flex-shrink: 0;
+}
+
+.vip-user-avatar img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+}
+
+.vip-user-avatar i {
+    font-size: 1rem;
+    color: var(--secondary);
+    opacity: 0.7;
+}
+
+.vip-user-info {
+    flex: 1;
+    min-width: 0;
+}
+
+.vip-user-name {
+    font-size: 0.9rem;
+    font-weight: 500;
+    color: var(--text-main);
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+
+.vip-user-id {
+    font-size: 0.7rem;
+    font-family: var(--font-mono);
+    color: var(--text-muted);
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+
+.vip-user-remove {
+    width: 28px;
+    height: 28px;
+    border-radius: 8px;
+    border: none;
+    background: rgba(239, 68, 68, 0.1);
+    color: var(--error);
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    opacity: 0;
+    transition: all 0.2s ease;
+    flex-shrink: 0;
+}
+
+.vip-user-card:hover .vip-user-remove {
+    opacity: 1;
+}
+
+.vip-user-remove:hover {
+    background: rgba(239, 68, 68, 0.2);
+    transform: scale(1.1);
+}
+
+.vip-user-remove i {
+    font-size: 0.7rem;
+}
+
+/* Empty VIP List */
+.vip-empty-state {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    padding: 40px 20px;
+    color: var(--text-muted);
+    text-align: center;
+}
+
+.vip-empty-state i {
+    font-size: 2rem;
+    margin-bottom: 12px;
+    opacity: 0.3;
+}
+
+.vip-empty-state p {
+    font-size: 0.85rem;
+    margin: 0;
+}
+
+/* Member Card in Search List */
+.vip-member-item {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    padding: 10px 12px;
+    border-bottom: 1px solid rgba(255, 255, 255, 0.04);
+    transition: all 0.2s ease;
+    cursor: pointer;
+}
+
+.vip-member-item:last-child {
+    border-bottom: none;
+}
+
+.vip-member-item:hover {
+    background: rgba(255, 255, 255, 0.03);
+}
+
+.vip-member-item.is-vip {
+    background: rgba(167, 139, 250, 0.08);
+}
+
+.vip-member-avatar {
+    width: 36px;
+    height: 36px;
+    border-radius: 50%;
+    background: rgba(255, 255, 255, 0.05);
+    border: 1px solid rgba(255, 255, 255, 0.08);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    overflow: hidden;
+    flex-shrink: 0;
+}
+
+.vip-member-avatar img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+}
+
+.vip-member-avatar i {
+    font-size: 1rem;
+    color: var(--text-muted);
+}
+
+.vip-member-info {
+    flex: 1;
+    min-width: 0;
+}
+
+.vip-member-name {
+    font-size: 0.9rem;
+    font-weight: 500;
+    color: var(--text-main);
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+
+.vip-member-group-badge {
+    font-size: 0.75rem;
+    color: var(--text-muted);
+    background: rgba(255, 255, 255, 0.05);
+    border: 1px solid rgba(255, 255, 255, 0.08);
+    border-radius: 12px;
+    padding: 2px 8px;
+    margin-top: 4px;
+    display: inline-block;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    max-width: 100%;
+}
+
+.vip-member-add-btn {
+    width: 32px;
+    height: 32px;
+    border-radius: 50%;
+    border: none;
+    background: var(--secondary);
+    color: white;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transition: all 0.25s ease;
+    flex-shrink: 0;
+}
+
+.vip-member-add-btn:hover {
+    transform: scale(1.1);
+}
+
+.vip-member-add-btn.added {
+    background: var(--success);
+}
+
+.vip-member-add-btn i {
+    font-size: 0.8rem;
+}
+
+/* Mobile Responsive */
+@media (max-width: 768px) {
+    .vip-grid {
+        grid-template-columns: 1fr;
+    }
+
+    .vip-top-bar {
+        flex-direction: column;
+        align-items: flex-start;
+        gap: 14px;
+    }
+
+    .vip-actions {
+        width: 100%;
+        justify-content: space-between;
+    }
+
+    .vip-unlock-card {
+        padding: 24px 20px;
+    }
+
+    .vip-unlock-header {
+        flex-direction: column;
+        text-align: center;
+    }
+
+    .vip-mode-btn span {
+        display: none;
+    }
+}
+
+/* Legacy styles - kept for compatibility */
+.tag-list {
+    display: none;
+}
+
+.subtitle {
+    color: var(--text-secondary);
+    margin-bottom: 16px;
+    font-size: 0.9rem;
+}
+
+.inline-form {
+    display: flex;
+    gap: 12px;
+}
+
+.hidden {
+    display: none !important;
+}
+
+/* Auth section styles - used on auth.html page */
+/* Note: No special hiding rules needed since auth section is on separate page */
+
+/* ========================================
+   VIP Password Protection
+   ======================================== */
+.vip-section {
+    position: relative;
+    overflow: hidden;
+}
+
+.vip-section .card-header {
+    justify-content: space-between;
+    z-index: 10;
+    position: relative;
+}
+
+.vip-lock-indicator {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    padding: 6px 14px;
+    background: rgba(239, 68, 68, 0.15);
+    border: 1px solid rgba(239, 68, 68, 0.3);
+    border-radius: 100px;
+    font-size: 0.75rem;
+    font-weight: 600;
+    color: #f87171;
+    transition: all 0.3s ease;
+}
+
+.vip-lock-indicator i {
+    font-size: 0.7rem;
+}
+
+.vip-lock-indicator.unlocked {
+    background: rgba(52, 211, 153, 0.15);
+    border-color: rgba(52, 211, 153, 0.3);
+    color: var(--primary);
+}
+
+.vip-lock-indicator.unlocked i::before {
+    content: "\f3c1";
+    /* fa-unlock */
+}
+
+/* VIP Header Actions */
+.vip-header-actions {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+}
+
+/* VIP Lock Button */
+.vip-lock-btn {
+    display: none;
+    align-items: center;
+    gap: 6px;
+    padding: 8px 14px;
+    background: rgba(239, 68, 68, 0.15);
+    border: 1px solid rgba(239, 68, 68, 0.3);
+    border-radius: var(--card-radius-xs);
+    color: var(--error);
+    font-size: 0.8rem;
+    font-weight: 500;
+    cursor: pointer;
+    transition: all 0.25s ease;
+}
+
+.vip-lock-btn:hover {
+    background: rgba(239, 68, 68, 0.25);
+    border-color: rgba(239, 68, 68, 0.5);
+    transform: translateY(-1px);
+}
+
+.vip-lock-btn i {
+    font-size: 0.75rem;
+}
+
+/* Show lock button when VIP is unlocked */
+.vip-section.unlocked .vip-lock-btn {
+    display: flex;
+}
+
+/* Hide lock indicator when VIP is unlocked */
+.vip-section.unlocked .vip-lock-indicator {
+    display: none;
+}
+
+.vip-content-wrapper {
+    position: relative;
+    filter: blur(8px);
+    pointer-events: none;
+    user-select: none;
+    transition: filter 0.4s ease, opacity 0.4s ease;
+    opacity: 0.5;
+}
+
+.vip-content-wrapper.unlocked {
+    filter: none;
+    pointer-events: auto;
+    user-select: auto;
+    opacity: 1;
+}
+
+.vip-unlock-overlay {
+    position: absolute;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    top: 65px;
+    /* Start below the card header */
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    z-index: 5;
+    background: var(--glass-bg);
+    backdrop-filter: blur(20px) saturate(1.5);
+    -webkit-backdrop-filter: blur(20px) saturate(1.5);
+    transition: opacity 0.4s ease, visibility 0.4s ease;
+    overflow: hidden;
+    /* Prevent internal scrollbar */
+    padding: 20px;
+}
+
+.vip-unlock-overlay.hidden {
+    opacity: 0;
+    visibility: hidden;
+    pointer-events: none;
+}
+
+.vip-unlock-container {
+    text-align: center;
+    padding: 24px 28px;
+    max-width: 340px;
+    width: 100%;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 16px;
+}
+
+.vip-unlock-icon {
+    width: 56px;
+    height: 56px;
+    margin: 0;
+    background: linear-gradient(135deg, rgba(167, 139, 250, 0.25) 0%, rgba(139, 92, 246, 0.15) 100%);
+    border: 2px solid rgba(167, 139, 250, 0.4);
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    animation: pulse-glow 2s ease-in-out infinite;
+    flex-shrink: 0;
+}
+
+.vip-unlock-icon i {
+    font-size: 1.5rem;
+    color: var(--secondary);
+}
+
+@keyframes pulse-glow {
+
+    0%,
+    100% {
+        box-shadow: 0 0 16px rgba(167, 139, 250, 0.25), inset 0 0 20px rgba(167, 139, 250, 0.1);
+    }
+
+    50% {
+        box-shadow: 0 0 28px rgba(167, 139, 250, 0.4), inset 0 0 20px rgba(167, 139, 250, 0.15);
+    }
+}
+
+.vip-unlock-container h3 {
+    font-size: 1.25rem;
+    font-weight: 700;
+    margin: 0;
+    background: linear-gradient(135deg, var(--text-main) 0%, var(--secondary) 100%);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    background-clip: text;
+    line-height: 1.3;
+}
+
+.vip-unlock-container>p {
+    color: var(--text-muted);
+    font-size: 0.85rem;
+    margin: 0;
+    line-height: 1.4;
+    opacity: 0.85;
+}
+
+#vip-unlock-form {
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+    width: 100%;
+    margin-top: 4px;
+}
+
+.vip-password-field {
+    position: relative;
+    display: flex;
+    align-items: center;
+}
+
+.vip-password-field input {
+    width: 100%;
+    padding: 12px 44px 12px 16px;
+    background: rgba(0, 0, 0, 0.5);
+    border: 2px solid rgba(167, 139, 250, 0.25);
+    border-radius: var(--card-radius-sm);
+    font-size: 0.95rem;
+    color: var(--text-main);
+    text-align: left;
+    letter-spacing: 1px;
+    transition: all 0.25s ease;
+}
+
+.vip-password-field input:focus {
+    outline: none;
+    border-color: var(--secondary);
+    box-shadow: 0 0 0 3px rgba(167, 139, 250, 0.2);
+    background: rgba(0, 0, 0, 0.6);
+}
+
+.vip-password-field input::placeholder {
+    letter-spacing: 0;
+    color: var(--text-muted);
+    text-align: left;
+}
+
+.vip-password-field .password-toggle {
+    position: absolute;
+    right: 12px;
+    background: none;
+    border: none;
+    color: var(--text-muted);
+    cursor: pointer;
+    padding: 4px;
+    transition: color 0.2s ease;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.vip-password-field .password-toggle:hover {
+    color: var(--secondary);
+}
+
+.vip-password-field .password-toggle i {
+    font-size: 0.9rem;
+}
+
+#vip-unlock-form .cyber-btn {
+    margin-top: 0;
+    width: 100%;
+    padding: 12px 20px;
+    font-size: 0.9rem;
+    justify-content: center;
+    font-weight: 600;
+}
+
+.vip-password-error {
+    color: var(--error);
+    font-size: 0.8rem;
+    min-height: 18px;
+    margin-top: -4px;
+    transition: opacity 0.3s ease;
+    line-height: 1.3;
+}
+
+.vip-password-error:empty {
+    opacity: 0;
+    min-height: 0;
+}
+
+/* Shake animation for wrong password */
+@keyframes shake {
+
+    0%,
+    100% {
+        transform: translateX(0);
+    }
+
+    10%,
+    30%,
+    50%,
+    70%,
+    90% {
+        transform: translateX(-6px);
+    }
+
+    20%,
+    40%,
+    60%,
+    80% {
+        transform: translateX(6px);
+    }
+}
+
+.vip-password-field input.shake {
+    animation: shake 0.5s ease;
+    border-color: var(--error) !important;
+    box-shadow: 0 0 0 4px rgba(239, 68, 68, 0.2) !important;
+}
+
+.vip-header-row {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    flex-wrap: wrap;
+    gap: 12px;
+    margin-bottom: 16px;
+}
+
+.vip-header-row .subtitle {
+    margin-bottom: 0;
+}
+
+/* VIP Input Toggle */
+.vip-input-toggle {
+    display: flex;
+    gap: 6px;
+    background: rgba(0, 0, 0, 0.2);
+    padding: 3px;
+    border-radius: var(--card-radius-xs);
+    width: fit-content;
+    align-items: center;
+}
+
+.toggle-btn {
+    padding: 6px 12px;
+    border: none;
+    background: transparent;
+    color: var(--text-muted);
+    cursor: pointer;
+    border-radius: 6px;
+    font-size: 0.75rem;
+    font-weight: 500;
+    transition: all 0.25s ease;
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    white-space: nowrap;
+}
+
+.toggle-btn:hover {
+    color: var(--text-secondary);
+    background: rgba(255, 255, 255, 0.04);
+}
+
+.toggle-btn.active {
+    background: var(--primary);
+    color: #0a0a0f;
+}
+
+.toggle-btn.active i {
+    color: #0a0a0f;
+}
+
+.toggle-btn i {
+    font-size: 0.75rem;
+}
+
+/* VIP Input Container */
+.vip-input-container {
+    margin-bottom: 20px;
+}
+
+/* Search Container */
+.search-container {
+    position: relative;
+    margin-bottom: 14px;
+}
+
+.search-icon {
+    position: absolute;
+    left: 16px;
+    top: 50%;
+    transform: translateY(-50%);
+    color: var(--text-muted);
+    font-size: 0.9rem;
+}
+
+.search-container input {
+    width: 100%;
+    padding: 12px 16px 12px 44px;
+    background: rgba(0, 0, 0, 0.3);
+    border: 1px solid var(--glass-border);
+    border-radius: var(--card-radius-sm);
+    font-size: 0.9rem;
+    color: var(--text-main);
+    transition: all 0.25s ease;
+}
+
+.search-container input:focus {
+    outline: none;
+    border-color: var(--primary);
+    box-shadow: 0 0 0 3px var(--primary-dim);
+}
+
+/* Members List */
+.members-list {
+    max-height: 380px;
+    overflow-y: auto;
+    border: 1px solid var(--glass-border);
+    border-radius: var(--card-radius-sm);
+    background: rgba(0, 0, 0, 0.2);
+}
+
+.members-list::-webkit-scrollbar {
+    width: 6px;
+}
+
+.members-list::-webkit-scrollbar-track {
+    background: transparent;
+}
+
+.members-list::-webkit-scrollbar-thumb {
+    background: rgba(255, 255, 255, 0.15);
+    border-radius: 3px;
+}
+
+.members-list::-webkit-scrollbar-thumb:hover {
+    background: rgba(255, 255, 255, 0.25);
+}
+
+/* Member Card */
+.member-card {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    padding: 12px 14px;
+    border-bottom: 1px solid var(--glass-border);
+    transition: all 0.2s ease;
+}
+
+.member-card:last-child {
+    border-bottom: none;
+}
+
+.member-card:hover {
+    background: rgba(255, 255, 255, 0.03);
+}
+
+.member-card.is-vip {
+    background: var(--secondary-dim);
+}
+
+.member-avatar-container {
+    position: relative;
+    flex-shrink: 0;
+}
+
+.member-avatar {
+    width: 44px;
+    height: 44px;
+    border-radius: 50%;
+    object-fit: cover;
+    border: 2px solid var(--glass-border);
+}
+
+.member-avatar-fallback {
+    width: 44px;
+    height: 44px;
+    border-radius: 50%;
+    background: rgba(255, 255, 255, 0.05);
+    border: 2px solid var(--glass-border);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 18px;
+    color: var(--text-muted);
+}
+
+.admin-badge {
+    position: absolute;
+    bottom: -2px;
+    right: -2px;
+    width: 18px;
+    height: 18px;
+    background: linear-gradient(135deg, #f59e0b 0%, #d97706 100%);
+    border-radius: 50%;
+    border: 2px solid var(--bg-main);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 9px;
+    color: white;
+}
+
+.member-info {
+    flex: 1;
+    min-width: 0;
+}
+
+.member-name {
+    font-weight: 500;
+    font-size: 0.9rem;
+    color: var(--text-main);
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+
+.member-id {
+    font-size: 0.75rem;
+    color: var(--text-muted);
+    font-family: var(--font-mono);
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+    margin-top: 2px;
+}
+
+.member-add-btn {
+    background: var(--primary);
+    border: none;
+    color: #0a0a0f;
+    width: 34px;
+    height: 34px;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+    transition: all 0.25s ease;
+    flex-shrink: 0;
+}
+
+.member-add-btn:hover:not(:disabled) {
+    transform: scale(1.1);
+    box-shadow: 0 4px 12px -2px var(--primary-glow);
+}
+
+.member-add-btn.is-vip {
+    background: var(--success);
+    cursor: default;
+}
+
+.member-add-btn:disabled {
+    opacity: 0.6;
+    cursor: not-allowed;
+}
+
+.member-add-btn i {
+    font-size: 13px;
+}
+
+/* Loading and Error States */
+.loading-state,
+.error-state {
+    text-align: center;
+    padding: 48px 20px;
+    color: var(--text-muted);
+}
+
+.loading-state i,
+.error-state i {
+    font-size: 2.5rem;
+    margin-bottom: 16px;
+    display: block;
+    opacity: 0.5;
+}
+
+.error-state {
+    color: var(--error);
+}
+
+.error-state p {
+    font-size: 1rem;
+    font-weight: 500;
+    margin-bottom: 8px;
+}
+
+.error-state small {
+    display: block;
+    color: var(--text-muted);
+    font-size: 0.8rem;
+}

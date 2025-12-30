@@ -1,0 +1,25 @@
+            <section id="queue" class="card full-width">
+                <div class="card-header" style="justify-content: space-between;">
+                    <div style="display: flex; align-items: center; gap: 15px;">
+                        <i class="fas fa-list"></i>
+                        <h2 data-i18n="ui.dashboard.queue.title">Up Next</h2>
+                        <span class="badge" id="queue-count">0</span>
+                    </div>
+                    <div class="queue-header-actions">
+                        <button id="prefetch-btn" class="cyber-btn small queue-action-btn"
+                            title="Download all songs in queue" data-i18n-title="ui.dashboard.queue.prefetchAll">
+                            <i class="fas fa-download"></i> <span data-i18n="ui.dashboard.queue.prefetchAll">PREFETCH
+                                ALL</span>
+                        </button>
+                        <button id="add-song-btn" class="cyber-btn primary small add-track-btn queue-action-btn"
+                            title="Add a track" data-i18n-title="ui.dashboard.queue.addTrack">
+                            <i class="fas fa-plus"></i> <span data-i18n="ui.dashboard.queue.addTrack">ADD TRACK</span>
+                        </button>
+                    </div>
+                </div>
+                <div class="queue-container">
+                    <ul id="queue-list">
+                        <!-- Queue items populated here -->
+                    </ul>
+                </div>
+            </section>

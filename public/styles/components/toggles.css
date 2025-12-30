@@ -1,0 +1,118 @@
+/* ========================================
+   Legacy Toggle Switch (kept for VIP section)
+   ======================================== */
+
+.toggle-switch {
+    position: relative;
+    display: inline-block;
+    width: 54px;
+    height: 30px;
+    flex-shrink: 0;
+}
+
+.toggle-switch input {
+    opacity: 0;
+    width: 0;
+    height: 0;
+}
+
+.toggle-slider {
+    position: absolute;
+    cursor: pointer;
+    inset: 0;
+    background: linear-gradient(145deg, #2a2a3a, #1e1e2a);
+    border: 2px solid rgba(100, 116, 139, 0.4);
+    border-radius: 30px;
+    transition: all 0.35s cubic-bezier(0.4, 0, 0.2, 1);
+    box-shadow: inset 0 2px 4px rgba(0, 0, 0, 0.3);
+}
+
+.toggle-slider:before {
+    position: absolute;
+    content: "";
+    height: 22px;
+    width: 22px;
+    left: 2px;
+    bottom: 2px;
+    background: linear-gradient(145deg, #6b7280, #4b5563);
+    border-radius: 50%;
+    transition: all 0.35s cubic-bezier(0.4, 0, 0.2, 1);
+    box-shadow: 0 2px 6px rgba(0, 0, 0, 0.35);
+}
+
+.toggle-switch input:checked+.toggle-slider {
+    background: linear-gradient(145deg, #22c55e, #16a34a);
+    border-color: #34d369;
+}
+
+.toggle-switch input:checked+.toggle-slider:before {
+    transform: translateX(24px);
+    background: linear-gradient(145deg, #ffffff, #e5e7eb);
+}
+
+/* Settings Row Save States (V2) */
+.setting-row.saving {
+    opacity: 0.6;
+    pointer-events: none;
+}
+
+.setting-row.saved {
+    animation: settingRowSaved 0.8s ease;
+}
+
+@keyframes settingRowSaved {
+
+    0%,
+    40% {
+        background: rgba(34, 197, 94, 0.12);
+        border-color: rgba(34, 197, 94, 0.25);
+    }
+
+    100% {
+        background: rgba(255, 255, 255, 0.02);
+        border-color: rgba(255, 255, 255, 0.04);
+    }
+}
+
+/* Responsive Generic Modal & Navbar */
+@media (max-width: 768px) {
+    .modal-overlay:not(.settings-modal-overlay) {
+        padding: 16px;
+    }
+
+    .glass-modal:not(.settings-modal-content) {
+        max-height: 90vh;
+        border-radius: 20px;
+    }
+
+    .modal-header {
+        padding: 16px 20px;
+    }
+
+    .modal-title i {
+        width: 36px;
+        height: 36px;
+    }
+
+    .modal-body {
+        padding: 16px;
+    }
+
+    .modal-footer {
+        padding: 14px 16px;
+    }
+
+    .navbar-icon-btn {
+        width: 38px;
+        height: 38px;
+    }
+
+    .burger-menu-item {
+        height: 38px;
+    }
+
+    .burger-menu-wrapper.menu-open .burger-menu-item {
+        width: 38px;
+        height: 38px;
+    }
+}
