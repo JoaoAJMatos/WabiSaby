@@ -1,0 +1,56 @@
+/* ========================================
+   WabiSaby - CSS Custom Properties
+   ======================================== */
+
+:root {
+    /* Core Colors - Sophisticated Neutral with Accent */
+    --bg-main: #0a0a0f;
+    --bg-panel: rgba(18, 18, 24, 0.85);
+    --bg-card: rgba(22, 22, 30, 0.75);
+    --bg-elevated: rgba(30, 30, 42, 0.9);
+
+    /* Glass Effect */
+    --glass-bg: rgba(18, 18, 28, 0.65);
+    --glass-border: rgba(255, 255, 255, 0.08);
+    --glass-border-hover: rgba(255, 255, 255, 0.15);
+    --glass-highlight: rgba(255, 255, 255, 0.03);
+
+    /* Accent Colors - Refined Emerald */
+    --primary: #34d399;
+    --primary-dim: rgba(52, 211, 153, 0.15);
+    --primary-glow: rgba(52, 211, 153, 0.25);
+    --secondary: #a78bfa;
+    --secondary-dim: rgba(167, 139, 250, 0.15);
+
+    /* Status Colors */
+    --success: #22c55e;
+    --warning: #f59e0b;
+    --error: #ef4444;
+
+    /* Text */
+    --text-main: #f1f5f9;
+    --text-secondary: #94a3b8;
+    --text-muted: #64748b;
+
+    /* Typography */
+    --font-main: 'Outfit', -apple-system, BlinkMacSystemFont, sans-serif;
+    --font-mono: 'JetBrains Mono', 'SF Mono', Consolas, monospace;
+
+    /* Spacing & Shape */
+    --card-radius: 20px;
+    --card-radius-sm: 12px;
+    --card-radius-xs: 8px;
+
+    /* Shadows */
+    --shadow-card: 0 4px 24px -4px rgba(0, 0, 0, 0.4),
+        0 8px 48px -8px rgba(0, 0, 0, 0.3);
+    --shadow-elevated: 0 8px 32px -4px rgba(0, 0, 0, 0.5),
+        0 16px 64px -8px rgba(0, 0, 0, 0.4);
+    --shadow-glow: 0 0 40px -10px var(--primary);
+
+    /* Wabi-Sabi Scrollbar Colors - Organic, Muted, Natural */
+    --scrollbar-width: 8px;
+    --scrollbar-track: rgba(18, 18, 24, 0.3);
+    --scrollbar-border: rgba(255, 255, 255, 0.03);
+}
+

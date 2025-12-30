@@ -1,0 +1,315 @@
+/* ========================================
+   Authentication Section
+   ======================================== */
+
+.auth-content-horizontal {
+    display: flex;
+    gap: 0;
+    align-items: flex-start;
+    padding: 40px;
+}
+
+.auth-qr-column {
+    flex: 0 0 auto;
+    display: flex;
+    justify-content: center;
+    align-items: flex-start;
+    padding-right: 40px;
+}
+
+.auth-separator {
+    width: 1px;
+    background: linear-gradient(180deg,
+            transparent 0%,
+            rgba(255, 255, 255, 0.1) 20%,
+            rgba(255, 255, 255, 0.15) 50%,
+            rgba(255, 255, 255, 0.1) 80%,
+            transparent 100%);
+    flex: 0 0 auto;
+    align-self: stretch;
+    margin: 0 40px;
+    min-height: 280px;
+}
+
+.auth-qr-wrapper {
+    position: relative;
+    padding: 12px;
+    background: linear-gradient(135deg,
+            var(--primary-dim) 0%,
+            var(--secondary-dim) 100%);
+    border-radius: var(--card-radius);
+    border: 1px solid var(--glass-border);
+    box-shadow: var(--shadow-card);
+    overflow: hidden;
+    transition: all 0.3s ease;
+    backdrop-filter: blur(12px) saturate(1.8);
+    -webkit-backdrop-filter: blur(12px) saturate(1.8);
+}
+
+.auth-qr-wrapper:hover {
+    border-color: var(--glass-border-hover);
+    box-shadow: var(--shadow-elevated);
+}
+
+/* Subtle texture overlay */
+.auth-qr-wrapper::before {
+    content: '';
+    position: absolute;
+    inset: 0;
+    background-image:
+        radial-gradient(circle at 20% 30%, var(--primary-glow) 0%, transparent 50%),
+        radial-gradient(circle at 80% 70%, var(--secondary-dim) 0%, transparent 50%);
+    pointer-events: none;
+    z-index: 1;
+    border-radius: var(--card-radius);
+}
+
+#qr-container {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    padding: 24px;
+    background: #ffffff;
+    width: fit-content;
+    border-radius: var(--card-radius-sm);
+    box-shadow:
+        0 8px 32px rgba(0, 0, 0, 0.2),
+        inset 0 1px 0 rgba(255, 255, 255, 0.9);
+    min-width: 320px;
+    min-height: 320px;
+    position: relative;
+    overflow: hidden;
+    border: 1px solid var(--glass-border);
+}
+
+#qr-container::before {
+    content: '';
+    position: absolute;
+    inset: -3px;
+    background: linear-gradient(135deg, var(--secondary), var(--secondary-dim));
+    border-radius: var(--card-radius-sm);
+    opacity: 0;
+    transition: opacity 0.4s ease;
+    z-index: -1;
+    filter: blur(8px);
+}
+
+#qr-container:hover::before {
+    opacity: 0.3;
+}
+
+/* Styled QR code */
+#qr-container canvas,
+#qr-container img {
+    border-radius: 8px;
+    image-rendering: -webkit-optimize-contrast;
+    image-rendering: crisp-edges;
+}
+
+.qr-code-styled {
+    border-radius: 8px;
+}
+
+.qr-placeholder {
+    color: var(--text-muted);
+    font-family: var(--font-main);
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 16px;
+    font-size: 0.95rem;
+    text-align: center;
+}
+
+.qr-placeholder i {
+    font-size: 2.5rem;
+    color: var(--primary);
+    animation: spin 1s linear infinite;
+}
+
+.qr-placeholder span {
+    color: var(--text-secondary);
+    font-weight: 500;
+}
+
+.auth-instructions-column {
+    flex: 1 1 auto;
+    display: flex;
+    flex-direction: column;
+    gap: 20px;
+    min-width: 0;
+    justify-content: flex-start;
+    padding-left: 40px;
+}
+
+.auth-header-text {
+    margin-bottom: 0;
+}
+
+.auth-header-text h3 {
+    margin: 0 0 4px 0;
+    font-size: 1.5rem;
+    font-weight: 700;
+    color: var(--text-main);
+    background: linear-gradient(135deg, var(--text-main) 0%, var(--text-secondary) 100%);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    background-clip: text;
+}
+
+.auth-header-text p {
+    margin: 0;
+    font-size: 0.9rem;
+    color: var(--text-secondary);
+    line-height: 1.5;
+}
+
+.auth-instructions {
+    margin-top: 0;
+}
+
+.auth-steps {
+    list-style: none;
+    padding: 0;
+    margin: 0;
+    display: flex;
+    flex-direction: column;
+    gap: 16px;
+}
+
+.auth-steps li {
+    display: flex;
+    align-items: flex-start;
+    gap: 16px;
+    padding: 0;
+    position: relative;
+}
+
+.auth-step-number {
+    flex: 0 0 auto;
+    width: 32px;
+    height: 32px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background: linear-gradient(135deg, rgba(52, 211, 153, 0.2) 0%, rgba(52, 211, 153, 0.1) 100%);
+    border: 1.5px solid rgba(52, 211, 153, 0.4);
+    border-radius: 50%;
+    color: var(--primary);
+    font-size: 0.9rem;
+    font-weight: 700;
+    font-family: var(--font-mono);
+    box-shadow: 0 2px 8px rgba(52, 211, 153, 0.2);
+}
+
+.auth-step-content {
+    flex: 1 1 auto;
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+    padding-top: 0;
+}
+
+.auth-step-content strong {
+    color: var(--text-main);
+    font-size: 1.05rem;
+    font-weight: 600;
+    letter-spacing: -0.01em;
+}
+
+.auth-step-content span {
+    color: var(--text-secondary);
+    font-size: 0.9rem;
+    line-height: 1.5;
+}
+
+.auth-tips {
+    padding: 20px;
+    background: rgba(167, 139, 250, 0.08);
+    border: 1px solid rgba(167, 139, 250, 0.15);
+    border-radius: var(--card-radius-sm);
+}
+
+.auth-tips h4 {
+    margin: 0 0 16px 0;
+    font-size: 1rem;
+    font-weight: 600;
+    color: var(--text-main);
+    display: flex;
+    align-items: center;
+    gap: 8px;
+}
+
+.auth-tips h4 i {
+    color: var(--secondary);
+}
+
+.auth-tips ul {
+    list-style: none;
+    padding: 0;
+    margin: 0;
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+}
+
+.auth-tips ul li {
+    color: var(--text-secondary);
+    font-size: 0.9rem;
+    padding-left: 24px;
+    position: relative;
+    line-height: 1.5;
+}
+
+.auth-tips ul li::before {
+    content: '•';
+    position: absolute;
+    left: 0;
+    color: var(--secondary);
+    font-weight: bold;
+    font-size: 1.2rem;
+}
+
+/* Responsive: Stack vertically on mobile/tablet */
+@media (max-width: 768px) {
+    .auth-content-horizontal {
+        flex-direction: column;
+        gap: 32px;
+        padding: 24px;
+    }
+
+    .auth-qr-column {
+        width: 100%;
+        justify-content: center;
+        padding-right: 0;
+    }
+
+    .auth-separator {
+        display: none;
+    }
+
+    .auth-qr-wrapper {
+        width: 100%;
+        max-width: 320px;
+        margin: 0 auto;
+    }
+
+    #qr-container {
+        width: 100%;
+        max-width: 100%;
+        min-width: auto;
+    }
+
+    .auth-instructions-column {
+        width: 100%;
+        padding-left: 0;
+    }
+
+    .auth-header-text h3 {
+        font-size: 1.5rem;
+    }
+
+    .auth-header-text p {
+        font-size: 0.95rem;
+    }
+}

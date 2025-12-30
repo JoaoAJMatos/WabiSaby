@@ -1,0 +1,555 @@
+/* ========================================
+   Volume Normalization Graph - Redesigned
+   Clean markers with tooltips on hover
+   dB values displayed in dedicated row below
+   ======================================== */
+
+/* Container */
+.volume-normalization-range-container {
+    background: var(--glass-bg);
+    border: 1px solid var(--glass-border);
+    border-radius: var(--card-radius-sm);
+    padding: 24px;
+    margin: 20px 0;
+    backdrop-filter: blur(10px);
+    transition: all 0.3s ease;
+}
+
+.volume-normalization-range-container:hover {
+    border-color: var(--glass-border-hover);
+    background: rgba(18, 18, 28, 0.75);
+}
+
+.volume-normalization-range-container.has-errors {
+    border-color: var(--error);
+    background: rgba(239, 68, 68, 0.05);
+}
+
+.volume-range-header {
+    margin-bottom: 20px;
+}
+
+.volume-range-header label {
+    font-size: 0.85rem;
+    font-weight: 600;
+    color: var(--text-main);
+    text-transform: uppercase;
+    letter-spacing: 0.08em;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+}
+
+.volume-range-header label::before {
+    content: '';
+    width: 3px;
+    height: 14px;
+    background: linear-gradient(135deg, var(--primary), var(--secondary));
+    border-radius: 2px;
+}
+
+/* Visual Range */
+.volume-range-visual {
+    position: relative;
+    width: 100%;
+}
+
+.volume-range-track {
+    position: relative;
+    width: 100%;
+    height: 56px;
+    background: rgba(255, 255, 255, 0.02);
+    border: 1px solid rgba(255, 255, 255, 0.06);
+    border-radius: 10px;
+    overflow: visible;
+    box-shadow: inset 0 2px 8px rgba(0, 0, 0, 0.2);
+}
+
+/* Zones - Refined gradient look */
+.volume-zone {
+    position: absolute;
+    top: 0;
+    height: 100%;
+    transition: all 0.3s ease;
+}
+
+.volume-zone-too-low {
+    left: 0;
+    background: linear-gradient(135deg,
+            rgba(234, 179, 8, 0.18) 0%,
+            rgba(234, 179, 8, 0.08) 100%);
+    border-radius: 10px 0 0 10px;
+}
+
+.volume-zone-ok {
+    background: linear-gradient(135deg,
+            rgba(34, 197, 94, 0.18) 0%,
+            rgba(34, 197, 94, 0.08) 100%);
+}
+
+.volume-zone-too-high {
+    background: linear-gradient(135deg,
+            rgba(239, 68, 68, 0.18) 0%,
+            rgba(239, 68, 68, 0.08) 100%);
+    border-radius: 0 10px 10px 0;
+}
+
+/* Markers - Clean minimal design */
+.volume-marker {
+    position: absolute;
+    top: 0;
+    bottom: 0;
+    width: 0;
+    transform: translateX(-50%);
+    z-index: 10;
+    transition: left 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+/* Marker Line - Subtle vertical indicator */
+.marker-line {
+    position: absolute;
+    top: 0;
+    left: 50%;
+    transform: translateX(-50%);
+    width: 2px;
+    height: 100%;
+    transition: all 0.2s ease;
+}
+
+.volume-marker-too-low .marker-line {
+    background: linear-gradient(180deg,
+            rgba(234, 179, 8, 0.8) 0%,
+            rgba(234, 179, 8, 0.3) 100%);
+}
+
+.volume-marker-too-high .marker-line {
+    background: linear-gradient(180deg,
+            rgba(239, 68, 68, 0.8) 0%,
+            rgba(239, 68, 68, 0.3) 100%);
+}
+
+.volume-marker-target .marker-line {
+    width: 3px;
+    background: linear-gradient(180deg,
+            rgba(59, 130, 246, 0.9) 0%,
+            rgba(59, 130, 246, 0.4) 100%);
+    box-shadow: 0 0 8px rgba(59, 130, 246, 0.4);
+}
+
+.volume-marker-current .marker-line {
+    background: linear-gradient(180deg,
+            rgba(6, 182, 212, 0.9) 0%,
+            rgba(6, 182, 212, 0.3) 100%);
+    animation: current-pulse 2s ease-in-out infinite;
+}
+
+@keyframes current-pulse {
+
+    0%,
+    100% {
+        opacity: 0.7;
+    }
+
+    50% {
+        opacity: 1;
+    }
+}
+
+/* Marker Handle - Draggable circle at bottom */
+.marker-handle {
+    position: absolute;
+    bottom: -8px;
+    left: 50%;
+    transform: translateX(-50%);
+    width: 16px;
+    height: 16px;
+    border-radius: 50%;
+    background: #1a1a2e;
+    border: 2px solid currentColor;
+    transition: all 0.2s ease;
+    cursor: grab;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.3);
+}
+
+.volume-marker-too-low .marker-handle {
+    color: #eab308;
+    border-color: #eab308;
+}
+
+.volume-marker-too-high .marker-handle {
+    color: #ef4444;
+    border-color: #ef4444;
+}
+
+.marker-handle-target {
+    width: 20px;
+    height: 20px;
+    bottom: -10px;
+    color: #3b82f6;
+    border-color: #3b82f6;
+    background: radial-gradient(circle at center, rgba(59, 130, 246, 0.3) 0%, #1a1a2e 70%);
+}
+
+.marker-handle-current {
+    width: 14px;
+    height: 14px;
+    bottom: -7px;
+    color: #06b6d4;
+    border-color: #06b6d4;
+    cursor: default;
+    animation: handle-pulse 2s ease-in-out infinite;
+}
+
+@keyframes handle-pulse {
+
+    0%,
+    100% {
+        box-shadow: 0 0 0 0 rgba(6, 182, 212, 0.4);
+    }
+
+    50% {
+        box-shadow: 0 0 0 6px rgba(6, 182, 212, 0);
+    }
+}
+
+/* Draggable markers interaction */
+.draggable-marker {
+    cursor: grab;
+    touch-action: none;
+    padding: 0 16px;
+    margin: 0 -16px;
+}
+
+.draggable-marker:hover .marker-handle {
+    transform: translateX(-50%) scale(1.2);
+    box-shadow: 0 0 12px rgba(255, 255, 255, 0.2);
+}
+
+.draggable-marker:hover .marker-line {
+    opacity: 1;
+}
+
+.draggable-marker.dragging {
+    cursor: grabbing;
+    z-index: 20;
+}
+
+.draggable-marker.dragging .marker-handle {
+    transform: translateX(-50%) scale(1.3);
+}
+
+/* Marker Tooltip - Appears on hover */
+.marker-tooltip {
+    position: absolute;
+    top: -48px;
+    left: 50%;
+    transform: translateX(-50%) translateY(8px);
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 4px;
+    background: rgba(15, 15, 25, 0.95);
+    padding: 8px 12px;
+    border-radius: 8px;
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    white-space: nowrap;
+    backdrop-filter: blur(12px);
+    opacity: 0;
+    visibility: hidden;
+    transition: all 0.2s ease;
+    pointer-events: none;
+    box-shadow: 0 8px 24px rgba(0, 0, 0, 0.4);
+    z-index: 100;
+}
+
+.marker-tooltip::after {
+    content: '';
+    position: absolute;
+    bottom: -6px;
+    left: 50%;
+    transform: translateX(-50%);
+    border-left: 6px solid transparent;
+    border-right: 6px solid transparent;
+    border-top: 6px solid rgba(15, 15, 25, 0.95);
+}
+
+.draggable-marker:hover .marker-tooltip,
+.draggable-marker.dragging .marker-tooltip,
+.volume-marker-current:hover .marker-tooltip {
+    opacity: 1;
+    visibility: visible;
+    transform: translateX(-50%) translateY(0);
+}
+
+.marker-tooltip i {
+    font-size: 0.7rem;
+}
+
+.tooltip-label {
+    font-size: 0.7rem;
+    font-weight: 500;
+    color: var(--text-secondary);
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+}
+
+.tooltip-value {
+    font-size: 0.85rem;
+    font-weight: 700;
+    font-family: var(--font-mono);
+    color: var(--text-main);
+}
+
+.volume-marker-too-low .tooltip-value {
+    color: #eab308;
+}
+
+.volume-marker-too-high .tooltip-value {
+    color: #ef4444;
+}
+
+.volume-marker-target .tooltip-value {
+    color: #3b82f6;
+}
+
+.volume-marker-current .tooltip-value {
+    color: #06b6d4;
+}
+
+/* Axis - Below the track */
+.volume-range-axis {
+    position: relative;
+    width: 100%;
+    height: 28px;
+    margin-top: 16px;
+    padding: 0;
+}
+
+.volume-axis-tick {
+    position: absolute;
+    top: 0;
+    transform: translateX(-50%);
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+}
+
+.volume-axis-tick::before {
+    content: '';
+    width: 1px;
+    height: 6px;
+    background: rgba(255, 255, 255, 0.15);
+    margin-bottom: 4px;
+}
+
+.volume-axis-tick-label {
+    font-size: 0.65rem;
+    color: var(--text-muted);
+    font-family: var(--font-mono);
+    white-space: nowrap;
+    letter-spacing: -0.02em;
+}
+
+/* Threshold Values Display Row - NEW */
+.volume-threshold-values {
+    display: flex;
+    flex-wrap: wrap;
+    justify-content: center;
+    gap: 8px;
+    margin-top: 16px;
+    padding: 16px;
+    background: rgba(0, 0, 0, 0.2);
+    border-radius: 10px;
+    border: 1px solid rgba(255, 255, 255, 0.04);
+}
+
+.threshold-value-item {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    padding: 8px 14px;
+    background: rgba(255, 255, 255, 0.03);
+    border-radius: 8px;
+    border: 1px solid rgba(255, 255, 255, 0.06);
+    transition: all 0.2s ease;
+}
+
+.threshold-value-item:hover {
+    background: rgba(255, 255, 255, 0.06);
+    border-color: rgba(255, 255, 255, 0.1);
+    transform: translateY(-1px);
+}
+
+.threshold-indicator {
+    width: 10px;
+    height: 10px;
+    border-radius: 50%;
+    flex-shrink: 0;
+    box-shadow: 0 0 8px currentColor;
+}
+
+.threshold-indicator-pulse {
+    animation: indicator-pulse 2s ease-in-out infinite;
+}
+
+@keyframes indicator-pulse {
+
+    0%,
+    100% {
+        opacity: 1;
+        box-shadow: 0 0 8px currentColor;
+    }
+
+    50% {
+        opacity: 0.6;
+        box-shadow: 0 0 12px currentColor;
+    }
+}
+
+.threshold-info {
+    display: flex;
+    flex-direction: column;
+    gap: 2px;
+}
+
+.threshold-label {
+    font-size: 0.7rem;
+    font-weight: 500;
+    color: var(--text-secondary);
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+}
+
+.threshold-db {
+    font-size: 0.95rem;
+    font-weight: 700;
+    font-family: var(--font-mono);
+    color: var(--text-main);
+    letter-spacing: -0.02em;
+}
+
+.threshold-too-low .threshold-db {
+    color: #eab308;
+}
+
+.threshold-target .threshold-db {
+    color: #3b82f6;
+}
+
+.threshold-ok .threshold-db {
+    color: #22c55e;
+}
+
+.threshold-too-high .threshold-db {
+    color: #ef4444;
+}
+
+.threshold-current .threshold-db {
+    color: #06b6d4;
+}
+
+/* Legend - Simplified */
+.volume-range-legend {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 16px;
+    margin-top: 16px;
+    padding-top: 16px;
+    border-top: 1px solid rgba(255, 255, 255, 0.06);
+}
+
+.legend-item {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    font-size: 0.75rem;
+    color: var(--text-muted);
+}
+
+.legend-color {
+    width: 14px;
+    height: 14px;
+    border-radius: 4px;
+    border: 1px solid;
+    flex-shrink: 0;
+}
+
+/* Error Message */
+.range-error-message {
+    margin-top: 12px;
+    padding: 12px 16px;
+    background: rgba(239, 68, 68, 0.1);
+    border: 1px solid rgba(239, 68, 68, 0.3);
+    border-radius: 8px;
+    color: var(--error);
+    font-size: 0.85rem;
+    display: none;
+}
+
+.volume-normalization-range-container.has-errors .range-error-message {
+    display: block;
+}
+
+/* Responsive */
+@media (max-width: 768px) {
+    .volume-normalization-range-container {
+        padding: 16px;
+    }
+
+    .volume-range-track {
+        height: 48px;
+    }
+
+    .marker-handle {
+        width: 14px;
+        height: 14px;
+        bottom: -7px;
+    }
+
+    .marker-handle-target {
+        width: 18px;
+        height: 18px;
+        bottom: -9px;
+    }
+
+    .marker-tooltip {
+        top: -44px;
+        padding: 6px 10px;
+    }
+
+    .tooltip-label {
+        font-size: 0.65rem;
+    }
+
+    .tooltip-value {
+        font-size: 0.8rem;
+    }
+
+    .volume-threshold-values {
+        padding: 12px;
+        gap: 6px;
+    }
+
+    .threshold-value-item {
+        padding: 6px 10px;
+        gap: 8px;
+    }
+
+    .threshold-indicator {
+        width: 8px;
+        height: 8px;
+    }
+
+    .threshold-label {
+        font-size: 0.65rem;
+    }
+
+    .threshold-db {
+        font-size: 0.85rem;
+    }
+
+    .volume-range-legend {
+        flex-direction: column;
+        gap: 10px;
+    }
+}

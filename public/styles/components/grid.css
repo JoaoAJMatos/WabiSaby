@@ -1,0 +1,46 @@
+/* ========================================
+   Grid Layout
+   ======================================== */
+
+.dashboard-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 24px;
+    flex: 1;
+    align-items: start;
+}
+
+.full-width {
+    grid-column: 1 / -1;
+}
+
+@media (max-width: 768px) {
+    body {
+        padding: 16px;
+    }
+
+    header {
+        padding: 14px 20px;
+        top: 12px;
+        margin-bottom: 24px;
+    }
+
+    .dashboard-grid {
+        grid-template-columns: 1fr;
+        gap: 20px;
+    }
+
+    h1 {
+        font-size: 1.3rem;
+    }
+
+    .platform-hints {
+        gap: 8px;
+        margin: -6px 0 10px 0;
+    }
+
+    .hint-item {
+        font-size: 0.7rem;
+        padding: 3px 8px;
+    }
+}

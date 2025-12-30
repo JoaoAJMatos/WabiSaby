@@ -1,0 +1,376 @@
+/* ========================================
+   Header / Navbar
+   ======================================== */
+
+header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 16px 28px;
+    background: var(--glass-bg);
+    backdrop-filter: blur(20px) saturate(1.5);
+    -webkit-backdrop-filter: blur(20px) saturate(1.5);
+    position: sticky;
+    top: 16px;
+    z-index: 100;
+    border-radius: var(--card-radius);
+    margin-bottom: 32px;
+    border: 1px solid var(--glass-border);
+    box-shadow: var(--shadow-card);
+}
+
+header::before {
+    content: '';
+    position: absolute;
+    inset: 0;
+    border-radius: inherit;
+    background: linear-gradient(135deg, var(--glass-highlight) 0%, transparent 50%);
+    pointer-events: none;
+}
+
+.logo-container {
+    display: flex;
+    align-items: center;
+    gap: 14px;
+}
+
+h1 {
+    font-family: var(--font-main);
+    font-size: 1.6rem;
+    margin: 0;
+    font-weight: 700;
+    letter-spacing: -0.02em;
+    color: var(--text-main);
+}
+
+h1 .highlight {
+    background: linear-gradient(135deg, var(--primary) 0%, #6ee7b7 100%);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    background-clip: text;
+}
+
+.pulse-icon {
+    color: var(--primary);
+    animation: pulse-glow 3s infinite ease-in-out;
+}
+
+@keyframes pulse-glow {
+
+    0%,
+    100% {
+        opacity: 0.7;
+        filter: drop-shadow(0 0 4px var(--primary-glow));
+    }
+
+    50% {
+        opacity: 1;
+        filter: drop-shadow(0 0 12px var(--primary-glow));
+    }
+}
+
+/* Navbar Actions */
+.navbar-actions {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+}
+
+/* Burger Menu Wrapper */
+.burger-menu-wrapper {
+    position: relative;
+    display: flex;
+    align-items: center;
+    flex-direction: row-reverse;
+    gap: 0;
+    overflow: visible;
+}
+
+.burger-menu-btn {
+    z-index: 2;
+    position: relative;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    gap: 3px;
+}
+
+.burger-menu-btn:hover {
+    transform: scale(1.05);
+    background: rgba(255, 255, 255, 0.08);
+    border-color: var(--glass-border-hover);
+    color: var(--text-main);
+}
+
+.burger-menu-btn:active {
+    transform: scale(0.95);
+}
+
+/* Burger Menu Hint Indicator */
+.burger-menu-btn.burger-menu-has-hint {
+    position: relative;
+}
+
+.burger-menu-btn.burger-menu-has-hint::after {
+    content: '!';
+    position: absolute;
+    top: -6px;
+    right: -6px;
+    width: 18px;
+    height: 18px;
+    background: var(--warning);
+    border-radius: 50%;
+    border: 2px solid var(--bg-main);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 0.7rem;
+    color: var(--bg-main);
+    font-weight: 900;
+    font-family: var(--font-main);
+    line-height: 1;
+    animation: pulse-hint 2s infinite ease-in-out;
+    z-index: 100;
+    box-shadow: 0 2px 6px rgba(245, 158, 11, 0.4);
+}
+
+/* Hamburger lines - 3 horizontal lines */
+.burger-line {
+    display: block;
+    width: 18px;
+    height: 2px;
+    background-color: currentColor;
+    border-radius: 2px;
+    transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+    transform-origin: center;
+}
+
+/* Hamburger to X morph animation */
+.burger-menu-wrapper.menu-open .burger-line-top {
+    transform: translateY(5px) rotate(45deg);
+}
+
+.burger-menu-wrapper.menu-open .burger-line-middle {
+    opacity: 0;
+    transform: scale(0);
+}
+
+.burger-menu-wrapper.menu-open .burger-line-bottom {
+    transform: translateY(-5px) rotate(-45deg);
+}
+
+.burger-menu-item {
+    width: 0;
+    height: 42px;
+    padding: 0;
+    margin: 0;
+    opacity: 0;
+    overflow: visible;
+    border-width: 0;
+    transform: translateX(20px) scale(0.8);
+    position: relative;
+    transition:
+        width 0.35s cubic-bezier(0.175, 0.885, 0.32, 1.275),
+        padding 0.35s ease,
+        opacity 0.3s ease 0.05s,
+        margin 0.35s ease,
+        transform 0.35s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+    pointer-events: none;
+}
+
+/* Staggered delays for sequential appearance (closest to burger first) */
+.burger-menu-item:nth-child(4) {
+    transition-delay: 0s;
+}
+
+.burger-menu-item:nth-child(3) {
+    transition-delay: 0.05s;
+}
+
+.burger-menu-item:nth-child(2) {
+    transition-delay: 0.1s;
+}
+
+/* Show menu items when menu is open */
+.burger-menu-wrapper.menu-open .burger-menu-item {
+    width: 42px;
+    height: 42px;
+    padding: 0;
+    margin-right: 8px;
+    opacity: 1;
+    border-width: 1px;
+    transform: translateX(0) scale(1);
+    pointer-events: auto;
+}
+
+.navbar-icon-btn {
+    width: 42px;
+    height: 42px;
+    border-radius: 50%;
+    border: 1px solid var(--glass-border);
+    background: rgba(255, 255, 255, 0.04);
+    color: var(--text-secondary);
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transition: all 0.25s ease;
+    position: relative;
+}
+
+.navbar-icon-btn:hover {
+    background: rgba(255, 255, 255, 0.08);
+    border-color: var(--glass-border-hover);
+    color: var(--text-main);
+    transform: scale(1.05);
+}
+
+.navbar-icon-btn:active {
+    transform: scale(0.95);
+}
+
+.navbar-icon-btn i {
+    font-size: 1rem;
+    transition: inherit;
+}
+
+/* Logs button - link variant */
+a.navbar-icon-btn {
+    text-decoration: none;
+}
+
+a.navbar-icon-btn:hover {
+    transform: scale(1.05);
+    background: var(--primary-dim);
+    border-color: var(--primary);
+    color: var(--primary);
+}
+
+a.navbar-icon-btn:active {
+    transform: scale(0.95);
+}
+
+/* Burger menu items should not rotate on hover */
+.burger-menu-item:hover {
+    transform: scale(1.05) !important;
+    background: var(--primary-dim);
+    border-color: var(--primary);
+    color: var(--primary);
+}
+
+.burger-menu-item:active {
+    transform: scale(0.95) !important;
+}
+
+/* Logs button - Purple */
+#logs-btn:hover {
+    background: rgba(168, 85, 247, 0.15) !important;
+    border-color: rgba(168, 85, 247, 0.5) !important;
+    color: rgb(168, 85, 247) !important;
+}
+
+/* Settings button - Green */
+#settings-btn:hover {
+    background: rgba(34, 197, 94, 0.15) !important;
+    border-color: rgba(34, 197, 94, 0.5) !important;
+    color: rgb(34, 197, 94) !important;
+}
+
+/* Settings Button Badge */
+#settings-btn.settings-btn-has-hint {
+    position: relative;
+    overflow: visible;
+}
+
+.settings-btn-badge {
+    position: absolute;
+    top: -6px;
+    right: -6px;
+    width: 18px;
+    height: 18px;
+    background: var(--warning);
+    border-radius: 50%;
+    border: 2px solid var(--bg-main);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 0.6rem;
+    color: var(--bg-main);
+    font-weight: 700;
+    z-index: 100;
+    animation: pulse-hint 2s infinite ease-in-out;
+    box-shadow: 0 2px 6px rgba(245, 158, 11, 0.4);
+}
+
+.settings-btn-badge i {
+    font-size: 0.65rem;
+}
+
+/* Logout button - Red */
+#logout-btn:hover {
+    background: rgba(239, 68, 68, 0.15) !important;
+    border-color: rgba(239, 68, 68, 0.5) !important;
+    color: rgb(239, 68, 68) !important;
+}
+
+/* Status Badge */
+.status-badge {
+    font-family: var(--font-main);
+    font-size: 0.75rem;
+    background: var(--primary-dim);
+    border: 1px solid rgba(52, 211, 153, 0.3);
+    color: var(--primary);
+    padding: 8px 16px;
+    border-radius: 100px;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    font-weight: 600;
+    letter-spacing: 0.05em;
+    text-transform: uppercase;
+}
+
+.status-badge.offline {
+    background: rgba(239, 68, 68, 0.15);
+    border-color: rgba(239, 68, 68, 0.3);
+    color: var(--error);
+}
+
+.status-badge.action-required {
+    background: rgba(245, 158, 11, 0.15);
+    border-color: rgba(245, 158, 11, 0.3);
+    color: var(--warning);
+}
+
+.dot {
+    width: 8px;
+    height: 8px;
+    background: var(--primary);
+    border-radius: 50%;
+    animation: dot-pulse 2s infinite;
+}
+
+.status-badge.offline .dot {
+    background: var(--error);
+    animation: none;
+}
+
+.status-badge.action-required .dot {
+    background: var(--warning);
+    animation: dot-pulse 2s infinite;
+}
+
+@keyframes dot-pulse {
+
+    0%,
+    100% {
+        opacity: 1;
+        transform: scale(1);
+    }
+
+    50% {
+        opacity: 0.5;
+        transform: scale(0.8);
+    }
+}

@@ -1,0 +1,126 @@
+/* ========================================
+   Wabi-Sabi Scrollbar System
+   Organic, Imperfect, Natural Beauty
+   ======================================== */
+
+/* Firefox Scrollbar */
+* {
+    scrollbar-width: thin;
+    scrollbar-color: rgba(52, 211, 153, 0.2) rgba(18, 18, 24, 0.3);
+}
+
+/* Webkit Scrollbar (Chrome, Safari, Edge) */
+*::-webkit-scrollbar {
+    width: var(--scrollbar-width);
+    height: var(--scrollbar-width);
+}
+
+*::-webkit-scrollbar-track {
+    background: var(--scrollbar-track);
+    border-radius: 0;
+    /* Subtle texture - not perfectly smooth */
+    background-image:
+        linear-gradient(90deg, transparent 0%, rgba(255, 255, 255, 0.01) 50%, transparent 100%),
+        linear-gradient(0deg, transparent 0%, rgba(255, 255, 255, 0.005) 50%, transparent 100%);
+    background-size: 4px 4px, 2px 2px;
+}
+
+*::-webkit-scrollbar-thumb {
+    /* Multi-layered background for organic texture and depth */
+    background:
+        /* Subtle radial highlight at top */
+        radial-gradient(ellipse 100% 60% at 50% 25%, rgba(255, 255, 255, 0.08) 0%, transparent 70%),
+        /* Subtle vertical gradient for depth */
+        linear-gradient(180deg,
+            rgba(52, 211, 153, 0.28) 0%,
+            rgba(52, 211, 153, 0.18) 25%,
+            rgba(94, 163, 250, 0.15) 75%,
+            rgba(94, 163, 250, 0.22) 100%),
+        /* Base gradient */
+        linear-gradient(180deg,
+            rgba(52, 211, 153, 0.25) 0%,
+            rgba(52, 211, 153, 0.15) 30%,
+            rgba(94, 163, 250, 0.12) 70%,
+            rgba(94, 163, 250, 0.18) 100%);
+    border-radius: 6px;
+    /* Organic, slightly imperfect shape - not perfectly round */
+    border: 1px solid var(--scrollbar-border);
+    /* Subtle inner shadow for depth and texture */
+    box-shadow:
+        inset 0 1px 2px rgba(0, 0, 0, 0.2),
+        inset 0 -1px 1px rgba(255, 255, 255, 0.05),
+        0 0 8px rgba(52, 211, 153, 0.08);
+    /* Gentle transition - natural, not mechanical */
+    transition:
+        background 0.4s cubic-bezier(0.4, 0, 0.2, 1),
+        box-shadow 0.4s cubic-bezier(0.4, 0, 0.2, 1),
+        border-color 0.3s ease;
+}
+
+*::-webkit-scrollbar-thumb:hover {
+    /* Enhanced layered background on hover */
+    background:
+        radial-gradient(ellipse 100% 60% at 50% 25%, rgba(255, 255, 255, 0.12) 0%, transparent 70%),
+        linear-gradient(180deg,
+            rgba(52, 211, 153, 0.38) 0%,
+            rgba(52, 211, 153, 0.25) 25%,
+            rgba(94, 163, 250, 0.20) 75%,
+            rgba(94, 163, 250, 0.28) 100%),
+        linear-gradient(180deg,
+            rgba(52, 211, 153, 0.35) 0%,
+            rgba(52, 211, 153, 0.22) 30%,
+            rgba(94, 163, 250, 0.18) 70%,
+            rgba(94, 163, 250, 0.25) 100%);
+    border-color: rgba(255, 255, 255, 0.06);
+    box-shadow:
+        inset 0 1px 2px rgba(0, 0, 0, 0.25),
+        inset 0 -1px 1px rgba(255, 255, 255, 0.08),
+        0 0 12px rgba(52, 211, 153, 0.12);
+}
+
+*::-webkit-scrollbar-thumb:active {
+    /* More vibrant layered background when active */
+    background:
+        radial-gradient(ellipse 100% 60% at 50% 25%, rgba(255, 255, 255, 0.15) 0%, transparent 70%),
+        linear-gradient(180deg,
+            rgba(52, 211, 153, 0.48) 0%,
+            rgba(52, 211, 153, 0.32) 25%,
+            rgba(94, 163, 250, 0.25) 75%,
+            rgba(94, 163, 250, 0.35) 100%),
+        linear-gradient(180deg,
+            rgba(52, 211, 153, 0.45) 0%,
+            rgba(52, 211, 153, 0.28) 30%,
+            rgba(94, 163, 250, 0.22) 70%,
+            rgba(94, 163, 250, 0.32) 100%);
+    border-color: rgba(255, 255, 255, 0.08);
+    box-shadow:
+        inset 0 1px 3px rgba(0, 0, 0, 0.3),
+        inset 0 -1px 2px rgba(255, 255, 255, 0.1),
+        0 0 16px rgba(52, 211, 153, 0.15);
+    /* Subtle breathing animation - organic, natural quality */
+    animation: scrollbarPulse 2s ease-in-out infinite;
+}
+
+/* Horizontal scrollbar adjustments */
+*::-webkit-scrollbar:horizontal {
+    height: var(--scrollbar-width);
+}
+
+/* Corner where vertical and horizontal scrollbars meet */
+*::-webkit-scrollbar-corner {
+    background: var(--scrollbar-track);
+}
+
+/* Subtle animation on scroll - organic, breathing quality */
+@keyframes scrollbarPulse {
+
+    0%,
+    100% {
+        opacity: 1;
+    }
+
+    50% {
+        opacity: 0.85;
+    }
+}
+

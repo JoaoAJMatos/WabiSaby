@@ -1,0 +1,73 @@
+            <section id="now-playing" class="card full-width now-playing-card">
+                <!-- Visualizer Background -->
+                <div class="np-visualizer-bg">
+                    <canvas id="visualizer-canvas"></canvas>
+                </div>
+
+                <!-- Main Content -->
+                <div class="np-content">
+                    <!-- Left: Album Art -->
+                    <div class="np-artwork-container">
+                        <div id="np-artwork" class="np-artwork">
+                            <i class="fas fa-compact-disc np-artwork-placeholder"></i>
+                        </div>
+                    </div>
+
+                    <!-- Center: Song Info & Progress -->
+                    <div class="np-info">
+                        <div id="current-song-info" class="np-song-details">
+                            <div class="np-idle-state">
+                                <span class="np-idle-label" data-i18n="ui.dashboard.nowPlaying.readyToPlay">READY TO
+                                    PLAY</span>
+                                <p class="np-idle-hint" data-i18n="ui.dashboard.nowPlaying.addTrackHint">Add a track to
+                                    get started</p>
+                            </div>
+                        </div>
+
+                        <div id="progress-section" class="np-progress hidden">
+                            <div class="np-progress-bar-container">
+                                <div id="progress-bar" class="np-progress-bar"></div>
+                            </div>
+                            <div class="np-time-display">
+                                <span id="current-time">0:00</span>
+                                <span id="total-time">0:00</span>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Right: Controls -->
+                    <div class="np-controls">
+                        <button id="play-pause-btn" class="np-control-btn" title="Pause"
+                            data-i18n-title="ui.dashboard.nowPlaying.pause">
+                            <i class="fas fa-pause"></i>
+                        </button>
+                        <button id="skip-btn" class="np-control-btn np-skip-btn" title="Skip"
+                            data-i18n-title="ui.dashboard.nowPlaying.skip">
+                            <i class="fas fa-forward"></i>
+                        </button>
+                        <button id="shuffle-btn" class="np-control-btn" title="Shuffle Mode"
+                            data-i18n-title="ui.dashboard.settings.playback.shuffleEnabled">
+                            <i class="fas fa-random"></i>
+                        </button>
+                        <button id="repeat-btn" class="np-control-btn" title="Repeat Mode"
+                            data-i18n-title="ui.dashboard.settings.playback.repeatMode">
+                            <i class="fas fa-repeat"></i>
+                        </button>
+                        <!-- Volume Control -->
+                        <div class="np-volume-control">
+                            <button class="np-volume-btn" id="volume-toggle-btn" title="Volume" aria-label="Volume">
+                                <i class="fas fa-volume-up" id="volume-icon"></i>
+                            </button>
+                            <div class="np-volume-slider-wrapper">
+                                <input type="range" id="volume-slider" min="0" max="100" value="100" step="1"
+                                    aria-label="Volume" />
+                                <span class="np-volume-value" id="volume-value">100%</span>
+                            </div>
+                        </div>
+                        <button id="fullscreen-btn" class="np-control-btn np-fullscreen-btn" title="Fullscreen"
+                            data-i18n-title="ui.dashboard.nowPlaying.fullscreen">
+                            <i class="fas fa-expand"></i>
+                        </button>
+                    </div>
+                </div>
+            </section>

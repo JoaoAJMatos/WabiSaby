@@ -1,0 +1,138 @@
+/* ========================================
+   Buttons - Modern & Clean
+   ======================================== */
+
+.controls {
+    display: flex;
+    justify-content: center;
+    gap: 16px;
+    margin-top: 20px;
+}
+
+.cyber-btn {
+    position: relative;
+    width: 100%;
+    padding: 14px 20px;
+    border: none;
+    font-family: var(--font-main);
+    font-weight: 600;
+    font-size: 0.9rem;
+    cursor: pointer;
+    transition: all 0.25s ease;
+    background: transparent;
+    border-radius: var(--card-radius-sm);
+    color: var(--text-main);
+    letter-spacing: 0.02em;
+}
+
+.cyber-btn.primary {
+    background: linear-gradient(135deg, var(--primary) 0%, #6ee7b7 100%);
+    color: #0a0a0f;
+    box-shadow: 0 4px 16px -4px var(--primary-glow);
+}
+
+.cyber-btn.primary:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 8px 28px -4px var(--primary-glow);
+    background: linear-gradient(135deg, #6ee7b7 0%, var(--primary) 100%);
+}
+
+.cyber-btn.primary:active {
+    transform: translateY(0);
+    box-shadow: 0 4px 16px -4px var(--primary-glow);
+}
+
+.cyber-btn.primary.small i {
+    color: #0a0a0f;
+    font-weight: 600;
+}
+
+.cyber-btn.primary.small:hover i {
+    transform: scale(1.1);
+}
+
+/* Disabled state for all small buttons */
+.cyber-btn.small:disabled,
+.cyber-btn.small.disabled {
+    opacity: 0.5;
+    cursor: not-allowed;
+    pointer-events: none;
+}
+
+.cyber-btn.small:disabled:hover,
+.cyber-btn.small.disabled:hover {
+    transform: none !important;
+    box-shadow: none !important;
+}
+
+.cyber-btn.secondary {
+    background: var(--glass-bg);
+    border: 1px solid var(--glass-border);
+    color: var(--text-main);
+}
+
+.cyber-btn.secondary:hover {
+    background: rgba(255, 255, 255, 0.08);
+    border-color: var(--glass-border-hover);
+    transform: translateY(-2px);
+    box-shadow: 0 6px 20px -4px rgba(255, 255, 255, 0.1);
+}
+
+.cyber-btn.secondary:active {
+    transform: translateY(0);
+    box-shadow: 0 2px 8px -2px rgba(255, 255, 255, 0.05);
+}
+
+.cyber-btn.warning {
+    background: rgba(245, 158, 11, 0.1);
+    border: 1px solid rgba(245, 158, 11, 0.3);
+    color: var(--warning);
+}
+
+.cyber-btn.warning:hover {
+    background: rgba(245, 158, 11, 0.2);
+    border-color: var(--warning);
+}
+
+.cyber-btn.small {
+    width: auto;
+    padding: 10px 18px;
+    font-size: 0.85rem;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    letter-spacing: 0.02em;
+    transition: all 0.25s cubic-bezier(0.4, 0, 0.2, 1);
+    position: relative;
+    overflow: hidden;
+}
+
+.cyber-btn.small i {
+    font-size: 0.85rem;
+    color: inherit;
+    opacity: 1;
+    transition: all 0.2s ease;
+}
+
+.cyber-btn.danger {
+    background: rgba(239, 68, 68, 0.12);
+    border: 1px solid rgba(239, 68, 68, 0.3);
+    color: #f87171;
+}
+
+.cyber-btn.danger:hover {
+    background: rgba(239, 68, 68, 0.2);
+    border-color: rgba(239, 68, 68, 0.5);
+    color: #f87171;
+    transform: translateY(-2px);
+    box-shadow: 0 6px 20px -4px rgba(239, 68, 68, 0.4);
+}
+
+.cyber-btn.danger:active {
+    transform: translateY(0);
+    box-shadow: 0 2px 8px -2px rgba(239, 68, 68, 0.3);
+}
+
+.btn-glitch {
+    display: none;
+}
