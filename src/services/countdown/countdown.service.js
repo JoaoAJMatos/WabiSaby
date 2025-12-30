@@ -28,6 +28,8 @@ class CountdownService {
         this.prefetchInProgress = false;
         this.waveformData = null; // Store waveform data for prefetched song
         this.waveformInProgress = false;
+        this.lastSeekTime = 0; // Track when we last sought to prevent repeated seeks
+        this.initialSeekDone = false; // Track if we've done the initial positioning seek
 
         // Listen to playback events to track song state
         eventBus.on(PLAYBACK_STARTED, () => {
@@ -42,6 +44,8 @@ class CountdownService {
         eventBus.on(PLAYBACK_FINISHED, () => {
             // Reset song state when playback finishes
             this.songStarted = false;
+            this.initialSeekDone = false;
+            this.lastSeekTime = 0;
         });
     }
 
@@ -178,6 +182,8 @@ class CountdownService {
         // Reset state when config changes
         this.songQueued = false;
         this.songStarted = false;
+        this.initialSeekDone = false;
+        this.lastSeekTime = 0;
 
         logger.info('Countdown configuration updated:', {
             enabled: config.countdown.enabled,
@@ -519,28 +525,115 @@ class CountdownService {
             }
         }
 
-        // At startTime: Ensure song is playing at correct position
-        if (timeUntilStart <= 0 && !this.songStarted && this.songQueued) {
-            const orchestrator = this._getOrchestrator();
-            const currentSong = orchestrator?.currentSong;
+        // At startTime and during playback: Ensure song is playing at correct position
+        const orchestrator = this._getOrchestrator();
+        const currentSong = orchestrator?.currentSong;
 
-            if (!currentSong) {
-                // No song playing, trigger playback
-                logger.info('Start time reached, triggering countdown song playback');
-                orchestrator.skip(); // This will start playing the next song in queue
-            } else if (this._isCountdownSong(currentSong)) {
-                // Countdown song is playing, verify timing
-                const elapsed = currentSong.elapsed || 0;
-                const expectedPosition = songTimestamp * 1000 - (targetTime - now);
-                const drift = Math.abs(elapsed - expectedPosition);
+        if (this._isCountdownSong(currentSong)) {
+            const expectedPosition = Math.max(0, now - startTime);
+            const elapsed = currentSong.elapsed || 0;
+            const drift = Math.abs(elapsed - expectedPosition);
+            const timeSinceStart = now - startTime;
+            const timeSinceLastSeek = now - this.lastSeekTime;
 
-                if (drift > 2000) { // More than 2 seconds off
-                    logger.warn('Countdown song timing drift detected:', { drift, elapsed, expected: expectedPosition });
-                    // In the future, could implement seek here
+            // If we're at or past startTime, ensure correct position
+            if (timeUntilStart <= 0) {
+                // If song just started, mark it and reset seek tracking
+                if (!this.songStarted) {
+                    logger.info('Countdown song started playing');
+                    this.songStarted = true;
+                    this.initialSeekDone = false;
+                    this.lastSeekTime = 0; // Reset to allow initial seek
                 }
 
-                this.songStarted = true;
+                // Initial positioning: Seek once when song first starts (within first 2 seconds)
+                if (!this.initialSeekDone && timeSinceStart <= 2000) {
+                    if (drift > 100) { // Even small drift at start should be corrected
+                        logger.info('Initial countdown song positioning:', {
+                            drift: Math.round(drift) + 'ms',
+                            current: Math.round(elapsed) + 'ms',
+                            expected: Math.round(expectedPosition) + 'ms'
+                        });
+
+                        const seekSuccess = orchestrator.seek(expectedPosition);
+                        if (seekSuccess) {
+                            this.lastSeekTime = now;
+                            this.initialSeekDone = true;
+                            logger.info('Positioned countdown song at start:', {
+                                position: Math.round(expectedPosition) + 'ms'
+                            });
+                        }
+                    } else {
+                        // No drift, mark as done
+                        this.initialSeekDone = true;
+                    }
+                }
+                // Early correction: Allow one more seek in first 10 seconds if drift is significant
+                else if (this.initialSeekDone && timeSinceStart <= 10000 && timeSinceLastSeek > 3000) {
+                    if (drift > 2000) { // Only if drift is > 2 seconds
+                        logger.info('Early countdown song correction:', {
+                            drift: Math.round(drift) + 'ms',
+                            current: Math.round(elapsed) + 'ms',
+                            expected: Math.round(expectedPosition) + 'ms'
+                        });
+
+                        const seekSuccess = orchestrator.seek(expectedPosition);
+                        if (seekSuccess) {
+                            this.lastSeekTime = now;
+                            logger.info('Corrected countdown song position:', {
+                                position: Math.round(expectedPosition) + 'ms'
+                            });
+                        }
+                    }
+                }
+                // After initial period: Only seek if drift would significantly affect final timestamp
+                else if (timeSinceStart > 10000 && timeSinceLastSeek > 10000) {
+                    // Calculate projected position at target time
+                    const timeUntilTarget = targetTime - now;
+                    const projectedPositionAtTarget = elapsed + timeUntilTarget;
+                    const targetPosition = songTimestamp * 1000;
+                    const projectedDrift = Math.abs(projectedPositionAtTarget - targetPosition);
+
+                    // Only seek if projected drift at target time is > 2 seconds
+                    // This ensures we only interrupt playback if it would actually matter
+                    if (projectedDrift > 2000) {
+                        logger.warn('Significant countdown drift detected, correcting:', {
+                            projectedDrift: Math.round(projectedDrift) + 'ms',
+                            current: Math.round(elapsed) + 'ms',
+                            expected: Math.round(expectedPosition) + 'ms',
+                            projectedAtTarget: Math.round(projectedPositionAtTarget) + 'ms',
+                            targetPosition: Math.round(targetPosition) + 'ms'
+                        });
+
+                        const seekSuccess = orchestrator.seek(expectedPosition);
+                        if (seekSuccess) {
+                            this.lastSeekTime = now;
+                            logger.info('Corrected countdown song for final timestamp accuracy:', {
+                                position: Math.round(expectedPosition) + 'ms'
+                            });
+                        }
+                    }
+                }
+
+                // Log precision status every 10 seconds (without seeking)
+                if (now % 10000 < 1000) {
+                    const timeUntilTarget = targetTime - now;
+                    const currentPositionAtTarget = elapsed + timeUntilTarget;
+                    const targetPosition = songTimestamp * 1000;
+                    const finalDrift = Math.abs(currentPositionAtTarget - targetPosition);
+
+                    logger.debug('Countdown synchronization status:', {
+                        timeUntilTarget: Math.round(timeUntilTarget / 1000) + 's',
+                        currentPosition: Math.round(elapsed) + 'ms',
+                        expectedAtTarget: Math.round(targetPosition) + 'ms',
+                        projectedAtTarget: Math.round(currentPositionAtTarget) + 'ms',
+                        projectedDrift: Math.round(finalDrift) + 'ms'
+                    });
+                }
             }
+        } else if (timeUntilStart <= 0 && !this.songStarted && this.songQueued) {
+            logger.info('Start time reached, triggering countdown song playback');
+            orchestrator.skip(); // This will start playing the next song in queue
         }
     }
 

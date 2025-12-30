@@ -1661,6 +1661,8 @@ async function loadSettings() {
 
 let lastCountdownNumber = null;
 let celebrationTriggered = false;
+let celebrationStartTime = null;
+let celebrationDuration = null;
 const BIG_NUMBER_THRESHOLD = 60; // Show big number for last 60 seconds
 
 /**
@@ -1686,9 +1688,29 @@ function updateCountdownDisplay(countdown) {
 
     if (isAtZero && !celebrationTriggered) {
         // Trigger celebration!
+        const displayDuration = countdown.messageDisplayDuration || 30;
         triggerCelebration(countdown.message || 'Happy New Year!', countdown);
         celebrationTriggered = true;
+        celebrationStartTime = Date.now();
+        celebrationDuration = displayDuration * 1000;
         return;
+    }
+
+    // If celebration is active, don't process other countdown updates
+    if (celebrationTriggered) {
+        // Check if celebration duration has passed
+        if (celebrationStartTime && celebrationDuration) {
+            const elapsed = Date.now() - celebrationStartTime;
+            if (elapsed >= celebrationDuration) {
+                // Celebration duration has passed, allow reset
+                celebrationTriggered = false;
+                celebrationStartTime = null;
+                celebrationDuration = null;
+            } else {
+                // Still in celebration period, keep showing it
+                return;
+            }
+        }
     }
 
     if (shouldShow && countdownTimeRemaining > 0) {
@@ -1742,8 +1764,24 @@ function updateCountdownDisplay(countdown) {
     }
 
     // Reset celebration flag when countdown is disabled or reset
-    if (!countdownEnabled || (countdownTimeRemaining !== null && countdownTimeRemaining > countdownShowThreshold * 1000)) {
-        celebrationTriggered = false;
+    // But only if celebration duration has passed
+    if (!celebrationTriggered) {
+        // Only reset if not currently celebrating
+        if (!countdownEnabled || (countdownTimeRemaining !== null && countdownTimeRemaining > countdownShowThreshold * 1000)) {
+            celebrationStartTime = null;
+            celebrationDuration = null;
+        }
+    } else {
+        // Celebration is active, check if duration has passed
+        if (celebrationStartTime && celebrationDuration) {
+            const elapsed = Date.now() - celebrationStartTime;
+            if (elapsed >= celebrationDuration) {
+                // Celebration duration has passed, allow reset
+                celebrationTriggered = false;
+                celebrationStartTime = null;
+                celebrationDuration = null;
+            }
+        }
     }
 }
 
@@ -1796,6 +1834,10 @@ function triggerCelebration(message, countdown = {}) {
         if (elements.countdownParticles) {
             elements.countdownParticles.innerHTML = '';
         }
+        // Reset celebration flag after display duration
+        celebrationTriggered = false;
+        celebrationStartTime = null;
+        celebrationDuration = null;
     }, displayDuration);
 }
 

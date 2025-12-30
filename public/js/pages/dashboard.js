@@ -362,7 +362,11 @@ function updateQueueUI(data, shuffleEnabled = false) {
                 audio.addEventListener('canplaythrough', () => {
                     console.log('Audio can play through');
                     if (localCurrentSong && !localCurrentSong.isPaused && audio.paused) {
-                        startAudioPlayback();
+                        // Check if audio has actually ended before restarting
+                        const hasEnded = audio.ended || (audio.duration > 0 && audio.currentTime >= audio.duration - 0.1);
+                        if (!hasEnded) {
+                            startAudioPlayback();
+                        }
                     }
                 });
                 

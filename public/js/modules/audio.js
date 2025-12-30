@@ -150,9 +150,6 @@ async function initVisualizer() {
                 });
                 
                 dataSendCount++;
-                if (dataSendCount % 200 === 0) { // Log every 2 seconds
-                    console.log('✓ Sent audio data:', dataSendCount, 'times, length:', data.length, 'sample:', data[0], data[10], data[50]);
-                }
             } else if (typeof localCurrentSong !== 'undefined' && localCurrentSong && !localCurrentSong.streamUrl) {
                 // Song is preparing, send idle animation indicator
                 broadcast.postMessage({ type: 'IDLE_ANIMATION', preparing: true });
@@ -300,6 +297,14 @@ async function startAudioPlayback() {
 // Ensure audio is playing when it should be (called periodically)
 function ensureAudioPlaying() {
     if (currentAudio && typeof localCurrentSong !== 'undefined' && localCurrentSong && !localCurrentSong.isPaused && currentAudio.paused) {
+        // Check if audio has actually ended (reached the end of the track)
+        // If it has ended, don't try to restart it - let the server handle next song
+        const hasEnded = currentAudio.ended || (currentAudio.duration > 0 && currentAudio.currentTime >= currentAudio.duration - 0.1);
+        if (hasEnded) {
+            // Audio has finished, don't restart
+            return;
+        }
+        
         console.log('Audio should be playing but is paused, attempting to start...');
         startAudioPlayback();
     }
@@ -324,9 +329,12 @@ function unlockAudio() {
             console.log('AudioContext unlocked via user interaction');
             audioUnlocked = true;
             
-            // Try to start playback if we should be playing
+            // Try to start playback if we should be playing (but not if audio has ended)
             if (currentAudio && typeof localCurrentSong !== 'undefined' && localCurrentSong && !localCurrentSong.isPaused && currentAudio.paused) {
-                startAudioPlayback();
+                const hasEnded = currentAudio.ended || (currentAudio.duration > 0 && currentAudio.currentTime >= currentAudio.duration - 0.1);
+                if (!hasEnded) {
+                    startAudioPlayback();
+                }
             }
         });
     } else {
@@ -348,9 +356,12 @@ document.addEventListener('visibilitychange', () => {
             audioContext.resume().catch(() => {});
         }
         
-        // If we should be playing, try to restart
+        // If we should be playing, try to restart (but not if audio has ended)
         if (currentAudio && typeof localCurrentSong !== 'undefined' && localCurrentSong && !localCurrentSong.isPaused && currentAudio.paused) {
-            startAudioPlayback();
+            const hasEnded = currentAudio.ended || (currentAudio.duration > 0 && currentAudio.currentTime >= currentAudio.duration - 0.1);
+            if (!hasEnded) {
+                startAudioPlayback();
+            }
         }
     }
 });
