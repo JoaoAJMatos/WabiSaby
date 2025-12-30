@@ -1785,7 +1785,7 @@ function triggerCelebration(message) {
     // Create confetti particles
     createConfetti();
 
-    // Hide celebration after 15 seconds
+    // Hide celebration after 30 seconds (increased from 15 seconds)
     setTimeout(() => {
         if (elements.countdownOverlay) {
             elements.countdownOverlay.classList.remove('visible', 'celebration');
@@ -1795,7 +1795,7 @@ function triggerCelebration(message) {
         if (elements.countdownParticles) {
             elements.countdownParticles.innerHTML = '';
         }
-    }, 15000);
+    }, 30000);
 }
 
 /**

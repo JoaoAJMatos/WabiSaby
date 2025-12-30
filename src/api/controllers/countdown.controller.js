@@ -177,6 +177,32 @@ class CountdownController {
             });
         }
     }
+
+    /**
+     * Pre-fetch countdown song in background
+     * @param {Object} req - Express request
+     * @param {Object} res - Express response
+     */
+    async prefetchSong(req, res) {
+        try {
+            const initiated = await countdownService.prefetchCountdownSong();
+            const status = countdownService.getStatus();
+
+            res.json({
+                success: initiated,
+                message: initiated 
+                    ? 'Countdown song prefetch initiated' 
+                    : 'Failed to initiate countdown song prefetch',
+                countdown: status
+            });
+        } catch (error) {
+            logger.error('Failed to prefetch countdown song:', error);
+            res.status(500).json({
+                success: false,
+                error: 'Failed to prefetch countdown song'
+            });
+        }
+    }
 }
 
 module.exports = new CountdownController();

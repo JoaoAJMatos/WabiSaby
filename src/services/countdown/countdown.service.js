@@ -13,6 +13,8 @@ class CountdownService {
         this.songQueued = false;
         this.songStarted = false;
         this.lastCheck = 0;
+        this.prefetchedSong = null; // Store pre-fetched song data
+        this.prefetchInProgress = false;
 
         // Listen to playback events to track song state
         eventBus.on(PLAYBACK_STARTED, () => {
@@ -100,6 +102,8 @@ class CountdownService {
             },
             songQueued: this.songQueued,
             songStarted: this.songStarted,
+            songPrefetched: this.prefetchedSong !== null,
+            prefetchInProgress: this.prefetchInProgress,
         };
     }
 
@@ -119,7 +123,15 @@ class CountdownService {
         if (newConfig.message !== undefined) config.countdown.message = newConfig.message;
 
         if (newConfig.song) {
-            if (newConfig.song.url !== undefined) config.countdown.song.url = newConfig.song.url;
+            const oldUrl = config.countdown.song?.url;
+            if (newConfig.song.url !== undefined) {
+                config.countdown.song.url = newConfig.song.url;
+                // If URL changed, clear prefetched song
+                if (oldUrl !== newConfig.song.url) {
+                    this.prefetchedSong = null;
+                    this.prefetchInProgress = false;
+                }
+            }
             if (newConfig.song.timestamp !== undefined) config.countdown.song.timestamp = newConfig.song.timestamp;
         }
 
@@ -176,7 +188,70 @@ class CountdownService {
     }
 
     /**
+     * Pre-fetch countdown song in background without adding to queue
+     * @returns {Promise<boolean>} True if fetch was initiated
+     */
+    async prefetchCountdownSong() {
+        config._ensureSettingsLoaded();
+
+        const songUrl = config.countdown.song?.url;
+        if (!songUrl) {
+            logger.warn('No countdown song URL configured');
+            return false;
+        }
+
+        // If already prefetched and URL matches, return success
+        if (this.prefetchedSong && this.prefetchedSong.sourceUrl === songUrl) {
+            logger.debug('Countdown song already prefetched');
+            return true;
+        }
+
+        // If prefetch is already in progress, return
+        if (this.prefetchInProgress) {
+            logger.debug('Countdown song prefetch already in progress');
+            return true;
+        }
+
+        this.prefetchInProgress = true;
+
+        try {
+            const { downloadTrack } = require('../audio/download.service');
+            
+            logger.info('Starting background prefetch of countdown song:', { url: songUrl });
+            
+            // Download in background (don't await - let it run async)
+            downloadTrack(songUrl, null, null)
+                .then((result) => {
+                    this.prefetchedSong = {
+                        filePath: result.filePath,
+                        sourceUrl: songUrl,
+                        title: result.title,
+                        artist: result.artist,
+                        thumbnailPath: result.thumbnailPath,
+                        prefetchedAt: Date.now()
+                    };
+                    this.prefetchInProgress = false;
+                    logger.info('Countdown song prefetched successfully:', {
+                        title: result.title,
+                        filePath: result.filePath
+                    });
+                })
+                .catch((error) => {
+                    this.prefetchInProgress = false;
+                    logger.error('Failed to prefetch countdown song:', error);
+                });
+
+            return true;
+        } catch (error) {
+            this.prefetchInProgress = false;
+            logger.error('Failed to initiate countdown song prefetch:', error);
+            return false;
+        }
+    }
+
+    /**
      * Queue the countdown song as priority
+     * Uses pre-fetched song if available, otherwise adds URL to queue
      * @returns {Promise<boolean>} True if song was queued
      */
     async prepareCountdownSong() {
@@ -198,7 +273,9 @@ class CountdownService {
 
             // Check if countdown song is already in queue
             const existingIndex = queueService.getQueue().findIndex(item =>
-                item.content === songUrl || item.sourceUrl === songUrl
+                item.content === songUrl || 
+                item.sourceUrl === songUrl ||
+                (this.prefetchedSong && item.content === this.prefetchedSong.filePath)
             );
 
             if (existingIndex !== -1) {
@@ -211,21 +288,43 @@ class CountdownService {
                 return true;
             }
 
-            // Add countdown song to front of queue
-            const queueItem = {
-                content: songUrl,
-                type: 'url',
-                title: 'Countdown Song',
-                requester: 'System',
-                isPriority: true,
-                isCountdownSong: true,
-            };
+            // Use pre-fetched song if available, otherwise use URL
+            let queueItem;
+            if (this.prefetchedSong && this.prefetchedSong.sourceUrl === songUrl) {
+                // Use pre-fetched file
+                queueItem = {
+                    content: this.prefetchedSong.filePath,
+                    type: 'file',
+                    sourceUrl: this.prefetchedSong.sourceUrl,
+                    title: this.prefetchedSong.title || 'Countdown Song',
+                    artist: this.prefetchedSong.artist || '',
+                    requester: 'System',
+                    isPriority: true,
+                    isCountdownSong: true,
+                    prefetched: true,
+                };
+                logger.info('Using pre-fetched countdown song:', { 
+                    title: this.prefetchedSong.title,
+                    filePath: this.prefetchedSong.filePath 
+                });
+            } else {
+                // Fallback to URL (will download when played)
+                queueItem = {
+                    content: songUrl,
+                    type: 'url',
+                    title: 'Countdown Song',
+                    requester: 'System',
+                    isPriority: true,
+                    isCountdownSong: true,
+                };
+                logger.info('Countdown song not prefetched, will download on play:', { url: songUrl });
+            }
 
             // Add to front of queue
             queueService.addFirst(queueItem);
             this.songQueued = true;
 
-            logger.info('Countdown song added to queue:', { url: songUrl });
+            logger.info('Countdown song added to queue');
             return true;
         } catch (error) {
             logger.error('Failed to prepare countdown song:', error);

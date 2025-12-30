@@ -20,4 +20,7 @@ router.post('/countdown/enable', countdownController.enable.bind(countdownContro
 // Disable countdown
 router.post('/countdown/disable', countdownController.disable.bind(countdownController));
 
+// Pre-fetch countdown song
+router.post('/countdown/prefetch', countdownController.prefetchSong.bind(countdownController));
+
 module.exports = { router };

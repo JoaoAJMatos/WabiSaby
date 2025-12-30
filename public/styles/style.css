@@ -6051,6 +6051,21 @@ input:focus {
     /* Moved to main header */
 }
 
+/* Countdown panel specific header */
+.settings-panel[data-panel="countdown"] .panel-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 18px;
+    margin-bottom: 24px;
+    padding-bottom: 20px;
+    border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+}
+
+.panel-toggle {
+    flex-shrink: 0;
+}
+
 .panel-icon {
     width: 52px;
     height: 52px;

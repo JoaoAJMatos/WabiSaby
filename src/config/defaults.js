@@ -80,13 +80,13 @@ class DefaultsConfig {
                 enabled: false,
                 targetDate: null, // ISO 8601 format: "2025-12-31T23:59:59"
                 showInPlayer: true,
-                showThreshold: 300, // seconds - show countdown when X seconds remaining
-                message: 'Happy New Year!', // Message to display at countdown zero
+                showThreshold: 30, // seconds - show countdown when X seconds remaining
+                message: 'Happy New Year! 🎉', // Message to display at countdown zero
                 song: {
                     url: null, // YouTube/Spotify URL or search query
                     timestamp: 0, // seconds - where in song to be at countdown zero
                 },
-                skipBuffer: 5000, // milliseconds - buffer before start time
+                skipBuffer: 5000, // milliseconds - buffer before start time (internal, not user-facing)
             },
         };
     }
