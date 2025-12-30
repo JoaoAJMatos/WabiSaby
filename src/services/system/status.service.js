@@ -486,20 +486,30 @@ class StatusService extends EventEmitter {
     }
 
     /**
-     * Check if a song is playing and start/stop periodic broadcast accordingly
+     * Check if a song is playing or countdown is active and start/stop periodic broadcast accordingly
      */
     checkAndUpdatePeriodicBroadcast() {
         try {
             const services = getServices();
+
+            // Check if countdown is active (needs periodic updates for real-time display)
+            const countdownActive = services?.countdown?.getTimeRemaining() > 0;
+
             if (!services || !services.playback || !services.playback.orchestrator) {
-                this.stopPeriodicBroadcast();
+                // Still start broadcast if countdown is active, even if playback services aren't ready
+                if (countdownActive && this.clients.size > 0) {
+                    this.startPeriodicBroadcast();
+                } else {
+                    this.stopPeriodicBroadcast();
+                }
                 return;
             }
 
             const orchestrator = services.playback.orchestrator;
             const isPlaying = orchestrator.currentSong && !orchestrator.isPaused;
 
-            if (isPlaying && this.clients.size > 0) {
+            // Keep broadcasting if either a song is playing OR countdown is active
+            if ((isPlaying || countdownActive) && this.clients.size > 0) {
                 this.startPeriodicBroadcast();
             } else {
                 this.stopPeriodicBroadcast();

@@ -207,6 +207,9 @@ class StatusController {
             // Get shuffle setting
             config._ensureSettingsLoaded();
 
+            // Get countdown status
+            const countdownStatus = services.countdown ? services.countdown.getStatus() : null;
+
             res.json({
                 auth: {
                     isConnected: !!isConnected, // Ensure it's a boolean
@@ -225,7 +228,8 @@ class StatusController {
                     queueLength: queue.length
                 },
                 shuffleEnabled: config.playback.shuffleEnabled,
-                repeatMode: config.playback.repeatMode
+                repeatMode: config.playback.repeatMode,
+                countdown: countdownStatus
             });
         } catch (error) {
             // Log detailed error information

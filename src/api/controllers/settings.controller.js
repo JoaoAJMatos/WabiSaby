@@ -19,7 +19,7 @@ const EDITABLE_SETTINGS = {
     notifications: ['enabled', 'notifyAtPosition'],
     privacy: ['demoMode'],
     rateLimit: ['enabled', 'maxRequests', 'windowSeconds'],
-    countdown: ['enabled', 'targetDate', 'showInPlayer', 'showThreshold', 'skipBuffer']
+    countdown: ['enabled', 'targetDate', 'showInPlayer', 'showThreshold', 'skipBuffer', 'message']
 };
 
 /**
@@ -68,6 +68,7 @@ const DEFAULT_SETTINGS = {
         showInPlayer: true,
         showThreshold: 300,
         skipBuffer: 5000,
+        message: 'Happy New Year! 🎉',
         song: {
             url: null,
             timestamp: 0
@@ -124,6 +125,7 @@ class SettingsController {
                 showInPlayer: config.countdown?.showInPlayer !== false,
                 showThreshold: config.countdown?.showThreshold || 300,
                 skipBuffer: config.countdown?.skipBuffer || 5000,
+                message: config.countdown?.message || 'Happy New Year! 🎉',
                 song: {
                     url: config.countdown?.song?.url || null,
                     timestamp: config.countdown?.song?.timestamp || 0
